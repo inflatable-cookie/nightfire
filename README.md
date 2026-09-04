@@ -6,10 +6,9 @@ registries, normalization, validation, hashing, block IDs, media locators,
 markdown rendering, and generic editors. Product schemas, product blocks, and
 application integrations stay in consumers.
 
-Current `main` contains the TypeScript/Svelte tranche extracted by Market Card
-272. Market Card 278 is ready to reshape the repository under `ts/` and `rust/`
-and extract the authoritative Rust crate `nightfire`. Do not release the
-current TS-only state.
+The repository keeps the TypeScript/Svelte implementation under `ts/`, the
+Rust crate `nightfire` under `rust/`, and shared wire fixtures at the root.
+The first release remains separately gated.
 
 ## Install
 
@@ -95,6 +94,10 @@ evidence lives in [PROVENANCE.md](PROVENANCE.md); contribution rules live in
 - `svelte` (peer): component runtime supplied by the consumer.
 - `marked`: retained markdown parsing behavior.
 - `isomorphic-dompurify`: one sanitizer contract across DOM and SSR runtimes.
+- `serde` and `serde_json`: retained Rust wire serialization and JSON payloads.
+- `blake3`: retained deterministic block-data hashing.
+- `uuid`: retained UUIDv7 block ID generation and serialization.
+- `thiserror`: retained typed media-locator and validation errors.
 
 Test-only packages provide Bun types, TypeScript/Svelte checking, jsdom, and DOM
 component assertions. The completed repository must contain no Underlay,

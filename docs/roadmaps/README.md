@@ -16,12 +16,12 @@ See [generation-index.md](generation-index.md) for status.
 
 ## Current Queue
 
-The repository bootstrap and TypeScript/Svelte extraction landed, but the Rust
-tranche was wrongly excluded. Market Card 278 is the ready corrective lane. The
-first immutable release is gated on that acceptance and a fresh explicit
-operator confirmation.
+Market Card 278 now has an implementation head with explicit TypeScript/Svelte
+and Rust tranches. The first immutable release remains gated on independent
+exact-head acceptance and fresh operator confirmation.
 
 ## Next Task
 
-Execute [g01.002 — dual-language repository](g01/002-dual-language-repository.md)
-through Market Card 278. Do not execute the release or consumer cutovers.
+Review the exact head for
+[g01.002 — dual-language repository](g01/002-dual-language-repository.md).
+Do not execute the release or consumer cutovers.

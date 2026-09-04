@@ -28,17 +28,25 @@ section = "Vision Artifacts"
 
 [tasks]
 "bootstrap:deps" = "cd {repo} && bun install --frozen-lockfile"
-check = "cd {repo} && bun x svelte-check --tsconfig tsconfig.json"
-"check:types" = "cd {repo} && bun x tsc --noEmit"
-"check:exports" = "cd {repo} && bun scripts/check-exports.ts"
-"check:boundaries" = "cd {repo} && bun scripts/check-boundaries.ts"
-"check:pack" = "cd {repo} && bun scripts/check-pack.ts"
+check = "cd {repo} && bun x svelte-check --tsconfig ts/tsconfig.json"
+"check:types" = "cd {repo} && bun x tsc --project ts/tsconfig.json --noEmit"
+"check:exports" = "cd {repo} && bun ts/scripts/check-exports.ts"
+"check:boundaries" = "cd {repo} && bun ts/scripts/check-boundaries.ts"
+"check:pack" = "cd {repo} && bun ts/scripts/check-pack.ts"
+"check:version-sync" = "cd {repo} && bun ts/scripts/check-version-sync.ts"
+"check:rust:format" = "cd {repo} && cargo fmt --all --check"
+"check:rust" = "cd {repo} && cargo check --workspace --all-targets --locked"
+"check:rust:clippy" = "cd {repo} && cargo clippy --workspace --all-targets --locked -- -D warnings"
+"check:rust:package" = "cd {repo} && bun ts/scripts/check-rust-package.ts"
+"check:git-consumer:npm" = "cd {repo} && bun ts/scripts/check-git-consumer.ts npm"
+"check:git-consumer:cargo" = "cd {repo} && bun ts/scripts/check-git-consumer.ts cargo"
 "check:format" = "cd {repo} && git diff --check"
-"test:unit" = "cd {repo} && bun scripts/run-test-files.ts tests/nightfire tests/wire"
-"test:components" = "cd {repo} && NIGHTFIRE_COMPONENT_TESTS=1 bun scripts/run-test-files.ts tests/components tests/patterns"
-"test:sanitization" = "cd {repo} && bun scripts/check-sanitization.ts"
-"qa:docs:paths" = "cd {repo} && effigy docs check paths README.md AGENTS.md CLAUDE.md CHANGELOG.md CONTRIBUTING.md SECURITY.md PAPERCUTS.md PROVENANCE.md .agents.local.env.example scripts/README.md docs/README.md docs/vision/README.md docs/vision/001-nightfire-foundation-vision.md docs/architecture/README.md docs/architecture/system-architecture.md docs/architecture/repo-authority-map.md docs/contracts/README.md docs/contracts/contract-index.md docs/contracts/001-working-rules.md docs/contracts/002-package-boundary.md docs/roadmaps/README.md docs/roadmaps/generation-index.md docs/roadmaps/g01/README.md docs/roadmaps/g01/001-standalone-package-foundation.md docs/roadmaps/g01/002-dual-language-repository.md docs/roadmaps/g01/003-v010-release.md docs/triage/README.md docs/handoffs/README.md docs/logs/README.md docs/policy/internal-writing-style.md fixtures/wire/v1/README.md"
-"qa:docs:links" = "cd {repo} && effigy docs check links README.md PROVENANCE.md CONTRIBUTING.md SECURITY.md PAPERCUTS.md scripts/README.md docs/README.md docs/vision/README.md docs/vision/001-nightfire-foundation-vision.md docs/architecture/README.md docs/architecture/system-architecture.md docs/architecture/repo-authority-map.md docs/contracts/README.md docs/contracts/contract-index.md docs/contracts/001-working-rules.md docs/contracts/002-package-boundary.md docs/roadmaps/README.md docs/roadmaps/generation-index.md docs/roadmaps/g01/README.md docs/roadmaps/g01/001-standalone-package-foundation.md docs/roadmaps/g01/002-dual-language-repository.md docs/roadmaps/g01/003-v010-release.md docs/triage/README.md docs/handoffs/README.md docs/logs/README.md docs/policy/internal-writing-style.md fixtures/wire/v1/README.md"
+"test:unit" = "cd {repo} && bun ts/scripts/run-test-files.ts ts/tests/nightfire ts/tests/wire"
+"test:components" = "cd {repo} && NIGHTFIRE_COMPONENT_TESTS=1 bun ts/scripts/run-test-files.ts ts/tests/components ts/tests/patterns"
+"test:sanitization" = "cd {repo} && bun ts/scripts/check-sanitization.ts"
+"test:rust" = "cd {repo} && cargo test --workspace --locked"
+"qa:docs:paths" = "cd {repo} && effigy docs check paths README.md AGENTS.md CLAUDE.md CHANGELOG.md CONTRIBUTING.md SECURITY.md PAPERCUTS.md PROVENANCE.md .agents.local.env.example ts/scripts/README.md docs/README.md docs/vision/README.md docs/vision/001-nightfire-foundation-vision.md docs/architecture/README.md docs/architecture/system-architecture.md docs/architecture/repo-authority-map.md docs/contracts/README.md docs/contracts/contract-index.md docs/contracts/001-working-rules.md docs/contracts/002-package-boundary.md docs/roadmaps/README.md docs/roadmaps/generation-index.md docs/roadmaps/g01/README.md docs/roadmaps/g01/001-standalone-package-foundation.md docs/roadmaps/g01/002-dual-language-repository.md docs/roadmaps/g01/003-v010-release.md docs/triage/README.md docs/handoffs/README.md docs/logs/README.md docs/policy/internal-writing-style.md fixtures/wire/v1/README.md rust/nightfire/README.md"
+"qa:docs:links" = "cd {repo} && effigy docs check links README.md PROVENANCE.md CONTRIBUTING.md SECURITY.md PAPERCUTS.md ts/scripts/README.md docs/README.md docs/vision/README.md docs/vision/001-nightfire-foundation-vision.md docs/architecture/README.md docs/architecture/system-architecture.md docs/architecture/repo-authority-map.md docs/contracts/README.md docs/contracts/contract-index.md docs/contracts/001-working-rules.md docs/contracts/002-package-boundary.md docs/roadmaps/README.md docs/roadmaps/generation-index.md docs/roadmaps/g01/README.md docs/roadmaps/g01/001-standalone-package-foundation.md docs/roadmaps/g01/002-dual-language-repository.md docs/roadmaps/g01/003-v010-release.md docs/triage/README.md docs/handoffs/README.md docs/logs/README.md docs/policy/internal-writing-style.md fixtures/wire/v1/README.md rust/nightfire/README.md"
 "qa:docs:index:vision" = "cd {repo} && effigy docs check index --policy-index vision"
 "qa:docs:agent-defaults" = "cd {repo} && effigy docs check forbidden AGENTS.md README.md docs/README.md --forbid '--repo .'"
 "qa:docs:contracts:local-paths" = "cd {repo} && effigy docs check forbidden docs/contracts/*.md --forbid '/Users/' --forbid '/home/'"
@@ -66,29 +74,38 @@ check = "cd {repo} && bun x svelte-check --tsconfig tsconfig.json"
 health = [
   { task = "check:exports" },
   { task = "check:boundaries" },
+  { task = "check:version-sync" },
 ]
 
 validate = [
   { task = "health" },
   { task = "check" },
   { task = "check:types" },
+  { task = "check:rust:format" },
+  { task = "check:rust" },
+  { task = "check:rust:clippy" },
   { task = "test:unit" },
   { task = "test:components" },
+  { task = "test:rust" },
 ]
 
 qa = [
   { task = "validate" },
   { task = "test:sanitization" },
   { task = "check:pack" },
+  { task = "check:rust:package" },
+  { task = "check:git-consumer:npm" },
+  { task = "check:git-consumer:cargo" },
   { task = "qa:docs" },
   { task = "qa:northstar" },
   { task = "check:format" },
 ]
 
 [test.suites]
-unit = "bun scripts/run-test-files.ts tests/nightfire tests/wire"
-components = "NIGHTFIRE_COMPONENT_TESTS=1 bun scripts/run-test-files.ts tests/components tests/patterns"
-sanitization = "bun scripts/check-sanitization.ts"
+unit = "bun ts/scripts/run-test-files.ts ts/tests/nightfire ts/tests/wire"
+components = "NIGHTFIRE_COMPONENT_TESTS=1 bun ts/scripts/run-test-files.ts ts/tests/components ts/tests/patterns"
+sanitization = "bun ts/scripts/check-sanitization.ts"
+rust = "cargo test --workspace --locked"
 
 [scan.attention_markers]
 warning = ["TODO", "REVIEW", "placeholder"]

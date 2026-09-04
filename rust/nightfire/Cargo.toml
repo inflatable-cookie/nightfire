@@ -1,0 +1,19 @@
+[package]
+name = "nightfire"
+version.workspace = true
+rust-version.workspace = true
+edition.workspace = true
+license.workspace = true
+readme = "README.md"
+description = "Generic block-content protocol, validation, and registries"
+repository = "https://github.com/inflatable-cookie/nightfire"
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+blake3 = "1"
+uuid = { workspace = true }
+thiserror = { workspace = true }
+
+[lints]
+workspace = true
