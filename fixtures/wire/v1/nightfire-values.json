@@ -1,0 +1,54 @@
+{
+  "values": [
+    {
+      "name": "empty",
+      "value": { "schema": "example:content/body", "blocks": [] }
+    },
+    {
+      "name": "single",
+      "value": {
+        "schema": "example:content/body",
+        "blocks": [
+          {
+            "id": "nf_018f1d5e7b7a7cc2a6f0aabbccddeeff",
+            "type": "markdown",
+            "version": "initial",
+            "data": { "text": "Hello" }
+          }
+        ]
+      }
+    },
+    {
+      "name": "multi",
+      "value": {
+        "schema": "example:content/body",
+        "blocks": [
+          {
+            "id": "nf_018f1d5e7b7a7cc2a6f0aabbccddee01",
+            "type": "markdown",
+            "version": "initial",
+            "data": { "text": "One" }
+          },
+          {
+            "id": "nf_018f1d5e7b7a7cc2a6f0aabbccddee02",
+            "type": "callout",
+            "version": "1",
+            "data": { "tone": "info" }
+          }
+        ]
+      }
+    }
+  ],
+  "versionCoercion": {
+    "type": "callout",
+    "current": "2",
+    "supported": ["2", "1"],
+    "stored": "1",
+    "unknown": "9"
+  },
+  "rejectedV1": {
+    "schema": "example:content/body",
+    "block": { "type": "markdown", "version": "initial", "data": { "text": "legacy" } },
+    "hash": "legacy"
+  }
+}

@@ -1,0 +1,25 @@
+:root {
+  --nightfire-color-text: #111827;
+  --nightfire-color-text-muted: #6b7280;
+  --nightfire-color-danger: #ef4444;
+  --nightfire-color-border-subtle: rgba(15, 23, 42, 0.15);
+  --nightfire-color-border-strong: rgba(15, 23, 42, 0.25);
+  --nightfire-color-field-bg: rgba(148, 163, 184, 0.18);
+  --nightfire-color-surface: #fff;
+  --nightfire-color-surface-secondary: rgba(255, 255, 255, 0.03);
+  --nightfire-space-1: 0.25rem;
+  --nightfire-space-2: 0.5rem;
+  --nightfire-space-3: 0.75rem;
+  --nightfire-radius-sm: 0.35rem;
+  --nightfire-radius-md: 0.75rem;
+  --nightfire-radius-control: 0.5rem;
+  --nightfire-radius-pill: 9999px;
+  --nightfire-font-size-sm: 0.8rem;
+  --nightfire-font-scale-xxs: 0.75;
+  --nightfire-font-scale-xs: 0.8;
+  --nightfire-font-scale-sm: 0.85;
+  --nightfire-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --nightfire-density-gap: 0.75rem;
+  --nightfire-button-chip-padding-block: 0.2em;
+  --nightfire-button-chip-padding-inline: 0.5em;
+}
