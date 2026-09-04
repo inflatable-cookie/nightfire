@@ -70,3 +70,33 @@ temporary consumers and build directories were removed.
 release, npm publication, crates.io publication, release command, merge, or
 consumer-repository edit occurred. Card 278 stops at an open PR for independent
 exact-head review.
+
+## 2026-09-05 repair validation
+
+PR #2 review at `d54f12d03236dd079d55562541b43a3de808b62b`
+found that Cargo omitted the root fixture from its package and that both wire
+suites asserted only a partial, partly hardcoded contract. Repair commit
+`76d1e7b9aaf81d00e5ccc01f43aa778a25fad474` closes both findings without
+changing retained Rust source or public package surfaces.
+
+The Cargo member now carries a tracked symlink to the canonical root fixture.
+`cargo package` dereferences it into the crate. The package gate unpacked the
+result, byte-compared its fixture with the root, and passed all 35 retained
+unit tests plus 6 shared-fixture integration tests from the unpacked crate.
+
+The root fixture now drives both languages through their real ID generation,
+validation, block-version registry, strategy registry, and media-locator
+paths. `effigy qa` passed, including all TypeScript/Svelte/security tests,
+Rust format/check/clippy/tests, 20 npm subpaths, 55 npm package files, 22 Cargo
+package files, boundaries, version sync, and documentation contracts.
+Disposable npm and Cargo consumers both installed the pushed repair commit.
+
+SHA-256 comparison reconfirmed that 11 retained Rust implementation and test
+files remain byte-identical to Underlay commit
+`7ef7f8e30c3e36fda3a277681405bd5aa5e8703d`. The repair touched no Rust API,
+crate manifest, licence, MSRV, lint configuration, Underlay/product code, or
+consumer repository.
+
+Fresh no-release checks found no Git tags, GitHub releases, npm registry
+package, or crates.io search result. No merge, tag, release, publication, or
+consumer edit occurred. The revised PR stops for independent exact-head review.
