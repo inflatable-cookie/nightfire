@@ -1,0 +1,60 @@
+[catalog]
+alias = "nightfire"
+
+[manifest]
+minimum_effigy_version = "0.12.1"
+
+[package_manager]
+js = "bun"
+
+[bootstrap]
+setup = ["bootstrap:deps"]
+
+[tasks]
+"bootstrap:deps" = "cd {repo} && bun install --frozen-lockfile"
+check = "cd {repo} && bun x svelte-check --tsconfig tsconfig.json"
+"check:types" = "cd {repo} && bun x tsc --noEmit"
+"check:exports" = "cd {repo} && bun scripts/check-exports.ts"
+"check:boundaries" = "cd {repo} && bun scripts/check-boundaries.ts"
+"check:pack" = "cd {repo} && bun scripts/check-pack.ts"
+"check:format" = "cd {repo} && git diff --check"
+"test:unit" = "cd {repo} && bun scripts/run-test-files.ts tests/nightfire tests/wire"
+"test:components" = "cd {repo} && NIGHTFIRE_COMPONENT_TESTS=1 bun scripts/run-test-files.ts tests/components tests/patterns"
+"test:sanitization" = "cd {repo} && bun scripts/check-sanitization.ts"
+"qa:docs" = "cd {repo} && effigy docs check links README.md PROVENANCE.md CONTRIBUTING.md SECURITY.md PAPERCUTS.md docs/README.md docs/contracts/001-working-rules.md docs/logs/README.md fixtures/wire/v1/README.md"
+"qa:northstar" = "cd {repo} && effigy docs check contains AGENTS.md --require 'effigy tasks' --require 'effigy test --plan' --require 'effigy qa' --require 'docs/README.md'"
+
+health = [
+  { task = "check:exports" },
+  { task = "check:boundaries" },
+]
+
+validate = [
+  { task = "health" },
+  { task = "check" },
+  { task = "check:types" },
+  { task = "test:unit" },
+  { task = "test:components" },
+]
+
+qa = [
+  { task = "validate" },
+  { task = "test:sanitization" },
+  { task = "check:pack" },
+  { task = "qa:docs" },
+  { task = "qa:northstar" },
+  { task = "check:format" },
+]
+
+[test.suites]
+unit = "bun scripts/run-test-files.ts tests/nightfire tests/wire"
+components = "NIGHTFIRE_COMPONENT_TESTS=1 bun scripts/run-test-files.ts tests/components tests/patterns"
+sanitization = "bun scripts/check-sanitization.ts"
+
+[scan.attention_markers]
+warning = ["TODO", "REVIEW", "placeholder"]
+high = ["FIXME", "HACK", "workaround", "tech debt"]
+critical = ["BUG:", "SECURITY:", "remove before release"]
+doctor = true
+fail_on_findings = false
+respect_gitignore = true

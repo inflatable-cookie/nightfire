@@ -1,0 +1,20 @@
+[
+  {
+    "name": "script-and-event-handler",
+    "input": "<img src=x onerror=\"globalThis.__nightfirePwned = true\"><script>globalThis.__nightfirePwned = true</script>\n\n# Safe heading",
+    "mustContain": ["Safe heading"],
+    "mustNotContain": ["<script", "onerror", "__nightfirePwned"]
+  },
+  {
+    "name": "javascript-url",
+    "input": "[unsafe](javascript:alert(1)) [safe](https://example.com/path)",
+    "mustContain": ["https://example.com/path"],
+    "mustNotContain": ["javascript:"]
+  },
+  {
+    "name": "encoded-and-svg-payloads",
+    "input": "Safe text\n\n<svg><a xlink:href=\"javascript:alert(1)\"><text>unsafe vector</text></a></svg><img src=\"data:text/html,<script>alert(1)</script>\">",
+    "mustContain": ["Safe text"],
+    "mustNotContain": ["javascript:", "data:text/html", "<script"]
+  }
+]

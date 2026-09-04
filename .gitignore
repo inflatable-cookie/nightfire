@@ -1,0 +1,5 @@
+node_modules/
+dist/
+.effigy/
+*.tgz
+.DS_Store
