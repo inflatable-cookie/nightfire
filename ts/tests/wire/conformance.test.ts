@@ -1,5 +1,5 @@
 import { describe, expect, it } from "../vitest";
-import fixture from "../../fixtures/wire/v1/nightfire-values.json";
+import fixture from "../../../fixtures/wire/v1/nightfire-values.json";
 import { generateNightfireBlockId } from "../../src/block-ids";
 import { registerBlockVersions, resolveBlockVersion } from "../../src/block-versions";
 import { normaliseNightfireValue } from "../../src/utils";

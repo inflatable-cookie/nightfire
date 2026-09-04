@@ -16,9 +16,9 @@ The root npm manifest is deliberate: Git npm consumers install the repository
 root. Its exports point into `ts/src`. Cargo discovers `nightfire` as a workspace
 package under `rust/`. Both manifests use the same release version and tag.
 
-Current `main` predates this shape and contains only the TypeScript/Svelte
-tranche at root. Market Card 278 owns the structural move and Rust extraction;
-the repository cannot release until that card is accepted.
+Market Card 278 established this shape. The repository cannot release until
+the card receives independent exact-head review and release is separately
+authorized.
 
 ## Rust tranche
 

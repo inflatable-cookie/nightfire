@@ -1,5 +1,5 @@
 import { describe, expect, it } from "../vitest";
-import cases from "../../fixtures/security/malicious-markdown-v1.json";
+import cases from "../fixtures/security/malicious-markdown-v1.json";
 import { renderSafeMarkdownPreview } from "../../src/markup/markdown-preview";
 
 const runtime = process.env.NIGHTFIRE_RUNTIME ?? "ssr";

@@ -1,6 +1,6 @@
 const roots = process.argv.slice(2);
 if (roots.length === 0) {
-  console.error("usage: bun scripts/run-test-files.ts <test-dir-or-file> [...]");
+  console.error("usage: bun ts/scripts/run-test-files.ts <test-dir-or-file> [...]");
   process.exit(2);
 }
 
@@ -24,7 +24,7 @@ for (const file of files) {
   const args = ["bun"];
   if (component) args.push("--conditions=browser");
   args.push("test");
-  if (component) args.push("--preload", "./tests/setup/component.ts");
+  if (component) args.push("--preload", "./ts/tests/setup/component.ts");
   args.push(file);
   const child = Bun.spawnSync(args, { stdout: "inherit", stderr: "inherit" });
   if (child.exitCode !== 0) process.exit(child.exitCode);

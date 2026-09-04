@@ -1,6 +1,6 @@
 # g01.002 — Dual-language repository
 
-- Status: Ready
+- Status: In review
 - External authority: Acowtancy Market Card 278
 - Operator decision: Nightfire owns both language tranches; Rust crate is
   `nightfire`

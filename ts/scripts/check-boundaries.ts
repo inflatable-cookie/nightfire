@@ -1,6 +1,5 @@
 import { readdir } from "node:fs/promises";
 import { dirname, join, normalize } from "node:path";
-import ts from "typescript";
 import { createSveltePlugin } from "../tests/setup/svelte-plugin";
 
 const forbidden = [
@@ -33,12 +32,12 @@ async function sourceFiles(root: string): Promise<string[]> {
   for (const entry of entries) {
     const path = join(root, entry.name);
     if (entry.isDirectory()) files.push(...await sourceFiles(path));
-    else if (/\.(ts|svelte)$/.test(entry.name)) files.push(path);
+    else if (/\.(ts|svelte|rs)$/.test(entry.name)) files.push(path);
   }
   return files;
 }
 
-const allSourceFiles = await sourceFiles("src");
+const allSourceFiles = await sourceFiles("ts/src");
 const sourceSet = new Set(allSourceFiles.map(normalize));
 
 for (const path of allSourceFiles) {
@@ -52,7 +51,15 @@ for (const path of allSourceFiles) {
   }
 }
 
-for (const path of ["src/editor-registry.ts", "src/render-registry.ts"]) {
+const rustFiles = (await sourceFiles("rust/nightfire")).filter((path) => path.endsWith(".rs"));
+for (const path of ["Cargo.toml", "rust/nightfire/Cargo.toml", ...rustFiles]) {
+  const source = await Bun.file(path).text();
+  if (/underlay|acowtancy|froyo|bovine|dairy/i.test(source)) {
+    throw new Error(`forbidden product or Underlay Rust source: ${path}`);
+  }
+}
+
+for (const path of ["ts/src/editor-registry.ts", "ts/src/render-registry.ts"]) {
   const firstLine = (await Bun.file(path).text()).split("\n", 1)[0];
   if (!firstLine.startsWith("import type ") || !firstLine.includes('from "svelte"')) {
     throw new Error(`registry Svelte import must stay type-only: ${path}`);
@@ -63,9 +70,10 @@ function importedSpecifiers(path: string, source: string): string[] {
   const scripts = path.endsWith(".svelte")
     ? Array.from(source.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g), (match) => match[1]!)
     : [source];
-  return scripts.flatMap((script) =>
-    ts.preProcessFile(script).importedFiles.map((file) => file.fileName),
-  );
+  return scripts.flatMap((script) => [
+    ...script.matchAll(/(?:import|export)\s+(?:type\s+)?(?:[^"'`;]*?\s+from\s+)?["']([^"']+)["']/g),
+    ...script.matchAll(/import\(\s*["']([^"']+)["']/g),
+  ].map((match) => match[1]!));
 }
 
 function resolveSourceImport(importer: string, specifier: string): string | null {
@@ -111,7 +119,7 @@ async function bundle(entrypoint: string, svelte = false) {
   };
 }
 
-for (const entrypoint of ["src/core.ts", "src/validation.ts"]) {
+for (const entrypoint of ["ts/src/core.ts", "ts/src/validation.ts"]) {
   for (const path of await sourceGraph(entrypoint)) {
     const source = await Bun.file(path).text();
     if (/import\s+(?!type\b)[^;]*from\s+["']svelte(?:\/|["'])/.test(source)) {
@@ -120,16 +128,16 @@ for (const entrypoint of ["src/core.ts", "src/validation.ts"]) {
   }
 }
 
-const rendererGraph = await sourceGraph("src/renderer.ts");
+const rendererGraph = await sourceGraph("ts/src/renderer.ts");
 for (const path of rendererGraph) {
   if (/(?:^|\/)(?:editor-registrations|render-registrations)\.ts$|\/editor\/|\/(?:markup|media)\/editor\.ts$/.test(path)) {
     throw new Error(`renderer source graph contains editor/registration module: ${path}`);
   }
 }
 
-const core = await bundle("src/core.ts");
-const validation = await bundle("src/validator-registry.ts");
-const renderer = await bundle("src/NightfireRenderer.svelte", true);
+const core = await bundle("ts/src/core.ts");
+const validation = await bundle("ts/src/validator-registry.ts");
+const renderer = await bundle("ts/src/NightfireRenderer.svelte", true);
 for (const marker of ["editor-registrations", "media/editor", "markup/editor", "registerBlockEditor("]) {
   if (renderer.text.includes(marker)) {
     throw new Error(`renderer bundle contains editor/registration marker: ${marker}`);

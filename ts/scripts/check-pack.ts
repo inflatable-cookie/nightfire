@@ -18,13 +18,13 @@ try {
     "package/README.md",
     "package/LICENSE",
     "package/PROVENANCE.md",
-    "package/src/core.ts",
-    "package/src/NightfireRenderer.svelte",
+    "package/ts/src/core.ts",
+    "package/ts/src/NightfireRenderer.svelte",
     "package/fixtures/wire/v1/nightfire-values.json",
   ]) {
     if (!entries.includes(required)) throw new Error(`packed artifact missing ${required}`);
   }
-  for (const forbidden of ["package/tests/", "package/scripts/", "package/docs/", "package/effigy.toml"]) {
+  for (const forbidden of ["package/ts/tests/", "package/ts/scripts/", "package/docs/", "package/effigy.toml"]) {
     if (entries.some((entry) => entry.startsWith(forbidden))) {
       throw new Error(`packed artifact leaked ${forbidden}`);
     }
