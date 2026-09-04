@@ -1,3 +1,5 @@
+import { lstat, realpath } from "node:fs/promises";
+
 const manifest = await Bun.file("package.json").json();
 const workspace = await Bun.file("Cargo.toml").text();
 const crate = await Bun.file("rust/nightfire/Cargo.toml").text();
@@ -19,4 +21,13 @@ for (const [language, source] of [["TypeScript", tsFixtureTest], ["Rust", rustFi
   }
 }
 
-console.log(`version sync passed: npm and Cargo ${cargoVersion}; both languages consume root wire v1`);
+const rootFixture = "fixtures/wire/v1/nightfire-values.json";
+const cargoFixture = "rust/nightfire/fixtures/wire/v1/nightfire-values.json";
+if (!(await lstat(cargoFixture)).isSymbolicLink()) {
+  throw new Error("Cargo fixture must be a tracked alias, not a second authored copy");
+}
+if (await realpath(cargoFixture) !== await realpath(rootFixture)) {
+  throw new Error("Cargo fixture alias does not resolve to the shared root fixture");
+}
+
+console.log(`version sync passed: npm and Cargo ${cargoVersion}; both languages and Cargo packaging consume root wire v1`);

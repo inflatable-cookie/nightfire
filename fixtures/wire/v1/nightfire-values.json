@@ -39,13 +39,136 @@
       }
     }
   ],
-  "versionCoercion": {
-    "type": "callout",
-    "current": "2",
-    "supported": ["2", "1"],
-    "stored": "1",
-    "unknown": "9"
+  "idGeneration": {
+    "prefix": "nf_",
+    "length": 35,
+    "versionNibble": { "index": 15, "value": "7" },
+    "variantNibble": { "index": 19, "allowed": ["8", "9", "a", "b"] }
   },
+  "registry": {
+    "blocks": [
+      {
+        "type": "markdown",
+        "label": "Markdown",
+        "category": "text",
+        "current": "initial",
+        "supported": ["initial"]
+      },
+      {
+        "type": "callout",
+        "label": "Callout",
+        "category": "text",
+        "current": "2",
+        "supported": ["2", "1"]
+      },
+      {
+        "type": "gallery",
+        "label": "Gallery",
+        "category": "media",
+        "current": "initial",
+        "supported": ["initial"]
+      }
+    ],
+    "strategy": {
+      "id": "example:content/body",
+      "cardinality": { "mode": "multi", "minBlocks": 1, "maxBlocks": 3 },
+      "allowedTypes": ["markdown", "callout"],
+      "allowedCategories": ["text"],
+      "defaultType": "markdown"
+    }
+  },
+  "validationCases": [
+    {
+      "name": "supported-version",
+      "value": {
+        "schema": "example:content/body",
+        "blocks": [
+          {
+            "id": "nf_018f1d5e7b7a7cc2a6f0aabbccddee11",
+            "type": "callout",
+            "version": "1",
+            "data": { "tone": "info" }
+          }
+        ]
+      },
+      "accepted": true,
+      "resolvedVersions": ["2"]
+    },
+    {
+      "name": "unknown-version",
+      "value": {
+        "schema": "example:content/body",
+        "blocks": [
+          {
+            "id": "nf_018f1d5e7b7a7cc2a6f0aabbccddee12",
+            "type": "callout",
+            "version": "9",
+            "data": { "tone": "danger" }
+          }
+        ]
+      },
+      "accepted": false,
+      "resolvedVersions": []
+    },
+    {
+      "name": "disallowed-type",
+      "value": {
+        "schema": "example:content/body",
+        "blocks": [
+          {
+            "id": "nf_018f1d5e7b7a7cc2a6f0aabbccddee13",
+            "type": "gallery",
+            "version": "initial",
+            "data": { "pages": [] }
+          }
+        ]
+      },
+      "accepted": false,
+      "resolvedVersions": []
+    }
+  ],
+  "mediaValue": {
+    "schema": "example:content/media",
+    "blocks": [
+      {
+        "id": "gallery_02",
+        "type": "gallery",
+        "version": "initial",
+        "data": {
+          "pages": [
+            { "image_id": "media-1" },
+            { "image_id": "media-2" }
+          ]
+        }
+      }
+    ]
+  },
+  "mediaLocatorCases": [
+    {
+      "name": "nested-page",
+      "locator": "gallery_02#/pages/1/image_id",
+      "blockId": "gallery_02",
+      "dataPointer": "/pages/1/image_id",
+      "found": true,
+      "resolved": "media-2"
+    },
+    {
+      "name": "missing-path",
+      "locator": "gallery_02#/pages/4/image_id",
+      "blockId": "gallery_02",
+      "dataPointer": "/pages/4/image_id",
+      "found": false,
+      "resolved": null
+    },
+    {
+      "name": "missing-block",
+      "locator": "hero_01#/image_id",
+      "blockId": "hero_01",
+      "dataPointer": "/image_id",
+      "found": false,
+      "resolved": null
+    }
+  ],
   "rejectedV1": {
     "schema": "example:content/body",
     "block": { "type": "markdown", "version": "initial", "data": { "text": "legacy" } },

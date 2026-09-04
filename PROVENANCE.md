@@ -51,7 +51,10 @@ Changes are limited to the repository boundary:
   `nightfire`, and source comments no longer name an application or former
   repository owner;
 - the crate README removes source-repository integration guidance and keeps the
-  generic API and wire examples.
+  generic API and wire examples;
+- the Cargo member carries a tracked fixture symlink; Cargo dereferences the
+  root fixture into the packaged crate, and the package gate compares the
+  packaged bytes with the root before testing the unpacked artifact.
 
 No product blocks, product schemas, raw answer data, or PII were copied in the
 first tranche.
