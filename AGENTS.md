@@ -2,7 +2,8 @@
 
 ## Scope
 
-Nightfire is the standalone generic TypeScript/Svelte block-content package.
+Nightfire is the standalone generic Rust and TypeScript/Svelte block-content
+system.
 Work in this repository only unless the operator explicitly expands scope.
 
 ## Start here
@@ -23,12 +24,14 @@ sequence. Do not copy Market delivery cards into this repository.
 - Keep renderer-only imports free of editor modules and registration effects.
 - Reject unknown block versions and legacy envelopes. Do not invent migration.
 - Sanitize every markdown or HTML path before Svelte `{@html}`.
-- Keep product schemas, product blocks, registrations, Rust, and consumer
-  changes out of this repository.
+- Keep product schemas, product blocks, product registrations, Underlay-specific
+  adapters, and consumer changes out of this repository.
 - Add dependencies only with direct retained-source evidence. Record the reason
   in `PROVENANCE.md` and the package documentation.
-- Treat committed wire fixtures as the TypeScript conformance boundary. Rust
-  wire ownership remains in Underlay.
+- Keep the Rust crate framework- and Underlay-independent, at edition 2021 and
+  MSRV 1.95 until an explicit compatibility decision changes them.
+- Treat committed root wire fixtures as the shared Rust/TypeScript conformance
+  boundary.
 
 ## Execution
 

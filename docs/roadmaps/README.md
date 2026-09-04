@@ -16,12 +16,12 @@ See [generation-index.md](generation-index.md) for status.
 
 ## Current Queue
 
-The standalone extraction is complete. The first immutable release is defined
-but gated on explicit operator confirmation. Underlay compatibility and Froyo
-adoption follow that release under the Market roadmap.
+The repository bootstrap and TypeScript/Svelte extraction landed, but the Rust
+tranche was wrongly excluded. Market Card 278 is the ready corrective lane. The
+first immutable release is gated on that acceptance and a fresh explicit
+operator confirmation.
 
 ## Next Task
 
-Wait for explicit operator confirmation before executing
-[g01.002 — v0.1.0 release](g01/002-v010-release.md). Until then, accept only
-package-local fixes that preserve the extraction contract.
+Execute [g01.002 — dual-language repository](g01/002-dual-language-repository.md)
+through Market Card 278. Do not execute the release or consumer cutovers.

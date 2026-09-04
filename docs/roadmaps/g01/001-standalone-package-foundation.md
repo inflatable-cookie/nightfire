@@ -1,15 +1,15 @@
 # g01.001 — Standalone package foundation
 
-- Status: Complete
+- Status: Closed incomplete — repository and TS tranche only
 - Completed: 2026-09-04
 - External authority: Acowtancy Market Card 272
 
 ## Outcome
 
 The retained Nightfire TypeScript/Svelte runtime was extracted from Underlay
-into this standalone repository. Package exports, boundary checks, wire
-fixtures, sanitization proof, component proof, provenance, and repository-local
-Northstar documentation now form one verifiable baseline.
+into this standalone repository. The work proved that tranche but incorrectly
+excluded the generic Rust crate. It is historical bootstrap evidence, not
+release acceptance; g01.002 owns the correction.
 
 ## Evidence
 

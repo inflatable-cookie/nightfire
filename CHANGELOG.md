@@ -13,3 +13,9 @@ tag or package publication has been authorized.
 - Explicit renderer, editor, and registry entry points.
 - Sanitized markdown rendering and malicious-input proofs.
 - Northstar repository documentation and Effigy validation spine.
+
+### Fixed
+
+- Corrected the repository contract: Nightfire owns the Rust crate as well as
+  the TypeScript/Svelte package. Release remains blocked until the Rust tranche
+  is extracted and joint QA passes.

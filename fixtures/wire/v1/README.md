@@ -10,4 +10,6 @@ shape asserted by Underlay Rust tests at source commit
 
 The standalone tests prove the same empty/single/multi envelopes, UUIDv7-style
 block ids, initial versions, supported-version coercion, unknown-version
-rejection, and v1 envelope rejection. Rust remains in Underlay.
+rejection, and v1 envelope rejection. Card 278 moves the Rust tests and
+implementation into this repository so both tranches consume these fixtures
+directly.

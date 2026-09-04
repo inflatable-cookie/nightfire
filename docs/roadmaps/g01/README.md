@@ -2,39 +2,43 @@
 
 ## Current Generation
 
-Nightfire has been extracted from Underlay into a standalone package. The local
-repository contract and proof surface are in place. Publication has not been
-authorized.
+Nightfire's repository and TypeScript/Svelte tranche exist, but the initial
+plan wrongly left the Rust core in Underlay. The operator confirmed that this
+repository must own both language tranches and that the Rust crate is named
+`nightfire`.
 
 ## Roadmap Sequence
 
-1. [g01.001 — Standalone package foundation](001-standalone-package-foundation.md) — complete.
-2. [g01.002 — v0.1.0 release](002-v010-release.md) — gated.
-3. Underlay compatibility proof — owned by the Market roadmap after release.
-4. Froyo direct adoption — owned by the Market roadmap after release.
+1. [g01.001 — Standalone package foundation](001-standalone-package-foundation.md) — closed incomplete.
+2. [g01.002 — Dual-language repository](002-dual-language-repository.md) — ready.
+3. [g01.003 — v0.1.0 release](003-v010-release.md) — gated.
+4. Underlay Rust/TS compatibility and direct Froyo/Farmyard adoption — owned by
+   the Market roadmap after release.
 
 ## Queue
 
-No local implementation item is ready. The next delivery mutation is the
-release, and it requires explicit operator confirmation.
+The repository reshape and Rust extraction are ready under Market Card 278.
+The release remains blocked.
 
 ## Dependencies And Parallelism
 
-Underlay compatibility and Froyo adoption may proceed in parallel only after an
-immutable Nightfire release exists. Consumer work must pin that release rather
-than a mutable branch.
+Underlay compatibility, Froyo adoption, and Farmyard Rust adoption may proceed
+in parallel only after an immutable dual-language release exists. Consumer work
+must pin that release rather than a mutable branch.
 
 ## Historical Language Boundary
 
-The extraction handoff and log use Market Card 272 language. They are retained
-as execution evidence, not current package architecture.
+The extraction handoff and log use the mistaken TS-only Market Card 272
+language. They are retained as execution evidence, not current architecture or
+release acceptance.
 
 ## Next Task
 
-Keep [g01.002](002-v010-release.md) gated until the operator authorizes the
-release action.
+Execute [g01.002](002-dual-language-repository.md). Keep
+[g01.003](003-v010-release.md) gated.
 
 ## Milestones
 
 - [g01.001 — Standalone package foundation](001-standalone-package-foundation.md)
-- [g01.002 — v0.1.0 release](002-v010-release.md)
+- [g01.002 — Dual-language repository](002-dual-language-repository.md)
+- [g01.003 — v0.1.0 release](003-v010-release.md)

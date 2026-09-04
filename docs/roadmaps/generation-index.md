@@ -2,4 +2,4 @@
 
 | Generation | Status | Outcome |
 | --- | --- | --- |
-| [g01](g01/README.md) | Active, release gated | Standalone package extracted and prepared for immutable release |
+| [g01](g01/README.md) | Active, corrective extraction ready | Dual-language repository and immutable Rust/TS release |

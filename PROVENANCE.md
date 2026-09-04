@@ -11,10 +11,15 @@ primarily `ts/src/nightfire/`. Adjacent generic helpers came from:
 - `ts/src/patterns/media-types/enums.ts` for the retained media-kind type;
 - Underlay's Nightfire design-token values for `src/styles.css`.
 
-Tests were extracted from the corresponding Nightfire unit and component
-tests at the same source commit. Wire fixtures mirror the Rust assertions named
-in [fixtures/wire/v1/README.md](fixtures/wire/v1/README.md); Rust remains in
-Underlay.
+Tests were extracted from the corresponding Nightfire unit and component tests
+at the same source commit. Wire fixtures mirror the Rust assertions named in
+[fixtures/wire/v1/README.md](fixtures/wire/v1/README.md).
+
+The TS-only extraction is incomplete. Card 278 will extract the generic Rust
+implementation from Underlay's `rust/crates/underlay-nightfire` into standalone
+crate `nightfire`, preserving source commit and file-level provenance. Until
+that card lands, Underlay remains the migration source but not the intended
+long-term authority.
 
 ## Standalone adaptations
 
@@ -37,8 +42,8 @@ Changes are limited to the repository boundary:
   wire contract;
 - package entrypoints expose only the retained generic surface.
 
-No product blocks, product schemas, Rust code, raw answer data, or PII were
-copied.
+No product blocks, product schemas, raw answer data, or PII were copied in the
+first tranche.
 
 ## Dependency boundary
 

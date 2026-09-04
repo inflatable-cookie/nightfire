@@ -6,16 +6,22 @@
 
 ## Ownership
 
-Nightfire owns generic TypeScript/Svelte block values, normalization,
-validation, registries, rendering, editing, markdown behavior, and media
-locators. Consumers own product schemas, product blocks, registrations,
-persistence policy, authorization, and application services.
+Nightfire owns generic Rust and TypeScript/Svelte block values, normalization,
+validation, strategies, registries, version coercion, hashing, block IDs, media
+locators, rendering, editing, and markdown behavior. Consumers own product
+schemas, product blocks, registrations, persistence policy, authorization,
+media traversal integrations, HTTP adaptation, and application services.
 
-Rust wire types remain in Underlay. Nightfire conforms to committed wire
-fixtures and does not move or duplicate the Rust implementation.
+The authoritative Rust crate is `nightfire`. Underlay's historical
+`underlay-nightfire` crate may survive only as a temporary re-export facade
+after consumer migration begins.
 
 ## Public surface
 
+- Expose the Rust crate through the root Cargo workspace and the npm package
+  through the root `package.json`, from one immutable repository version.
+- Keep implementation in explicit `rust/` and `ts/` tranches with shared root
+  wire fixtures.
 - Export explicit entry points for core, validation, registries, rendering,
   editing, strategies, media, and styles.
 - Keep `core` and `validation` free of Svelte runtime imports.
@@ -35,11 +41,12 @@ fixtures and does not move or duplicate the Rust implementation.
 ## Dependencies
 
 Every runtime dependency needs direct retained-source evidence. Forbidden
-framework, product, and duplicate utility dependencies must remain absent from
-the manifest, lockfile, and source graph.
+Underlay, framework, product, and duplicate utility dependencies must remain
+absent from both manifests, locks, and source graphs.
 
 ## Proof
 
-The package boundary is not established by prose alone. Export, source-graph,
-bundle, wire, sanitization, component, type, and package-content checks must
-remain executable through Effigy.
+The package boundary is not established by prose alone. Cargo format/check/
+clippy/test/package, npm export/source-graph/bundle/pack, wire, sanitization,
+component, type, version-sync, and clean Git-consumer checks must remain
+executable through Effigy.

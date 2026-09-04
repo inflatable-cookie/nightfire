@@ -1,46 +1,71 @@
 # System architecture
 
-## Shape
+## Repository shape
 
-Nightfire has five layers:
+Nightfire is one versioned repository with two implementation tranches:
 
-1. **Value and core utilities** define the durable content envelope, block IDs,
-   versions, and generic traversal behavior.
-2. **Validation and normalization** apply schema-independent save rules without
-   loading Svelte.
-3. **Registries** hold validators, renderers, and editors behind explicit
-   registration. Svelte references here remain type-only.
-4. **Adapters** provide Svelte render and edit surfaces. Importing rendering
-   must not load editor code or registration side effects.
-5. **Proof** covers wire fixtures, exports, dependency boundaries, components,
-   sanitization, and package contents.
+```text
+package.json        npm Git-install entry for @inflatable-cookie/nightfire
+Cargo.toml          Cargo workspace and shared Rust release metadata
+ts/                 TypeScript/Svelte source, tests, and config
+rust/               Rust crate `nightfire` and tests
+fixtures/wire/       shared versioned cross-language contract
+```
 
-## Data flow
+The root npm manifest is deliberate: Git npm consumers install the repository
+root. Its exports point into `ts/src`. Cargo discovers `nightfire` as a workspace
+package under `rust/`. Both manifests use the same release version and tag.
 
-A consumer supplies a `NightfireValue` and its own registrations. Validation
-checks the envelope and registered block versions. Save preparation drops
-invalid blocks and assigns missing stable IDs. Rendering resolves registered
-renderers and sanitizes untrusted markup before HTML insertion.
+Current `main` predates this shape and contains only the TypeScript/Svelte
+tranche at root. Market Card 278 owns the structural move and Rust extraction;
+the repository cannot release until that card is accepted.
 
-Nightfire does not persist content or choose a product schema. Those decisions
-remain with the consumer.
+## Rust tranche
+
+The Rust crate owns the durable value and block types, strategies, registries,
+structural validation, version coercion, hashing, stable block IDs, and media
+locators. It has no Underlay or application dependency.
+
+## TypeScript/Svelte tranche
+
+The TypeScript core and normalization layer remain free of Svelte runtime
+imports. Registries hold validators, renderers, and editors behind explicit
+registration with type-only Svelte references. Renderer imports do not load
+editor code or registration side effects.
+
+## Shared data flow
+
+A consumer supplies a `NightfireValue` and its own product registrations. Both
+languages validate the same envelope and registered block versions. Save
+preparation assigns missing stable IDs and rejects unsupported structures.
+TypeScript rendering resolves registered renderers and sanitizes untrusted
+markup before HTML insertion.
+
+Nightfire does not persist content, define a product schema, traverse
+Underlay-specific media usage, or convert validation errors into HTTP
+responses. Those decisions remain with consumers.
 
 ## Invariants
 
-- `core` and `validation` have no framework runtime edge.
+- One immutable tag versions both language tranches.
+- Rust and TypeScript consume the same root wire fixtures.
+- Unknown block types, versions, and legacy envelopes fail closed.
+- Rust public behavior matches the extracted generic Underlay crate until an
+  explicit contract changes it.
+- TypeScript `core` and `validation` have no framework runtime edge.
 - Registry imports from Svelte are type-only.
 - Renderer graphs contain no editor modules or registration effects.
-- Unknown block versions and legacy envelopes fail closed.
 - Markdown and embedded HTML cross one sanitizer contract before `{@html}`.
-- Wire fixtures are synthetic and contain no production data.
+- Fixtures are synthetic and contain no production data.
 
-## Reliability and size
+## Proof
 
-Boundary checks inspect source imports and built entry graphs. Package checks
-verify the shipped file set and exports. This makes accidental framework,
-editor, product, or transitive dependency growth visible before release.
+Effigy covers Rust format/check/clippy/test/package, TypeScript/Svelte checks,
+npm exports and pack contents, both clean Git-consumer paths, version sync, and
+cross-language conformance. A green single-language suite is not release proof.
 
 ## Change path
 
-Change architecture when ownership or layer boundaries move. Change contracts
-when observable guarantees move. Update tests and proof in the same batch.
+Change architecture when ownership or tranche boundaries move. Change contracts
+when observable guarantees move. Update both language proofs and shared
+fixtures in the same batch when the wire contract changes.

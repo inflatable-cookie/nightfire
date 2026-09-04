@@ -1,17 +1,28 @@
 # Nightfire
 
-Nightfire is the generic TypeScript and Svelte block-content package extracted
-from Underlay. It owns the durable Nightfire value envelope, registries,
-normalization, validation, markdown rendering, generic editors, and media
-locators. Product schemas and product block registrations stay in consumers.
+Nightfire is the standalone generic block-content system for Rust and
+TypeScript/Svelte. It owns the durable value envelope, blocks, strategies,
+registries, normalization, validation, hashing, block IDs, media locators,
+markdown rendering, and generic editors. Product schemas, product blocks, and
+application integrations stay in consumers.
 
-The package is currently private and consumed from an immutable repository
-commit during bootstrap. Publishing and release tags are outside this card.
+Current `main` contains the TypeScript/Svelte tranche extracted by Market Card
+272. Market Card 278 is ready to reshape the repository under `ts/` and `rust/`
+and extract the authoritative Rust crate `nightfire`. Do not release the
+current TS-only state.
 
 ## Install
 
+After the first dual-language release, TypeScript consumers use:
+
 ```sh
 bun add github:inflatable-cookie/nightfire#<commit>
+```
+
+Rust consumers use the same immutable repository tag:
+
+```toml
+nightfire = { git = "ssh://git@github.com/inflatable-cookie/nightfire.git", tag = "v0.1.0" }
 ```
 
 Svelte 5 is a peer dependency. Consumers using the editor or renderer must also
@@ -35,6 +46,10 @@ import { NightfireRenderer } from "@inflatable-cookie/nightfire/renderer";
 Svelte only for type declarations. Importing `renderer` does not load editors
 or registration side effects. Editor and renderer registration modules remain
 explicit opt-ins.
+
+The Rust crate exposes the matching value, block, strategy, registry,
+validation, hashing, block-ID, and media-locator contracts. Both languages use
+the shared versioned fixtures under `fixtures/wire/`.
 
 The wire shape is:
 
@@ -82,8 +97,9 @@ evidence lives in [PROVENANCE.md](PROVENANCE.md); contribution rules live in
 - `isomorphic-dompurify`: one sanitizer contract across DOM and SSR runtimes.
 
 Test-only packages provide Bun types, TypeScript/Svelte checking, jsdom, and DOM
-component assertions. The repository contains no Underlay, SvelteKit, Vite,
-bits-ui, lucide-svelte, zod, or smol-toml dependency.
+component assertions. The completed repository must contain no Underlay,
+SvelteKit, Vite, bits-ui, lucide-svelte, zod, or smol-toml dependency in either
+language tranche.
 
 ## License
 
