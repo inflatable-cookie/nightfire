@@ -1,30 +1,56 @@
-# Working rules
+# Contract 001 — Working rules
 
-## Boundary
+- Status: Active
+- Scope: Nightfire repository work
+- Owner: Nightfire maintainers
 
-Nightfire owns generic TypeScript/Svelte block values, normalization,
-validation, registries, rendering, editing, markdown behavior, and media
-locators. Consumers own product schemas, product blocks, persistence policy,
-and application services.
+## Problem
 
-Rust wire types remain in Underlay. TypeScript changes must conform to the
-committed wire fixtures; this repository does not move or duplicate Rust.
+Nightfire is consumed across repository boundaries. Unrecorded decisions,
+ad-hoc commands, or mixed release and adoption work make a small package hard
+to verify and unsafe to coordinate.
 
-## Import safety
+## Repository grammar
 
-- `@inflatable-cookie/nightfire/core` and `/validation` are framework-free.
-- Registries may import Svelte types but no Svelte runtime.
-- `/renderer` may import renderer components. It must not import editors,
-  editor registrations, or registration side effects.
-- Editor and renderer registrations are explicit opt-ins.
+- Vision states durable direction.
+- Architecture states ownership and structure.
+- Contracts state observable rules.
+- Roadmaps state local sequence and readiness.
+- Triage holds unpromoted ideas only.
+- Handoffs describe bounded work for another thread.
+- Execution logs record what ran and what proved it.
 
-## Trust boundary
+Do not use logs or handoffs as design authority.
 
-Markdown and embedded HTML are untrusted. Sanitize before `{@html}` in browser,
-SSR, and Tauri WebView-shaped execution. Unknown block versions and legacy
-envelopes fail closed. Fixtures contain synthetic values only.
+## Execution rules
 
-## Release boundary
+- Start through `docs/README.md`, `effigy tasks`, and `effigy test --plan`.
+- Use `effigy doctor` when routing or repository health is uncertain.
+- Keep a batch bounded to one coherent outcome.
+- Preserve unrelated work and avoid speculative infrastructure.
+- Update code, contract, tests, indexes, and evidence together when they form
+  one observable change.
+- Record process friction in `PAPERCUTS.md`.
 
-Implementation pull requests do not tag, publish, merge, or modify consumers.
-Release and adoption require separate operator approval.
+## Cross-repository rule
+
+Nightfire owns package-local implementation. Market owns the release and
+consumer-adoption sequence. A Nightfire change must not mutate Underlay,
+Poodle, Froyo, or an application unless the operator explicitly expands scope.
+
+## Compatibility rule
+
+Before `1.0`, remove obsolete paths cleanly unless a written consumer contract
+requires a migration window. Do not add silent legacy parsing or speculative
+shims.
+
+## Release rule
+
+Implementation approval does not authorize merge, tag, package publication, or
+consumer updates. Each external mutation needs explicit operator authority.
+
+## Definition of done
+
+A batch is done when its scoped behavior is implemented, the relevant Effigy
+checks pass, durable docs match the result, and the handoff names any remaining
+gate without pretending it is complete.

@@ -3,3 +3,4 @@ dist/
 .effigy/
 *.tgz
 .DS_Store
+.agents.local.env
