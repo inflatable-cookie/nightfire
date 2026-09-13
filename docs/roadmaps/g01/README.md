@@ -48,3 +48,11 @@ Keep [g01.003](003-v010-release.md) gated.
 - [g01.001 — Standalone package foundation](001-standalone-package-foundation.md)
 - [g01.002 — Dual-language repository](002-dual-language-repository.md)
 - [g01.003 — v0.1.0 release](003-v010-release.md)
+<!-- northstar:lifecycle:begin schema=northstar.lifecycle.projection.v2 digest=sha256:5b54c561a6ebc9f37e4d1dd1c473f36a19839cee854d4a636b4cc54e05617052 -->
+| Generation | Disposition | Runway state |
+| --- | --- | --- |
+| g01 | open | planning_required |
+| Task | Status | Stage | Revision | Record digest |
+| --- | --- | --- | --- | --- |
+| g01.004 | complete | none | 8 | sha256:dba3abc923a3eaee805cad192271f5f72061ce84bd2f2c41019ef42f7d7405e2 |
+<!-- northstar:lifecycle:end -->
