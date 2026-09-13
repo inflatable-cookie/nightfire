@@ -30,6 +30,14 @@ The extraction handoff and log use the mistaken TS-only Market Card 272
 language. They are retained as execution evidence, not current architecture or
 release acceptance.
 
+## Queue lifecycle adoption
+
+- [g01.004 Effigy-hosted lifecycle hook](004-adopt-effigy-hosted-lifecycle-hook.md)
+  is an operator-approved, configuration-only maintenance lane. It follows its
+  declared Queue dependencies and may run without changing product priority.
+  Existing next-task text continues to describe product sequencing; this entry
+  authorizes no sibling product work.
+
 ## Next Task
 
 Review the exact implementation head for [g01.002](002-dual-language-repository.md).
