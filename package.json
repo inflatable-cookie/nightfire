@@ -42,7 +42,7 @@
     "./package.json": "./package.json"
   },
   "dependencies": {
-    "@inflatable-cookie/poodle-svelte": "0.2.2",
+    "@inflatable-cookie/poodle-svelte": "0.4.2",
     "isomorphic-dompurify": "3.22.0",
     "marked": "17.0.6"
   },
