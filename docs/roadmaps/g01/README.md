@@ -38,6 +38,10 @@ release acceptance.
   Existing next-task text continues to describe product sequencing; this entry
   authorizes no sibling product work.
 
+- [g01.005 prospective-merge protocol migration](005-prospective-merge-protocol-migration.md)
+  owns the operator-authorized v4 manifest update. It is configuration-only,
+  independent of product priority, and changes no product behavior.
+
 ## Next Task
 
 Review the exact implementation head for [g01.002](002-dual-language-repository.md).
