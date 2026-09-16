@@ -8,6 +8,7 @@ only to match a later naming convention.
 
 ## Entries
 
+- [2026-09-16 — Poodle 0.4.2 adoption](2026-09/16-140000-poodle-0-4-2-adoption.md)
 - [2026-09-04 — Card 278 dual-language repository](2026-09/04-235619-card-278-dual-language-repository.md)
 - [2026-09-04 — Dual-language authority correction](2026-09/04-234249-dual-language-authority-correction.md)
 - [2026-09-04 — Northstar baseline normalization](2026-09/04-232838-northstar-baseline-normalization.md)
