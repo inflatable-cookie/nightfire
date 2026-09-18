@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "nightfire.block.download_card@1",
+  "title": "Nightfire download-card block payload",
+  "type": "object",
+  "required": ["files"],
+  "properties": {
+    "description": { "type": "string" },
+    "files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["media_id"],
+        "properties": {
+          "media_id": { "type": "string", "minLength": 1 },
+          "description": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

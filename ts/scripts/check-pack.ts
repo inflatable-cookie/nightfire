@@ -21,6 +21,16 @@ try {
     "package/ts/src/core.ts",
     "package/ts/src/NightfireRenderer.svelte",
     "package/fixtures/wire/v1/nightfire-values.json",
+    "package/schemas/value.schema.json",
+    "package/schemas/block.schema.json",
+    "package/schemas/registry.schema.json",
+    "package/schemas/strategy.schema.json",
+    "package/schemas/blocks/markdown.schema.json",
+    "package/schemas/blocks/rich_text.schema.json",
+    "package/schemas/blocks/download_card.schema.json",
+    "package/schemas/blocks/table.schema.json",
+    "package/schemas/blocks/item_list.schema.json",
+    "package/schemas/blocks/image.schema.json",
   ]) {
     if (!entries.includes(required)) throw new Error(`packed artifact missing ${required}`);
   }

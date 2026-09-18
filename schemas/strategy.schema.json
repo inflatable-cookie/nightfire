@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "nightfire.strategy@1",
+  "title": "Nightfire strategy",
+  "type": "object",
+  "required": ["id", "cardinality", "allowedTypes", "allowedCategories", "defaultType"],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "cardinality": {
+      "type": "object",
+      "required": ["mode"],
+      "properties": {
+        "mode": { "enum": ["single", "multi"] },
+        "minBlocks": { "type": "integer", "minimum": 1 },
+        "maxBlocks": {
+          "anyOf": [
+            { "type": "integer", "minimum": 1 },
+            { "type": "null" }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "allowedTypes": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "allowedCategories": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "defaultType": { "type": "string", "minLength": 1 },
+    "blockOptions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/blockOption" }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "blockOption": {
+      "type": "object",
+      "required": ["type", "label"],
+      "properties": {
+        "type": { "type": "string", "minLength": 1 },
+        "label": { "type": "string", "minLength": 1 },
+        "category": { "type": "string" },
+        "subcategory": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  }
+}
