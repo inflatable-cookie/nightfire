@@ -18,12 +18,28 @@ immutable.
   `data-nightfire-block="rich_text"` render hook. The block stores the
   ProseMirror document at `data.document` and enables Poodle's whole admitted
   feature set; the image node stays inert until a media source is registered.
+- The `image` block: `{ media_id, alt?, title?, caption?, sizing? }` with a renderer, an editor and an
+  empty checker, resolved through the media-source registry. `sizing` is `small | medium | large | full`
+  and defaults to natural size; the renderer emits the preset as a data attribute and **no style at all**,
+  so appearance stays the consumer's. The rich-text image command appears when a source is registered and
+  is absent otherwise.
+- The `video` block: `{ embed, title?, caption? }` over Poodle's own `ParsedEmbed`, with a renderer and an
+  editor. No provider list, parser or embed shape is defined here, and rendered embed markup passes
+  through `sanitizeEmbedHtml` before it reaches `{@html}`.
+- Published JSON Schema documents under `schemas/`: `nightfire.value@1`, `nightfire.block@1`,
+  `nightfire.registry@1`, `nightfire.strategy@1`, and one payload document per core block type. JSON
+  Schema 2020-12, relative `$ref`s only, no consumer vocabulary, shipped in the package and required by the
+  pack proof. `check:schemas` holds the set equal to the declared vocabulary and the shared wire fixtures.
+- The table editor: a grid with a keyboard model, row and column insertion and removal, a row-level header
+  toggle, per-cell alignment, per-edge borders, cell merge and split, and an in-page confirmation before a
+  destructive action. `section` is not authored and round-trips unchanged.
+- An optional `title` per file on `download_card`, beside the existing `description`.
 - The `download_card` block: a renderer, an editor, and an empty checker over
-  `{ description?, files: [{ media_id, description? }] }`, with the
+  `{ description?, files: [{ media_id, title?, description? }] }`, with the
   `data-nightfire-block="download_card"` render hook. Rows resolve their
   reference through the media-source registry and render inert and marked when
   no source is registered or a reference is unknown; the card description and
-  the author's file descriptions survive.
+  the author's file titles and descriptions survive.
 - The Svelte-free media-source registry, exported as `./media-source`:
   `registerMediaSource({ pick, resolve })` with a synchronous `resolve`, plus
   `MediaKind`. Module-level rather than a Svelte context, so a renderer resolves
@@ -42,9 +58,11 @@ immutable.
 
 ### Changed
 
-- Removed the styling and restyling contract recorded earlier the same day. It
-  asserted that this package owns a theme surface; the `--nightfire-*` set is an
-  application interface swept in by the extraction, and where it belongs is open.
+- The exported surface replaces `./media` with `./media-source`; see Removed above.
+- The `--nightfire-*` values in `ts/src/styles.css` are the editor surfaces' **default appearance layer**,
+  and they are overridable defaults: the token **names** are the public API and the values are not. A
+  consumer re-declares any of them in the scope that fits, including mapping them onto Poodle's semantic
+  variables.
 
 ## [0.1.0] - 2026-09-18
 
