@@ -54,3 +54,28 @@
   `server/forge.ts` and `server/git.ts`, and record the accepted forms.
 - Surface: Northstar Queue forge and PR resolution; any repository whose `origin`
   is an `ssh://` URL.
+
+## The changelog format that docs QA accepts is not the one the release parser accepts
+
+- Friction: `## [0.1.0] — 2026-09-18` passed `effigy qa:docs` and broke
+  `effigy release status` with `changelog parse errors: unexpected content in
+  category`. The em dash is the only difference from the accepted form.
+- Impact: the repository looked release-ready while the release tool refused to
+  read its changelog at all.
+- Plausible fix: have `qa` run the changelog parser the release path uses, or
+  accept both separators.
+- Surface: Effigy changelog parsing; `qa:docs` coverage.
+
+## Effigy proposes a patch bump for a release with breaking changes
+
+- Friction: `effigy release simulate` planned `0.1.1` for a release whose real
+  content is breaking: a retired block type and a removed export subpath. It
+  derives the bump from commit prefixes and changelog categories, and this
+  repository's history carries no breaking marker.
+- Impact: the default would produce a version that `^0.1.0` consumers silently
+  accept, which is the opposite of what a breaking change needs. The release has
+  to be prepared with an explicit `--version`, and someone has to know that.
+- Plausible fix: recognise a `### Removed` category as at least minor under
+  `pre-1-0 = true`, or warn when a release includes a removed category and the
+  computed bump is a patch.
+- Surface: Effigy `release prepare` version selection; `pre-1-0` handling.

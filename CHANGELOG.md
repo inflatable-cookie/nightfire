@@ -28,7 +28,7 @@ immutable.
   asserted that this package owns a theme surface; the `--nightfire-*` set is an
   application interface swept in by the extraction, and where it belongs is open.
 
-## [0.1.0] — 2026-09-18
+## [0.1.0] - 2026-09-18
 
 ### Added
 
