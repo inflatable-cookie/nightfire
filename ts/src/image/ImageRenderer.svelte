@@ -77,10 +77,11 @@
     data-media-state={resolved ? "resolved" : "inert"}
   >
     {#if resolved}
+      {@const tooltip = title || (typeof resolved.title === "string" && resolved.title.length > 0 ? resolved.title : undefined)}
       <img
         src={resolved.url}
         {alt}
-        title={title || undefined}
+        title={tooltip}
         width={dimension(resolved.width)}
         height={dimension(resolved.height)}
       />

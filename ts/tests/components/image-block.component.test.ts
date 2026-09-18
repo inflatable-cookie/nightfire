@@ -93,6 +93,25 @@ describe("nightfire/image block", () => {
     );
   });
 
+  it("falls back to the library title when the block carries none", () => {
+    registerMediaSource(stubSource());
+
+    const fallback = render(RendererComponent as any, {
+      block: { type: "image", version: "initial", data: { media_id: "img-1", alt: "x" } },
+    });
+    expect(fallback.container.querySelector("img")!.getAttribute("title")).toBe("Library title");
+
+    const authorWins = render(RendererComponent as any, { block: sizedBlock });
+    expect(authorWins.container.querySelector("img")!.getAttribute("title")).toBe(
+      "Author title"
+    );
+
+    const neither = render(RendererComponent as any, {
+      block: { type: "image", version: "initial", data: { media_id: "img-2" } },
+    });
+    expect(neither.container.querySelector("img")!.hasAttribute("title")).toBe(false);
+  });
+
   it("renders without dimensions when the source provides none", () => {
     registerMediaSource(stubSource());
 
