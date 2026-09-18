@@ -34,12 +34,13 @@ Retiring `media` is a consumer-visible break, and the Acowtancy adoption lane
 carries it. Published schemas are now settled rather than pending: the consumer
 requirement arrived from the Market/Silo Chatterbox, and
 [g01.010](g01/010-core-schema-identity.md) is ready and release-gated, because the
-consumer repins from the tag rather than following it. The styling question is
-narrower than it first looked: every `--nightfire-*` token in `ts/src/styles.css`
-is consumed by editor chrome and none by a renderer, and the operator confirmed
-the stylesheet stays, so the only open part is where its *values* come from.
+consumer repins from the tag rather than following it. The styling question turned
+out to be a non-question: every `--nightfire-*` token in `ts/src/styles.css` is
+consumed by editor chrome and none by a renderer, the stylesheet stays, and the
+tokens are overridable defaults, so what remains is token naming and a fallback
+cleanup rather than ownership.
 [Contract 003](../contracts/003-styling-and-restyling.md) states it, and
-[g01.011](g01/011-editor-default-styling.md) tracks the decision.
+[g01.011](g01/011-editor-default-styling.md) tracks it.
 
 ## Next Task
 

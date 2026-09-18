@@ -31,7 +31,7 @@ styling aims are g01.010 and g01.011; the rest is the runway below.
 8. [g01.008 — Download card replaces the media block](008-download-card-replaces-media.md) — in review.
 9. [g01.009 — Table editor](009-table-editor.md) — ready; serial behind g01.012.
 10. [g01.010 — Publish core schemas](010-core-schema-identity.md) — ready; release-gated, serial behind g01.008.
-11. [g01.011 — Editor default styling and token provenance](011-editor-default-styling.md) — blocked on where the token values come from; the stylesheet itself stays.
+11. [g01.011 — Editor default styling and token names](011-editor-default-styling.md) — ready; token naming and fallback cleanup, not a release gate.
 12. [g01.012 — Image block](012-image-block.md) — queued behind g01.008.
 13. [g01.013 — Video embed block](013-video-embed-block.md) — serial behind g01.009.
 14. [g01.014 — Download-card file titles](014-download-card-file-titles.md) — queued behind g01.008; parallel with g01.012.

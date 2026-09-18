@@ -47,10 +47,24 @@ it:
 ## Open question
 
 Not whether the stylesheet belongs here: it is the editors' default layer, the operator confirmed it
-stays, and the `./styles.css` subpath remains public API. The question is **where its values come
-from** — this package owns them and the upstream relationship becomes provenance, or they align with
-Poodle's own token source so both packages share one theme surface. That second route needs Poodle's
-tokens published and versioned first.
+stays, and the `./styles.css` subpath remains public API.
+
+Nor is it where the values come from. That framing was wrong. These are **defaults**, and rule 7 above
+already makes every one of them overridable without a fork, a build step or a dependency, so the values
+can change freely and the upstream relationship is provenance.
+
+What the token set really is, is **public API by name**. A consumer's override binds to a name, so
+renaming or removing one breaks every mapping, and nothing fails to compile when it happens. The names
+are the part worth getting right, and the part worth settling while no consumer has mapped them.
+
+The work that remains is small and lives in
+[g01.011](../roadmaps/g01/011-editor-default-styling.md):
+
+- the six app-shaped names are kept or renamed as a decision rather than by drift;
+- the mapping onto Poodle's semantic variables is documented as a consumer recipe rather than taken as a
+  dependency, because Poodle's components are editor-side only and its token package is unpublished;
+- every `var(--nightfire-*)` reference has exactly one declared value, so a fallback cannot silently
+  disagree with the stylesheet.
 
 Either way the contradicting inline fallbacks go, so every token has exactly one declared value, and
 the app-shaped names (`color-surface`, `color-danger`, `color-field-bg`, `button-chip-padding-*`) are

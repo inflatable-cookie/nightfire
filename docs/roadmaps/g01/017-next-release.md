@@ -40,7 +40,7 @@ The operator put the whole runway in this release:
 | Layout | g01.009 | queued |
 | Layout | g01.015, g01.016 | planned, behind g01.009 |
 | Schemas | g01.010 | ready; release-gated |
-| Styling | g01.011 | value-source decision only; the stylesheet stays |
+| Styling | g01.011 | ready; naming and fallback cleanup, not a release gate |
 
 Anything not accepted by the release commit moves to the following release. The version does not change
 to suit it.
