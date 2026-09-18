@@ -139,33 +139,33 @@
 <style>
   .underlay-nightfire-slash-palette {
     display: grid;
-    gap: var(--nightfire-space-2, 0.5rem);
-    padding: var(--nightfire-space-3, 0.75rem);
-    border-radius: var(--nightfire-radius-md, 0.5rem);
-    border: 1px solid var(--nightfire-color-border-subtle, rgba(148, 163, 184, 0.25));
+    gap: var(--nightfire-space-2);
+    padding: var(--nightfire-space-3);
+    border-radius: var(--nightfire-radius-md);
+    border: 1px solid var(--nightfire-color-border-subtle);
     background:
       linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.94)),
-      var(--nightfire-color-surface, rgba(15, 23, 42, 0.96));
+      var(--nightfire-color-surface);
     box-shadow: 0 18px 45px rgba(15, 23, 42, 0.28);
   }
 
   .underlay-nightfire-slash-palette__search {
     display: grid;
-    gap: var(--nightfire-space-1, 0.25rem);
+    gap: var(--nightfire-space-1);
   }
 
   .underlay-nightfire-slash-palette__label {
-    font-size: calc(1em * var(--nightfire-font-scale-xxs, 0.72));
-    color: var(--nightfire-color-text-muted, rgba(148, 163, 184, 0.82));
+    font-size: calc(1em * var(--nightfire-font-scale-xxs));
+    color: var(--nightfire-color-text-muted);
   }
 
   .underlay-nightfire-slash-palette__input {
     width: 100%;
-    padding: var(--nightfire-space-2, 0.5rem) var(--nightfire-space-3, 0.75rem);
-    border-radius: var(--nightfire-radius-sm, 0.35rem);
-    border: 1px solid var(--nightfire-color-border-strong, rgba(148, 163, 184, 0.35));
+    padding: var(--nightfire-space-2) var(--nightfire-space-3);
+    border-radius: var(--nightfire-radius-sm);
+    border: 1px solid var(--nightfire-color-border-strong);
     background: rgba(15, 23, 42, 0.82);
-    color: var(--nightfire-color-text, #f8fafc);
+    color: var(--nightfire-color-text);
   }
 
   .underlay-nightfire-slash-palette__list {
@@ -173,7 +173,7 @@
     margin: 0;
     padding: 0;
     display: grid;
-    gap: var(--nightfire-space-1, 0.25rem);
+    gap: var(--nightfire-space-1);
     max-height: 15rem;
     overflow: auto;
   }
@@ -183,9 +183,9 @@
     display: grid;
     gap: 0.15rem;
     text-align: left;
-    padding: var(--nightfire-space-2, 0.5rem) var(--nightfire-space-3, 0.75rem);
+    padding: var(--nightfire-space-2) var(--nightfire-space-3);
     border: 1px solid transparent;
-    border-radius: var(--nightfire-radius-sm, 0.35rem);
+    border-radius: var(--nightfire-radius-sm);
     background: transparent;
     color: inherit;
     cursor: pointer;
@@ -203,11 +203,11 @@
 
   .underlay-nightfire-slash-palette__item-description,
   .underlay-nightfire-slash-palette__empty {
-    font-size: calc(1em * var(--nightfire-font-scale-xs, 0.82));
-    color: var(--nightfire-color-text-muted, rgba(148, 163, 184, 0.82));
+    font-size: calc(1em * var(--nightfire-font-scale-xs));
+    color: var(--nightfire-color-text-muted);
   }
 
   .underlay-nightfire-slash-palette__empty {
-    padding: var(--nightfire-space-2, 0.5rem) var(--nightfire-space-3, 0.75rem);
+    padding: var(--nightfire-space-2) var(--nightfire-space-3);
   }
 </style>

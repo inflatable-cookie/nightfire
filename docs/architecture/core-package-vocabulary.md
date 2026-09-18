@@ -93,12 +93,12 @@ content-presentational fact belongs to the block's data rather than to a theme. 
 `underlay-*` class selectors are extraction artifacts — `PROVENANCE.md` is explicit that they are not
 an import, dependency, or integration hook — and no renderer may depend on them.
 
-`ts/src/styles.css` and its 23 `--nightfire-*` values are the **editor surfaces' default appearance
+`ts/src/styles.css` and its 24 `--nightfire-*` values are the **editor surfaces' default appearance
 layer**: every token is consumed, and only by editor chrome — no renderer references one, and Poodle's
 components are editor-side only. Its `./styles.css` subpath therefore stays.
 
-Those values are **defaults, not a theme this package owns against a consumer**: contract 003 rule 7
-already lets a consumer re-declare any of them, including mapping them onto Poodle's semantic variables.
+Those values are **defaults, not a theme this package owns against a consumer**: contract 003 lets a
+consumer re-declare any of them, including mapping them onto Poodle's semantic variables.
 So the values can change freely, and what is public API is the **names** — an override binds to a name,
 and renaming one breaks every mapping while nothing fails to compile.
 [g01.011](../roadmaps/g01/011-editor-default-styling.md) holds the naming decision and the fallback
