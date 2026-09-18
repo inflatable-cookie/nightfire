@@ -13,7 +13,7 @@ describe("nightfire/core self-registration", () => {
 	it("declares a vocabulary", () => {
 		expect(CORE_BLOCK_TYPE_NAMES.length).toBeGreaterThan(0);
 		expect(CORE_BLOCK_TYPE_NAMES).toContain("markdown");
-		expect(CORE_BLOCK_TYPE_NAMES).toContain("media");
+		expect(CORE_BLOCK_TYPE_NAMES).toContain("download_card");
 	});
 
 	it("registers a renderer for every type that declares one", () => {

@@ -13,7 +13,7 @@ describe("nightfire/NightfireEditor slash commands", () => {
     const view = render(NightfireEditorHarness);
     const textarea = view.container.querySelector("textarea") as HTMLTextAreaElement;
 
-    textarea.value = "/media";
+    textarea.value = "/download";
     textarea.selectionStart = textarea.value.length;
     textarea.selectionEnd = textarea.value.length;
     await fireEvent.input(textarea);
@@ -30,7 +30,7 @@ describe("nightfire/NightfireEditor slash commands", () => {
     });
     const textarea = view.container.querySelector("textarea") as HTMLTextAreaElement;
 
-    textarea.value = "/media";
+    textarea.value = "/download";
     textarea.selectionStart = textarea.value.length;
     textarea.selectionEnd = textarea.value.length;
     await fireEvent.input(textarea);
@@ -38,13 +38,13 @@ describe("nightfire/NightfireEditor slash commands", () => {
     const dialog = await screen.findByRole("dialog", { name: "Slash commands" });
     expect(dialog).toBeTruthy();
 
-    await fireEvent.click(within(dialog).getByRole("option", { name: /media/i }));
+    await fireEvent.click(within(dialog).getByRole("option", { name: /download/i }));
 
     await waitFor(() => {
       const payload = JSON.parse(screen.getByTestId("nightfire-value").textContent ?? "{}");
       expect(payload.blocks).toHaveLength(2);
       expect(payload.blocks[0].data.text).toBe("");
-      expect(payload.blocks[1].type).toBe("media");
+      expect(payload.blocks[1].type).toBe("download_card");
     });
   });
 });

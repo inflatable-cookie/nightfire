@@ -11,15 +11,15 @@ describe("nightfire/slash-commands", () => {
     const commands = buildNightfireSlashCommands(
       [
         { type: "markdown", label: "Markdown" },
-        { type: "media", label: "Media" }
+        { type: "download_card", label: "Download card" }
       ],
       {
         enabled: true,
         commands: [
           {
-            type: "media",
-            aliases: ["image"],
-            keywords: ["photo"]
+            type: "download_card",
+            aliases: ["file"],
+            keywords: ["attachment"]
           },
           {
             type: "unknown",
@@ -31,13 +31,13 @@ describe("nightfire/slash-commands", () => {
 
     expect(commands).toEqual([
       expect.objectContaining({
-        type: "markdown",
-        label: "Markdown"
+        type: "download_card",
+        aliases: expect.arrayContaining(["download_card", "file"]),
+        keywords: expect.arrayContaining(["attachment"])
       }),
       expect.objectContaining({
-        type: "media",
-        aliases: expect.arrayContaining(["media", "image"]),
-        keywords: expect.arrayContaining(["photo"])
+        type: "markdown",
+        label: "Markdown"
       })
     ]);
   });
@@ -53,31 +53,31 @@ describe("nightfire/slash-commands", () => {
         keywords: ["text"]
       },
       {
-        id: "insert-media",
-        type: "media",
-        label: "Media",
-        description: "Insert a media block.",
-        aliases: ["image"],
-        keywords: ["photo"]
+        id: "insert-download_card",
+        type: "download_card",
+        label: "Download card",
+        description: "Insert a download card block.",
+        aliases: ["file"],
+        keywords: ["attachment"]
       }
     ];
 
     expect(filterNightfireSlashCommands(commands, "para")).toEqual([commands[0]]);
-    expect(filterNightfireSlashCommands(commands, "photo")).toEqual([commands[1]]);
+    expect(filterNightfireSlashCommands(commands, "attachment")).toEqual([commands[1]]);
   });
 
   it("detects slash tokens at the caret and removes them after selection", () => {
     const context = {
-      value: "Intro /med",
-      selectionStart: 10,
-      selectionEnd: 10
+      value: "Intro /down",
+      selectionStart: 11,
+      selectionEnd: 11
     };
 
     const match = findNightfireSlashMatch(context);
     expect(match).toEqual({
       start: 6,
-      end: 10,
-      query: "med"
+      end: 11,
+      query: "down"
     });
     expect(removeNightfireSlashText(context.value, match!)).toBe("Intro ");
   });
@@ -90,9 +90,9 @@ describe("nightfire/slash-commands", () => {
     })).toBeNull();
 
     expect(findNightfireSlashMatch({
-      value: "/media",
+      value: "/download",
       selectionStart: 0,
-      selectionEnd: 6
+      selectionEnd: 9
     })).toBeNull();
   });
 });
