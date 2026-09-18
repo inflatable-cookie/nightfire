@@ -254,6 +254,11 @@ const payloadExamples: Record<string, unknown> = {
   table: { caption: "Totals", rows: [{ section: "body", cells: [{ markdown: "42", horizontal_align: "right", borders: { bottom: true } }] }] },
   item_list: { title: "Steps", items: [{ title: "First", body: [{ type: "markdown", version: "initial", data: { text: "Start" } }] }] },
   image: { media_id: "media-1", alt: "Example", sizing: "large" },
+  video: {
+    embed: { provider: "youtube", id: "dQw4w9WgXcQ", originalUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ" },
+    title: "Example film",
+    caption: "Seen from the ridge",
+  },
 };
 for (const type of CORE_BLOCK_TYPE_NAMES) {
   assertValid(payloadExamples[type], `blocks/${type}.schema.json`, `${type} payload example`);

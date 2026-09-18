@@ -24,6 +24,8 @@
     "**/download-card/render.ts",
     "**/image/editor.ts",
     "**/image/render.ts",
+    "**/video/editor.ts",
+    "**/video/render.ts",
     "**/layout/editor.ts",
     "**/rich-text/editor.ts",
     "**/rich-text/render.ts"
