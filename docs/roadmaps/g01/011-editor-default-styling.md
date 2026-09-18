@@ -33,6 +33,17 @@ values. So "who owns the values" was never the real issue.
   `color-field-bg`, `button-chip-padding-block`, `button-chip-padding-inline`.
 - **Some inline fallbacks contradict the shipped palette.** Fallbacks use a dark surface
   (`15, 23, 42`) and near-white text; the stylesheet defines a light palette (`#fff`, `#111827`).
+- **The table editor added chrome that breaks rule 1's acceptance.** `ts/src/layout/TableEditor.svelte`
+  references `--nightfire-color-focus`, `--nightfire-color-border-subtle`, `--nightfire-color-danger`
+  and `--nightfire-color-text-muted`, and **`--nightfire-color-focus` is not declared in**
+  `ts/src/styles.css` at all. Contract 003's acceptance says a renderer is not complete until every
+  presentational value comes from the token set or is added to it in the same change; this one added a
+  reference without the token. The `currentColor` fallback keeps it rendering, which is why nothing
+  caught it, but a consumer has no declared name to override.
+- **Five `currentColor` fallbacks exist across the package.** For `color-text-muted` a `currentColor`
+  fallback makes muted text unmuted, and for `color-border-subtle` it makes a subtle border the text
+  colour. They are not broken, but they are a second declared value that applies whenever the stylesheet
+  is absent — the same defect as the dark fallbacks in a quieter form.
 
 ## What remains a real decision
 
@@ -82,11 +93,21 @@ One declared value per token: either no fallback, or one that matches the shippe
 
 ## Work
 
-1. Decide the naming question, and record the answer in contract 003.
-2. Audit every `var(--nightfire-*)` reference and remove or correct its fallback.
-3. Add the Poodle mapping recipe to `README.md` if that route is chosen.
-4. Confirm contract 003 states the editor default layer, its overridability, and that names are the
+1. **Declare `--nightfire-color-focus` in `ts/src/styles.css`.** Shipped editor chrome references it and
+   the token does not exist, so a consumer cannot theme the focus ring by name.
+2. Decide the naming question, and record the answer in contract 003.
+3. Audit every `var(--nightfire-*)` reference across `ts/src` and give each token exactly one declared
+   value: no fallback, or one that matches the stylesheet. The audit now covers chrome added by the media,
+   image and table lanes, and by the video and item-list lanes landing before it.
+4. Add the Poodle mapping recipe to `README.md` if that route is chosen.
+5. Confirm contract 003 states the editor default layer, its overridability, and that names are the
    public API.
+
+## Sequencing
+
+This lane runs **last of the implementation lanes**, after g01.016, so its audit covers every editor
+surface in the release. Fixing the focus token earlier is tempting but would race the video and item-list
+lanes, which both edit editor chrome.
 
 ## Acceptance and review oracle
 

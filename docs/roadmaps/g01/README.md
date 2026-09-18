@@ -29,14 +29,14 @@ styling aims are g01.010 and g01.011; the rest is the runway below.
 6. [g01.006 — Adopt published Poodle 0.4.2](006-adopt-published-poodle-0-4-2.md) — complete.
 7. [g01.007 — Rich-text block](007-rich-text-block.md) — complete.
 8. [g01.008 — Download card replaces the media block](008-download-card-replaces-media.md) — complete.
-9. [g01.009 — Table editor](009-table-editor.md) — ready; serial behind g01.012.
+9. [g01.009 — Table editor](009-table-editor.md) — complete.
 10. [g01.010 — Publish core schemas](010-core-schema-identity.md) — ready; release-gated, serial behind g01.008.
-11. [g01.011 — Editor default styling and token names](011-editor-default-styling.md) — ready; token naming and fallback cleanup, not a release gate.
-12. [g01.012 — Image block](012-image-block.md) — queued behind g01.008.
-13. [g01.013 — Video embed block](013-video-embed-block.md) — serial behind g01.009.
-14. [g01.014 — Download-card file titles](014-download-card-file-titles.md) — queued behind g01.008; parallel with g01.012.
-15. [g01.015 — Table cell spans](015-table-cell-spans.md) — planned; serial behind g01.009.
-16. [g01.016 — Item list editor](016-item-list-editor.md) — ready; serial behind g01.009.
+11. [g01.011 — Editor default styling and token names](011-editor-default-styling.md) — ready; token audit, last of the implementation lanes.
+12. [g01.012 — Image block](012-image-block.md) — complete.
+13. [g01.013 — Video embed block](013-video-embed-block.md) — in flight.
+14. [g01.014 — Download-card file titles](014-download-card-file-titles.md) — complete.
+15. [g01.015 — Table cell spans](015-table-cell-spans.md) — ready; parallel with g01.013.
+16. [g01.016 — Item list editor](016-item-list-editor.md) — ready; serial behind g01.013.
 17. [g01.017 — Next release](017-next-release.md) — planned; gated on the whole generation including published schemas and the untested publish path.
 
 g01.001–003 predate the Queue lifecycle projection, so the generated block below
