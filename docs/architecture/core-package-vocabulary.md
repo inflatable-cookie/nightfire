@@ -28,11 +28,11 @@ categories in the registry are profile-owned.
 | Type | Category | Role | State |
 | --- | --- | --- | --- |
 | `markdown` | Text | plain markdown text | implemented, editor and renderer |
-| `rich_text` | Text | structured rich text, edited through the Poodle rich-text editor (TipTap/ProseMirror) | to add |
+| `rich_text` | Text | structured rich text, edited through the Poodle rich-text editor (TipTap/ProseMirror) | to add; vocabulary pinned below |
 | `table` | Layout | tabular structure | to add |
 | `item_list` | Layout | ordered list of titled child-block items | rename from `content_list`; no live instances |
-| `image` | Media | light shell referencing a media item | to add |
-| `media` | Media | light shell referencing a media item, kind-aware | to add |
+| `image` | Media | light shell referencing a media item, with alt text and sizing | to add |
+| `media` | Media | light shell linking to a media item, rendered as a download card | to add |
 
 ### `item_list`
 
@@ -56,6 +56,41 @@ from:
 
 The core defines the reference slot. It does not define a library, a storage shape, or a URL form.
 A consumer without a registered media source still has a valid block that renders inert.
+
+## The rich-text vocabulary
+
+The admitted vocabulary is not ours to invent: the Poodle rich-text engine assembles a **closed,
+feature-gated** set, and a feature that is not selected contributes no nodes, marks, commands, input
+rules or shortcuts. The feature vocabulary itself (`RichTextFeature`, `RichTextHeadingMode`) is
+declared in Poodle core and validated there, so the `rich_text` block mirrors that set rather than
+extending it.
+
+| Group | Admitted |
+| --- | --- |
+| Always | document, paragraph, text, hard break, undo/redo |
+| `formatting` | bold, italic, strike, code |
+| `headings` | heading, bounded to the core-declared heading levels |
+| `links` | link |
+| `lists` | bullet list, ordered list, list item |
+| `blockquote` | blockquote |
+| `code-block` | code block |
+| `horizontal-rule` | horizontal rule |
+| `tables` | table, table row, table header, table cell |
+| `images` | image, with `src`, `alt` and `title` as its whole model |
+
+The image node is the extension point: Poodle extends it to keep that public model closed, and the
+consumer supplies the `src`. That is the read path of the media-source seam below, and it is why the
+seam cannot be block-scoped.
+
+## Image and media are two types
+
+They differ in admin and in renderer, so they are separate blocks rather than one with a kind.
+
+- **`image`** carries alt text and sizing, because an image is content a reader must be able to
+  interpret and a layout must be able to place. Poodle's image node independently admits `alt` and
+  `title`, which corroborates that alt belongs in the image model rather than beside it.
+- **`media`** is a generalised linkage: a reference plus whatever a **download card** needs to
+  present it. No alt text, no sizing, because it is not rendered as content in flow.
 
 ## The media-source seam
 
@@ -94,11 +129,10 @@ authority rather than a mirror of one.
    so the corpus contains no instance, no producer and no origin. The shape is therefore ours to
    define, and the more capable definition costs nothing because nothing depends on the current one.
    That also makes the rename free: there are no instances to migrate.
-2. **Rich text vocabulary** — pin the admitted node and mark set from the editor's extension set.
-   The editor carries image and table extensions, so rich text can hold media, which is why the
-   media-source seam must reach it.
-3. **Two media types or one** — the registry declares both `image` and `media`; decide whether the
-   difference is presentation or kind.
+2. **Rich text vocabulary** — settled above, pinned from the editor's feature-gated extension set.
+   Rich text can hold an image node, which is why the media-source seam must reach it.
+3. **Two media types or one** — settled: **two**, because they differ in admin and renderer. `image`
+   carries alt text and sizing; `media` is a generalised linkage rendered as a download card.
 4. **Self-registration** — the package ships the mechanism but no default catalog. A complete core
    registers its own vocabulary so a consumer gets working blocks without composing them.
 
