@@ -25,7 +25,8 @@ library, and by `image`, which holds a single image from the same library. Both
 render through one media-source registry. `video` is separate: an embed
 addressed by provider and id, with no library involved. The image and video lanes
 follow the download card, a small title-field lane runs alongside the image lane,
-and the layout editors come last. They are serial because they share one
+and the table and item-list editors come last. They are serial because they share
+one
 capability declaration and two catalog files, except the title lane, which shares
 no file.
 
@@ -40,9 +41,9 @@ blast radius.
 
 ## Next Task
 
-Dispatch the download-card lane, which retires `media`, then the image and video
-lanes behind it. Keep the layout editors behind their table-editing brief, and do
-not execute a release or a consumer cutover.
+Dispatch the download-card lane, which retires `media`, then the image lane and the download-card
+title lane behind it, then the table editor and the video embed. Do not execute a release or a
+consumer cutover.
 <!-- northstar:lifecycle:begin schema=northstar.lifecycle.projection.v2 digest=sha256:ac30ee8e536e321d1ed79b80dafb4cbbd9669ebf80764a1dffd52aa3a4f3b0fc -->
 | Generation | Disposition | Runway state |
 | --- | --- | --- |

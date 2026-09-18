@@ -28,13 +28,15 @@ styling aims are g01.010 and g01.011; the rest is the runway below.
 5. [g01.005 — Prospective-merge protocol migration](005-prospective-merge-protocol-migration.md) — complete.
 6. [g01.006 — Adopt published Poodle 0.4.2](006-adopt-published-poodle-0-4-2.md) — complete.
 7. [g01.007 — Rich-text block](007-rich-text-block.md) — complete.
-8. [g01.008 — Download card replaces the media block](008-download-card-replaces-media.md) — next lane.
-9. [g01.009 — Layout block editors](009-layout-block-editors.md) — planned; needs a table-editing brief.
+8. [g01.008 — Download card replaces the media block](008-download-card-replaces-media.md) — in review.
+9. [g01.009 — Table editor](009-table-editor.md) — ready; serial behind g01.012.
 10. [g01.010 — Core schema identity and publication](010-core-schema-identity.md) — blocked across repositories.
 11. [g01.011 — Application interface styling](011-application-interface-styling.md) — blocked on where the interface tokens live.
-12. [g01.012 — Image block](012-image-block.md) — ready; serial behind g01.008.
-13. [g01.013 — Video embed block](013-video-embed-block.md) — serial behind g01.012.
-14. [g01.014 — Download-card file titles](014-download-card-file-titles.md) — ready; parallel with g01.012.
+12. [g01.012 — Image block](012-image-block.md) — queued behind g01.008.
+13. [g01.013 — Video embed block](013-video-embed-block.md) — serial behind g01.009.
+14. [g01.014 — Download-card file titles](014-download-card-file-titles.md) — queued behind g01.008; parallel with g01.012.
+15. [g01.015 — Table cell spans](015-table-cell-spans.md) — planned; serial behind g01.009.
+16. [g01.016 — Item list editor](016-item-list-editor.md) — ready; serial behind g01.009.
 
 g01.001–003 predate the Queue lifecycle projection, so the generated block below
 lists only the tasks the lifecycle system holds records for. Their terminal state
@@ -48,13 +50,16 @@ held in a media library, and by `image`, which holds a single image from the sam
 through one media-source registry. `video` is separate: an embed addressed by provider and id, with no
 library involved.
 
-g01.008, g01.012 and g01.013 are serial, not parallel: each changes `ts/src/core-blocks.ts` and the two
-catalog files, and those are adjacent-line edits to one declaration table and two import lists.
+g01.008, g01.009, g01.012 and g01.013 are serial, not parallel: each changes `ts/src/core-blocks.ts` and
+the catalog files, and those are adjacent-line edits to one declaration table and two import lists.
 Concurrent lanes would meet in the same lines, so each is dispatched behind the one before it through
-an explicit Queue dependency.
+an explicit Queue dependency. g01.015 and g01.016 sit behind the table editor for the same reason.
 
 g01.014 is the exception. It adds one optional field to the download card's own module and touches no
 shared file, so it runs in parallel with g01.012 once g01.008 has landed.
+
+Dispatch order: the download card first, then the image and title lanes together, then the table
+editor, then the video embed, then the item list and the span refinement.
 
 ## Dependencies And Parallelism
 
@@ -75,9 +80,8 @@ acceptance.
 
 ## Next Task
 
-Dispatch the download-card lane, which retires `media`, then the image and video lanes behind it. Keep
-the layout editors behind their table-editing brief, and do not execute a release or a consumer
-cutover.
+g01.008 is in review, with g01.012 and g01.014 queued behind it. Then comes the table editor, the video
+embed, and the item list and span refinements. Do not execute a release or a consumer cutover.
 <!-- northstar:lifecycle:begin schema=northstar.lifecycle.projection.v2 digest=sha256:ac30ee8e536e321d1ed79b80dafb4cbbd9669ebf80764a1dffd52aa3a4f3b0fc -->
 | Generation | Disposition | Runway state |
 | --- | --- | --- |
