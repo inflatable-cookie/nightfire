@@ -33,6 +33,9 @@ immutable.
 - The table editor: a grid with a keyboard model, row and column insertion and removal, a row-level header
   toggle, per-cell alignment, per-edge borders, cell merge and split, and an in-page confirmation before a
   destructive action. `section` is not authored and round-trips unchanged.
+- The `item_list` editor: items with an optional title and a body of child blocks, added, removed and
+  reordered, with a child type rendering through the registry exactly as it does in the renderer. An item
+  removal that would lose content asks first in-page, and `intro` and `variant` round-trip untouched.
 - An optional `title` per file on `download_card`, beside the existing `description`.
 - The `download_card` block: a renderer, an editor, and an empty checker over
   `{ description?, files: [{ media_id, title?, description? }] }`, with the
