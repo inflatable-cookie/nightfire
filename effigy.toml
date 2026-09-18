@@ -44,6 +44,7 @@ check = "cd {repo} && bun x svelte-check --tsconfig ts/tsconfig.json"
 "check:types" = "cd {repo} && bun x tsc --project ts/tsconfig.json --noEmit"
 "check:exports" = "cd {repo} && bun ts/scripts/check-exports.ts"
 "check:boundaries" = "cd {repo} && bun ts/scripts/check-boundaries.ts"
+"check:style-literals" = "cd {repo} && bun ts/scripts/check-style-literals.ts"
 "check:pack" = "cd {repo} && bun ts/scripts/check-pack.ts"
 "check:schemas" = "cd {repo} && bun ts/scripts/check-schemas.ts"
 "check:version-sync" = "cd {repo} && bun ts/scripts/check-version-sync.ts"
@@ -88,6 +89,7 @@ health = [
   { task = "check:exports" },
   { task = "check:boundaries" },
   { task = "check:schemas" },
+  { task = "check:style-literals" },
   { task = "check:version-sync" },
 ]
 

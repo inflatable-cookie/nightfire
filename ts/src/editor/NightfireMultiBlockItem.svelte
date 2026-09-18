@@ -136,9 +136,9 @@
   }
 
   .underlay-nightfire-field__multi-icon-btn--danger:hover:not([disabled]) {
-    background: rgba(239, 68, 68, 0.15);
-    color: #f87171;
-    border-color: rgba(239, 68, 68, 0.4);
+    background: color-mix(in srgb, var(--nightfire-color-danger) 15%, transparent);
+    color: var(--nightfire-color-danger);
+    border-color: color-mix(in srgb, var(--nightfire-color-danger) 40%, transparent);
   }
 
   .underlay-nightfire-field__multi-icon-btn svg {

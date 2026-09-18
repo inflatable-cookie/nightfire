@@ -1,6 +1,8 @@
 # The token audit is blind to hardcoded literals
 
-Recorded 2026-09-18 from g01.011's independent review. Unpromoted; not execution authority.
+Recorded 2026-09-18 from g01.011's independent review. Partly promoted by
+g01.018: the colour-literal fix and its guard landed; the sweep for radii,
+spacing and font literals is still open.
 
 ## What is true
 

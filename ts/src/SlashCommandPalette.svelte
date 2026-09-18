@@ -143,10 +143,11 @@
     padding: var(--nightfire-space-3);
     border-radius: var(--nightfire-radius-md);
     border: 1px solid var(--nightfire-color-border-subtle);
-    background:
-      linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.94)),
-      var(--nightfire-color-surface);
-    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.28);
+    background: var(--nightfire-color-surface);
+    box-shadow: 0 18px 45px var(--nightfire-color-border-strong);
+    /* The items inherit, so the palette sets the text colour explicitly: a host
+       page that colours its own text must not reach command labels. */
+    color: var(--nightfire-color-text);
   }
 
   .underlay-nightfire-slash-palette__search {
@@ -164,7 +165,7 @@
     padding: var(--nightfire-space-2) var(--nightfire-space-3);
     border-radius: var(--nightfire-radius-sm);
     border: 1px solid var(--nightfire-color-border-strong);
-    background: rgba(15, 23, 42, 0.82);
+    background: var(--nightfire-color-field-bg);
     color: var(--nightfire-color-text);
   }
 
@@ -193,8 +194,8 @@
 
   .underlay-nightfire-slash-palette__item:hover,
   .underlay-nightfire-slash-palette__item.underlay-nightfire-slash-palette__item--selected {
-    border-color: rgba(96, 165, 250, 0.32);
-    background: rgba(59, 130, 246, 0.14);
+    border-color: color-mix(in srgb, var(--nightfire-color-selection) 32%, transparent);
+    background: color-mix(in srgb, var(--nightfire-color-selection) 14%, transparent);
   }
 
   .underlay-nightfire-slash-palette__item-label {
