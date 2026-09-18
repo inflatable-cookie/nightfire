@@ -11,10 +11,11 @@ primarily `ts/src/nightfire/`. Adjacent generic helpers came from:
 - `ts/src/patterns/media-types/enums.ts` for the retained media-kind type;
 - Underlay's Nightfire design-token values for `ts/src/styles.css`.
 
-One token is **not** upstream. `--nightfire-color-focus` was added on 2026-09-18: the table editor
-referenced it while no declaration existed, so the token audit declared it. Its value is locally
-authored rather than derived from Underlay, and it is the only entry in `ts/src/styles.css` with no
-upstream source.
+Two tokens are **not** upstream. `--nightfire-color-focus` was added on 2026-09-18: the table editor
+referenced it while no declaration existed, so the token audit declared it. `--nightfire-color-selection`
+was added on 2026-09-18, when g01.018 replaced the slash palette's two literal selection alphas with one
+named token at the same alphas. Both values are locally authored rather than derived from Underlay, and
+they are the only entries in `ts/src/styles.css` with no upstream source.
 
 Tests were extracted from the corresponding Nightfire unit and component tests
 at the same source commit. Wire fixtures mirror the Rust assertions named in

@@ -6,6 +6,21 @@ immutable.
 
 ## [Unreleased]
 
+### Added
+
+- `--nightfire-color-selection`, the slash palette's selected-item colour, so the
+  highlight is a named token rather than two literal alphas.
+
+### Fixed
+
+- The slash command palette renders as light editor chrome instead of a dark
+  gradient over the shipped light defaults. Its search input and command labels
+  were 1.00:1 and 1.23:1 against the composited background; they now resolve
+  through the surface, field, border and text tokens. The multi-block item's
+  danger state uses `--nightfire-color-danger` instead of three red literals.
+- `effigy health` now runs `check:style-literals`, which fails on a colour
+  literal in any `ts/src/**/*.svelte` style block.
+
 ## [0.2.0] - 2026-09-18
 
 ### Added

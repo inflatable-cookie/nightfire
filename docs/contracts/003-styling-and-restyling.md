@@ -19,7 +19,7 @@ interface**, not this package's concern. The rules below replace that revision.
 
 ## The stylesheet that is present today, and what it is for
 
-`ts/src/styles.css` defines 24 `--nightfire-*` values. **Every one of them is consumed, and only by
+`ts/src/styles.css` defines 25 `--nightfire-*` values. **Every one of them is consumed, and only by
 editor surfaces** — `NightfireEditor`, `NightfireBlockEditor`, `SlashCommandPalette`, the field shell,
 the multi-block item, the markdown, image, download-card, video, item-list and table editors.
 **No renderer references a token**:
@@ -81,3 +81,11 @@ all inline `var(--nightfire-*, fallback)` values from editor chrome. Every
 public token reference under `ts/src` now resolves to one declaration in
 `styles.css`; renderers remain token-free. The inline table-column property is
 the documented per-instance exception and is not part of the public token set.
+
+That audit read references. g01.018 read values: `--nightfire-color-selection`
+was added for the slash palette's selected item, and
+`ts/scripts/check-style-literals.ts` now fails on a colour literal in any
+`ts/src/**/*.svelte` style block, so a directly written colour cannot survive
+beside a named one. `styles.css` stays the only place a colour value is declared.
+Radii, spacing and font literals are the same class of directly written value and
+are still unguarded.

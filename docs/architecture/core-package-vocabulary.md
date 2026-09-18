@@ -93,7 +93,7 @@ content-presentational fact belongs to the block's data rather than to a theme. 
 `underlay-*` class selectors are extraction artifacts — `PROVENANCE.md` is explicit that they are not
 an import, dependency, or integration hook — and no renderer may depend on them.
 
-`ts/src/styles.css` and its 24 `--nightfire-*` values are the **editor surfaces' default appearance
+`ts/src/styles.css` and its 25 `--nightfire-*` values are the **editor surfaces' default appearance
 layer**: every token is consumed, and only by editor chrome — no renderer references one, and Poodle's
 components are editor-side only. Its `./styles.css` subpath therefore stays.
 

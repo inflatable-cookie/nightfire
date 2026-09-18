@@ -92,5 +92,46 @@ palette, and do not introduce a second theme inside the editor default layer.
 
 ## Evidence
 
-On completion, record: the literals removed, the token added, the check's exception list and result, both
-document counts, and the exact `effigy qa` result.
+Recorded on completion:
+
+- **Literals removed.** `SlashCommandPalette.svelte`: the dark gradient
+  `linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.94))` over
+  the surface, its `box-shadow` `rgba(15, 23, 42, 0.28)`, the input background
+  `rgba(15, 23, 42, 0.82)`, and the selection pair `rgba(96, 165, 250, 0.32)` and
+  `rgba(59, 130, 246, 0.14)`. `editor/NightfireMultiBlockItem.svelte`: `#f87171`,
+  `rgba(239, 68, 68, 0.15)` and `rgba(239, 68, 68, 0.4)`. Eight literals, two
+  files. The palette root now sets `color: var(--nightfire-color-text)` so the
+  items' `color: inherit` cannot take the host page's text colour.
+- **Token added.** `--nightfire-color-selection: #3b82f6` in `ts/src/styles.css`,
+  used for both the selected item's border and its background through
+  `color-mix(in srgb, var(--nightfire-color-selection) 32%, transparent)` and
+  `... 14% ...`. One token, two alphas. The danger state uses the existing
+  `--nightfire-color-danger` the same way at 15% and 40%.
+- **The check.** `ts/scripts/check-style-literals.ts` scans every
+  `ts/src/**/*.svelte` style block for hex colours, `rgb()`/`hsl()`/`lab()`-family
+  functions with literal arguments, and the CSS named colours. Exception list:
+  `transparent`, `currentColor`, `inherit`. Wired into `health` as
+  `check:style-literals`. Probed with a planted `#ff0000`, `rgb(15 23 42)` and
+  `rebeccapurple`: all three reported, exit 1; the shipped head passes with no
+  findings. `ts/tests/nightfire/style-literals.test.ts` holds the bite and the
+  shipped pass, and asserts no renderer references a token.
+- **Both counts.** `docs/architecture/core-package-vocabulary.md` and
+  `docs/contracts/003-styling-and-restyling.md` said 24; both read 25, and the
+  test fails if either disagrees with `styles.css`. `PROVENANCE.md` records the
+  token as locally authored beside `--nightfire-color-focus`.
+- **`effigy qa` result.** Passed at the pushed head; the task-by-task output is
+  recorded in the pull request body, since the git-consumer proof needs the exact
+  committed head and so cannot run against a dirty worktree.
+- **Contrast after the fix.** Computed from the declared values, compositing the
+  tints over the white surface: `--nightfire-color-text` on
+  `--nightfire-color-surface` 17.74:1; `--nightfire-color-text-muted` on it
+  4.83:1, so the palette's small `Filter commands` label and its item
+  descriptions clear AA; the selected item's 14% selection tint gives
+  `--nightfire-color-text` 15.17:1. The danger icon's hover tint gives
+  `--nightfire-color-danger` 3.10:1, above the 3:1 WCAG non-text floor. The
+  measured 1.00:1 and 1.23:1 layers are gone. jsdom does not composite
+  backgrounds, so `ts/tests/nightfire/style-literals.test.ts` asserts only the
+  declared text-on-surface pair (17.74:1) and the token references; the tint
+  arithmetic above is recorded here, not asserted.
+- **Still unseen by the guard.** Radii, spacing and font literals written
+  directly in component styles. The triage note keeps that gap open.
