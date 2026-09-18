@@ -25,7 +25,7 @@ export const CORE_BLOCK_TYPES: Readonly<Record<string, CoreBlockCapabilities>> =
   // follow that precedent rather than inventing a second reference spelling.
   download_card: { renderer: true, editor: true, emptyChecker: true },
   table: { renderer: true, editor: true, emptyChecker: true },
-  item_list: { renderer: true, editor: false, emptyChecker: false },
+  item_list: { renderer: true, editor: true, emptyChecker: true },
   image: { renderer: true, editor: true, emptyChecker: true },
   video: { renderer: true, editor: true, emptyChecker: true },
 };

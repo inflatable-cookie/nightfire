@@ -1,10 +1,26 @@
+import ItemListEditor from "./ItemListEditor.svelte";
 import TableEditor from "./TableEditor.svelte";
 import {
+  isBlockContentEmpty,
   registerBlockEditor,
   registerBlockEmptyChecker,
 } from "../editor-registry";
 
+registerBlockEditor(null, "item_list", "Item list", ItemListEditor);
 registerBlockEditor(null, "table", "Table", TableEditor);
+
+registerBlockEmptyChecker("item_list", (block) => {
+  const items = Array.isArray(block?.data?.items) ? block.data.items : [];
+  return !items.some((item: unknown) => {
+    if (!item || typeof item !== "object" || Array.isArray(item)) return false;
+    const title = (item as { title?: unknown }).title;
+    if (typeof title === "string" && title.trim().length > 0) return true;
+
+    const body = (item as { body?: unknown }).body;
+    const children = Array.isArray(body) ? body : body ? [body] : [];
+    return children.some((child) => !isBlockContentEmpty(child));
+  });
+});
 
 registerBlockEmptyChecker("table", (block) => {
   const caption = block?.data?.caption;
