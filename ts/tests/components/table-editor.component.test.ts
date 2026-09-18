@@ -22,6 +22,33 @@ function lastBlock(onChange: ReturnType<typeof vi.fn>) {
   return onChange.mock.calls.at(-1)![0];
 }
 
+function expectRectangular(rows: any[], width: number) {
+  const occupied = new Set<string>();
+  rows.forEach((row, rowIndex) => {
+    let column = 0;
+    row.cells.forEach((cell: any) => {
+      while (occupied.has(`${rowIndex}:${column}`)) column += 1;
+      const colspan = cell.colspan ?? 1;
+      const rowspan = cell.rowspan ?? 1;
+      for (let rowOffset = 0; rowOffset < rowspan; rowOffset += 1) {
+        for (let columnOffset = 0; columnOffset < colspan; columnOffset += 1) {
+          const key = `${rowIndex + rowOffset}:${column + columnOffset}`;
+          expect(occupied.has(key), `overlapping slot ${key}`).toBe(false);
+          occupied.add(key);
+        }
+      }
+      column += colspan;
+    });
+  });
+  rows.forEach((_, rowIndex) => {
+    expect(
+      Array.from({ length: width }, (_unused, column) =>
+        occupied.has(`${rowIndex}:${column}`),
+      ),
+    ).toEqual(Array.from({ length: width }, () => true));
+  });
+}
+
 describe("nightfire/table editor", () => {
   it("registers the editor and answers emptiness from caption and cell markdown", () => {
     expect(EditorComponent).toBeTruthy();
@@ -219,5 +246,125 @@ describe("nightfire/table editor", () => {
     await fireEvent.click(within(dialog).getByRole("button", { name: "Confirm removal" }));
     expect(lastBlock(onChange).data.rows).toHaveLength(1);
     expect(lastBlock(onChange).data.rows[0].cells[0].markdown).toBe("");
+  });
+
+  it("extends a rectangular selection by keyboard, merges it, and preserves row sections", async () => {
+    const block = tableBlock([
+      { section: "head", cells: [{ markdown: "" }, { markdown: "" }] },
+      { section: "body", cells: [{ markdown: "" }, { markdown: "" }] },
+    ]);
+    const onChange = vi.fn();
+    const view = render(EditorComponent as any, { block, onChange });
+    const first = within(view.container).getByRole("gridcell", { name: "Row 1, column 1" });
+
+    first.focus();
+    await fireEvent.keyDown(first, { key: "ArrowRight", shiftKey: true });
+    await fireEvent.keyDown(document.activeElement as HTMLElement, {
+      key: "ArrowDown",
+      shiftKey: true,
+    });
+    await fireEvent.keyDown(document.activeElement as HTMLElement, {
+      key: "M",
+      ctrlKey: true,
+      shiftKey: true,
+    });
+
+    const merged = lastBlock(onChange);
+    expect(merged.data.rows.map((row: any) => row.section)).toEqual(["head", "body"]);
+    expect(merged.data.rows[0].cells).toEqual([
+      expect.objectContaining({ markdown: "", colspan: 2, rowspan: 2 }),
+    ]);
+    expect(merged.data.rows[1].cells).toEqual([]);
+    expectRectangular(merged.data.rows, 2);
+  });
+
+  it("round-trips both spans and splits back to a well-formed grid from the keyboard", async () => {
+    const mergedBlock = tableBlock([
+      {
+        section: "head",
+        cells: [
+          { markdown: "Kept", is_header: true, colspan: 2, rowspan: 2 },
+          { markdown: "Right", is_header: true },
+        ],
+      },
+      { section: "body", cells: [{ markdown: "Below right" }] },
+    ]);
+    const onChange = vi.fn();
+    const view = render(EditorComponent as any, { block: mergedBlock, onChange });
+    const mergedCell = within(view.container).getByRole("columnheader", {
+      name: "Row 1, column 1",
+    });
+
+    expect(mergedCell.getAttribute("aria-colspan")).toBe("2");
+    expect(mergedCell.getAttribute("aria-rowspan")).toBe("2");
+    await fireEvent.click(within(view.container).getByRole("button", { name: "Top edge" }));
+    expect(lastBlock(onChange).data.rows[0].cells[0]).toMatchObject({
+      colspan: 2,
+      rowspan: 2,
+      borders: { top: true },
+    });
+    mergedCell.focus();
+    await fireEvent.keyDown(mergedCell, {
+      key: "S",
+      ctrlKey: true,
+      shiftKey: true,
+    });
+
+    const split = lastBlock(onChange);
+    expect(split.data.rows.map((row: any) => row.section)).toEqual(["head", "body"]);
+    expect(split.data.rows[0].cells).toHaveLength(3);
+    expect(split.data.rows[1].cells).toHaveLength(3);
+    expect(split.data.rows[0].cells[0]).toMatchObject({ markdown: "Kept", is_header: true });
+    expect(split.data.rows[0].cells.map((cell: any) => cell.markdown)).toEqual([
+      "Kept",
+      "",
+      "Right",
+    ]);
+    expect(split.data.rows[1].cells.map((cell: any) => cell.markdown)).toEqual([
+      "",
+      "",
+      "Below right",
+    ]);
+    expect(split.data.rows[0].cells[0]).not.toHaveProperty("colspan");
+    expect(split.data.rows[0].cells[0]).not.toHaveProperty("rowspan");
+    expectRectangular(split.data.rows, 3);
+  });
+
+  it("requires in-page confirmation before a merge can discard cell content", async () => {
+    const block = tableBlock([
+      { cells: [{ markdown: "Keep" }, { markdown: "Discard" }] },
+      { cells: [{ markdown: "" }, { markdown: "" }] },
+    ]);
+    const onChange = vi.fn();
+    const view = render(EditorComponent as any, { block, onChange });
+    const first = within(view.container).getByRole("gridcell", { name: "Row 1, column 1" });
+
+    first.focus();
+    await fireEvent.keyDown(first, { key: "ArrowRight", shiftKey: true });
+    await fireEvent.keyDown(document.activeElement as HTMLElement, {
+      key: "M",
+      ctrlKey: true,
+      shiftKey: true,
+    });
+
+    expect(onChange).not.toHaveBeenCalled();
+    const dialog = within(view.container).getByRole("alertdialog");
+    expect(dialog.textContent).toContain("cannot be recovered");
+    await fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    expect(onChange).not.toHaveBeenCalled();
+    expect(block.data.rows[0].cells).toHaveLength(2);
+
+    await fireEvent.keyDown(document.activeElement as HTMLElement, {
+      key: "M",
+      ctrlKey: true,
+      shiftKey: true,
+    });
+    await fireEvent.click(
+      within(view.container).getByRole("button", { name: "Confirm merge" }),
+    );
+    expect(lastBlock(onChange).data.rows[0].cells).toEqual([
+      expect.objectContaining({ markdown: "Keep", colspan: 2 }),
+    ]);
+    expectRectangular(lastBlock(onChange).data.rows, 2);
   });
 });

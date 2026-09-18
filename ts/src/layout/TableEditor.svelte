@@ -8,6 +8,8 @@
   type TableCell = Record<string, unknown> & {
     markdown?: string;
     is_header?: boolean;
+    colspan?: number;
+    rowspan?: number;
     horizontal_align?: string | null;
     vertical_align?: string | null;
     borders?: Borders;
@@ -28,9 +30,28 @@
 
   let focusRow = $state(0);
   let focusColumn = $state(0);
+  let anchorRow = $state(0);
+  let anchorColumn = $state(0);
   let editing = $state(false);
   let rootElement = $state<HTMLElement | null>(null);
-  let confirmation = $state<{ kind: "row" | "column"; index: number } | null>(null);
+  let confirmation = $state<
+    { kind: "row" | "column"; index: number } | { kind: "merge" } | null
+  >(null);
+
+  type GridEntry = {
+    cell: TableCell;
+    cellIndex: number;
+    row: number;
+    column: number;
+    colspan: number;
+    rowspan: number;
+  };
+
+  type GridLayout = {
+    entries: GridEntry[];
+    slots: Map<string, GridEntry>;
+    width: number;
+  };
 
   const horizontalOptions = [
     { value: "", label: "Default" },
@@ -63,28 +84,95 @@
   }
 
   const rows = $derived(sourceRows());
-  const columnCount = $derived(
-    Math.max(1, ...rows.map((row) => (Array.isArray(row.cells) ? row.cells.length : 0))),
-  );
+  const layout = $derived(layoutRows(rows));
+  const columnCount = $derived(layout.width);
   const activeRow = $derived(Math.min(focusRow, rows.length - 1));
   const activeColumn = $derived(Math.min(focusColumn, columnCount - 1));
-  const focusedCell = $derived(cellAt(rows, activeRow, activeColumn));
+  const focusedEntry = $derived(entryAt(layout, activeRow, activeColumn));
+  const focusedCell = $derived(focusedEntry?.cell ?? emptyCell());
+  const selection = $derived(selectionBounds());
+  const mergeEntries = $derived(entriesForSelection(layout, selection));
+  const canMerge = $derived(mergeEntries !== null && mergeEntries.length > 1);
+  const canSplit = $derived(
+    focusedEntry !== undefined && (focusedEntry.colspan > 1 || focusedEntry.rowspan > 1),
+  );
 
-  function cellAt(source: TableRow[], rowIndex: number, columnIndex: number): TableCell {
-    const cells = source[rowIndex]?.cells;
-    return Array.isArray(cells) && cells[columnIndex] ? cells[columnIndex] : emptyCell();
+  function positiveSpan(value: unknown): number {
+    return typeof value === "number" && Number.isInteger(value) && value > 1 ? value : 1;
+  }
+
+  function slotKey(row: number, column: number): string {
+    return `${row}:${column}`;
+  }
+
+  function layoutRows(source: TableRow[]): GridLayout {
+    const entries: GridEntry[] = [];
+    const slots = new Map<string, GridEntry>();
+    let width = 1;
+
+    source.forEach((row, rowIndex) => {
+      const cells = Array.isArray(row.cells) ? row.cells : [];
+      let column = 0;
+      cells.forEach((cell, cellIndex) => {
+        const colspan = positiveSpan(cell.colspan);
+        const rowspan = positiveSpan(cell.rowspan);
+        while (true) {
+          let fits = true;
+          for (let rowOffset = 0; rowOffset < rowspan && fits; rowOffset += 1) {
+            for (let columnOffset = 0; columnOffset < colspan; columnOffset += 1) {
+              if (slots.has(slotKey(rowIndex + rowOffset, column + columnOffset))) {
+                fits = false;
+                break;
+              }
+            }
+          }
+          if (fits) break;
+          column += 1;
+        }
+
+        const entry = { cell, cellIndex, row: rowIndex, column, colspan, rowspan };
+        entries.push(entry);
+        for (let rowOffset = 0; rowOffset < rowspan; rowOffset += 1) {
+          for (let columnOffset = 0; columnOffset < colspan; columnOffset += 1) {
+            slots.set(slotKey(rowIndex + rowOffset, column + columnOffset), entry);
+          }
+        }
+        column += colspan;
+        width = Math.max(width, column);
+      });
+    });
+
+    return { entries, slots, width };
+  }
+
+  function entryAt(source: GridLayout, row: number, column: number): GridEntry | undefined {
+    return source.slots.get(slotKey(row, column));
   }
 
   function normalizedRows(source = rows): TableRow[] {
-    const width = Math.max(
-      1,
-      ...source.map((row) => (Array.isArray(row.cells) ? row.cells.length : 0)),
+    const nextRows = source.map((row) => ({
+      ...row,
+      cells: Array.isArray(row.cells) ? row.cells.map((cell) => ({ ...cell })) : [],
+    }));
+    const initialLayout = layoutRows(nextRows);
+    const requiredRows = Math.max(
+      nextRows.length,
+      ...initialLayout.entries.map((entry) => entry.row + entry.rowspan),
     );
-    return source.map((row) => {
-      const cells = Array.isArray(row.cells) ? row.cells.map((cell) => ({ ...cell })) : [];
-      while (cells.length < width) cells.push(emptyCell());
-      return { ...row, cells };
-    });
+    while (nextRows.length < requiredRows) nextRows.push({ cells: [] });
+    const width = initialLayout.width;
+
+    for (let rowIndex = 0; rowIndex < nextRows.length; rowIndex += 1) {
+      while (true) {
+        const current = layoutRows(nextRows);
+        const hasHole = Array.from({ length: width }, (_, column) => column).some(
+          (column) => !current.slots.has(slotKey(rowIndex, column)),
+        );
+        if (!hasHole) break;
+        nextRows[rowIndex].cells?.push(emptyCell());
+      }
+    }
+    return nextRows;
   }
 
   function emit(nextRows: TableRow[], dataUpdates: Record<string, unknown> = {}): void {
@@ -106,10 +194,147 @@
     update: (cell: TableCell) => TableCell,
   ): void {
     const nextRows = normalizedRows();
-    const row = nextRows[rowIndex];
+    const entry = entryAt(layoutRows(nextRows), rowIndex, columnIndex);
+    if (!entry) return;
+    const row = nextRows[entry.row];
     if (!row || !Array.isArray(row.cells)) return;
-    row.cells[columnIndex] = update({ ...row.cells[columnIndex] });
+    row.cells[entry.cellIndex] = update({ ...row.cells[entry.cellIndex] });
     emit(nextRows);
+  }
+
+  function selectionBounds(): {
+    top: number;
+    right: number;
+    bottom: number;
+    left: number;
+  } {
+    const anchor = entryAt(layout, anchorRow, anchorColumn);
+    const focus = focusedEntry;
+    const anchorBottom = anchor ? anchor.row + anchor.rowspan - 1 : anchorRow;
+    const anchorRight = anchor ? anchor.column + anchor.colspan - 1 : anchorColumn;
+    const focusBottom = focus ? focus.row + focus.rowspan - 1 : activeRow;
+    const focusRight = focus ? focus.column + focus.colspan - 1 : activeColumn;
+    return {
+      top: Math.min(anchor?.row ?? anchorRow, focus?.row ?? activeRow),
+      right: Math.max(anchorRight, focusRight),
+      bottom: Math.max(anchorBottom, focusBottom),
+      left: Math.min(anchor?.column ?? anchorColumn, focus?.column ?? activeColumn),
+    };
+  }
+
+  function entriesForSelection(
+    source: GridLayout,
+    bounds: { top: number; right: number; bottom: number; left: number },
+  ): GridEntry[] | null {
+    const selected = new Set<GridEntry>();
+    for (let row = bounds.top; row <= bounds.bottom; row += 1) {
+      for (let column = bounds.left; column <= bounds.right; column += 1) {
+        const entry = entryAt(source, row, column);
+        if (!entry) return null;
+        if (
+          entry.row < bounds.top ||
+          entry.column < bounds.left ||
+          entry.row + entry.rowspan - 1 > bounds.bottom ||
+          entry.column + entry.colspan - 1 > bounds.right
+        ) {
+          return null;
+        }
+        selected.add(entry);
+      }
+    }
+    return [...selected];
+  }
+
+  function isSelected(entry: GridEntry): boolean {
+    return (
+      entry.row >= selection.top &&
+      entry.column >= selection.left &&
+      entry.row + entry.rowspan - 1 <= selection.bottom &&
+      entry.column + entry.colspan - 1 <= selection.right
+    );
+  }
+
+  function requestMerge(): void {
+    if (!canMerge || !mergeEntries) return;
+    if (mergeEntries.some((entry) => hasContent(entry.cell))) confirmation = { kind: "merge" };
+    else mergeSelection();
+  }
+
+  function mergeSelection(): void {
+    const nextRows = normalizedRows();
+    const nextLayout = layoutRows(nextRows);
+    const selected = entriesForSelection(nextLayout, selection);
+    if (!selected || selected.length <= 1) return;
+    const topLeft = selected.find(
+      (entry) => entry.row === selection.top && entry.column === selection.left,
+    );
+    if (!topLeft) return;
+
+    const removals = selected
+      .filter((entry) => entry !== topLeft)
+      .sort((a, b) => b.row - a.row || b.cellIndex - a.cellIndex);
+    for (const entry of removals) nextRows[entry.row].cells?.splice(entry.cellIndex, 1);
+
+    const topLeftCells = nextRows[topLeft.row].cells;
+    if (!topLeftCells) return;
+    const mergedCell = { ...topLeftCells[topLeft.cellIndex] };
+    const colspan = selection.right - selection.left + 1;
+    const rowspan = selection.bottom - selection.top + 1;
+    if (colspan > 1) mergedCell.colspan = colspan;
+    else delete mergedCell.colspan;
+    if (rowspan > 1) mergedCell.rowspan = rowspan;
+    else delete mergedCell.rowspan;
+    topLeftCells[topLeft.cellIndex] = mergedCell;
+
+    confirmation = null;
+    anchorRow = selection.top;
+    anchorColumn = selection.left;
+    focusRow = selection.top;
+    focusColumn = selection.left;
+    emit(nextRows);
+    focusCell();
+  }
+
+  function splitCell(): void {
+    const nextRows = normalizedRows();
+    const nextLayout = layoutRows(nextRows);
+    const entry = entryAt(nextLayout, activeRow, activeColumn);
+    if (!entry || (entry.colspan === 1 && entry.rowspan === 1)) return;
+    const original = { ...entry.cell };
+    delete original.colspan;
+    delete original.rowspan;
+
+    const positioned = nextLayout.entries
+      .filter((candidate) => candidate !== entry)
+      .map((candidate) => ({
+        row: candidate.row,
+        column: candidate.column,
+        cell: { ...candidate.cell },
+      }));
+    positioned.push({ row: entry.row, column: entry.column, cell: original });
+    for (let rowOffset = 0; rowOffset < entry.rowspan; rowOffset += 1) {
+      for (let columnOffset = 0; columnOffset < entry.colspan; columnOffset += 1) {
+        if (rowOffset !== 0 || columnOffset !== 0) {
+          positioned.push({
+            row: entry.row + rowOffset,
+            column: entry.column + columnOffset,
+            cell: emptyCell(original.is_header === true),
+          });
+        }
+      }
+    }
+
+    for (let row = 0; row < nextRows.length; row += 1) {
+      nextRows[row].cells = positioned
+        .filter((item) => item.row === row)
+        .sort((a, b) => a.column - b.column)
+        .map((item) => item.cell);
+    }
+
+    anchorRow = entry.row;
+    anchorColumn = entry.column;
+    emit(nextRows);
+    focusCell();
   }
 
   function setCaption(caption: string): void {
@@ -246,24 +471,50 @@
       ?.focus();
   }
 
-  function move(row: number, column: number): void {
-    focusRow = Math.max(0, Math.min(row, rows.length - 1));
-    focusColumn = Math.max(0, Math.min(column, columnCount - 1));
+  function move(row: number, column: number, extend = false): void {
+    const targetRow = Math.max(0, Math.min(row, rows.length - 1));
+    const targetColumn = Math.max(0, Math.min(column, columnCount - 1));
+    const target = entryAt(layout, targetRow, targetColumn);
+    if (!target) return;
+    focusRow = target.row;
+    focusColumn = target.column;
+    if (!extend) {
+      anchorRow = target.row;
+      anchorColumn = target.column;
+    }
     focusCell();
   }
 
+  function moveByTab(direction: -1 | 1): void {
+    const entries = layout.entries;
+    const index = focusedEntry ? entries.indexOf(focusedEntry) : 0;
+    const nextIndex = index + direction;
+    if (nextIndex < 0) move(entries[0]?.row ?? 0, entries[0]?.column ?? 0);
+    else if (nextIndex >= entries.length) insertRow(1);
+    else move(entries[nextIndex].row, entries[nextIndex].column);
+  }
+
   function handleCellKeydown(event: KeyboardEvent): void {
-    if (event.key === "ArrowUp") move(activeRow - 1, activeColumn);
-    else if (event.key === "ArrowDown") move(activeRow + 1, activeColumn);
-    else if (event.key === "ArrowLeft") move(activeRow, activeColumn - 1);
-    else if (event.key === "ArrowRight") move(activeRow, activeColumn + 1);
+    const entry = focusedEntry;
+    if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === "m") {
+      requestMerge();
+    } else if (
+      (event.ctrlKey || event.metaKey) &&
+      event.shiftKey &&
+      event.key.toLowerCase() === "s"
+    ) {
+      splitCell();
+    } else if (event.key === "ArrowUp") move(activeRow - 1, activeColumn, event.shiftKey);
+    else if (event.key === "ArrowDown") {
+      move(activeRow + (entry?.rowspan ?? 1), activeColumn, event.shiftKey);
+    } else if (event.key === "ArrowLeft") move(activeRow, activeColumn - 1, event.shiftKey);
+    else if (event.key === "ArrowRight") {
+      move(activeRow, activeColumn + (entry?.colspan ?? 1), event.shiftKey);
+    }
     else if (event.key === "Enter") enterEdit();
     else if (event.key === "Tab") {
       event.preventDefault();
-      const flatIndex = activeRow * columnCount + activeColumn + (event.shiftKey ? -1 : 1);
-      if (flatIndex < 0) move(0, 0);
-      else if (flatIndex >= rows.length * columnCount) insertRow(1);
-      else move(Math.floor(flatIndex / columnCount), flatIndex % columnCount);
+      moveByTab(event.shiftKey ? -1 : 1);
       return;
     } else if (
       event.key.length === 1 &&
@@ -288,10 +539,7 @@
     if (event.key !== "Tab") return;
 
     event.preventDefault();
-    const flatIndex = activeRow * columnCount + activeColumn + (event.shiftKey ? -1 : 1);
-    if (flatIndex < 0) move(0, 0);
-    else if (flatIndex >= rows.length * columnCount) insertRow(1);
-    else move(Math.floor(flatIndex / columnCount), flatIndex % columnCount);
+    moveByTab(event.shiftKey ? -1 : 1);
   }
 
   function cellLabel(rowIndex: number, columnIndex: number): string {
@@ -314,24 +562,34 @@
       aria-label="Table cells"
       aria-rowcount={rows.length}
       aria-colcount={columnCount}
+      style:--nightfire-table-columns={columnCount}
     >
-      {#each rows as row, rowIndex}
+      {#each rows as _, rowIndex}
         <div class="underlay-table-editor__row" role="row">
-          {#each Array(columnCount) as _, columnIndex}
-            {@const cell = cellAt(rows, rowIndex, columnIndex)}
-            {@const isActive = rowIndex === activeRow && columnIndex === activeColumn}
+          {#each layout.entries.filter((entry) => entry.row === rowIndex) as entry}
+            {@const cell = entry.cell}
+            {@const isActive = entry.row === activeRow && entry.column === activeColumn}
             <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
             <div
               class="underlay-table-editor__cell"
-              class:underlay-table-editor__cell--active={isActive}
+              class:underlay-table-editor__cell--active={isActive || isSelected(entry)}
               role={cell.is_header === true ? "columnheader" : "gridcell"}
-              aria-label={cellLabel(rowIndex, columnIndex)}
-              aria-selected={isActive}
+              aria-label={cellLabel(entry.row, entry.column)}
+              aria-selected={isSelected(entry)}
+              aria-colspan={entry.colspan > 1 ? entry.colspan : undefined}
+              aria-rowspan={entry.rowspan > 1 ? entry.rowspan : undefined}
               tabindex={isActive && !editing ? 0 : -1}
-              data-table-cell={`${rowIndex}-${columnIndex}`}
+              data-table-cell={`${entry.row}-${entry.column}`}
+              style={`grid-column: ${entry.column + 1} / span ${entry.colspan}; grid-row: ${entry.row + 1} / span ${entry.rowspan}`}
+              onpointerdown={(event) => {
+                if (!event.shiftKey) {
+                  anchorRow = entry.row;
+                  anchorColumn = entry.column;
+                }
+              }}
               onfocus={() => {
-                focusRow = rowIndex;
-                focusColumn = columnIndex;
+                focusRow = entry.row;
+                focusColumn = entry.column;
               }}
               onkeydown={handleCellKeydown}
               ondblclick={() => enterEdit()}
@@ -339,13 +597,13 @@
               {#if isActive && editing}
                 <textarea
                   class="underlay-table-editor__cell-input"
-                  aria-label={`Edit ${cellLabel(rowIndex, columnIndex)}`}
-                  data-table-input={`${rowIndex}-${columnIndex}`}
+                  aria-label={`Edit ${cellLabel(entry.row, entry.column)}`}
+                  data-table-input={`${entry.row}-${entry.column}`}
                   value={typeof cell.markdown === "string" ? cell.markdown : ""}
                   oninput={(event) =>
                     setMarkdown(
-                      rowIndex,
-                      columnIndex,
+                      entry.row,
+                      entry.column,
                       (event.currentTarget as HTMLTextAreaElement).value,
                     )}
                   onkeydown={handleEditorKeydown}
@@ -365,6 +623,30 @@
   </div>
 
   <div class="underlay-table-editor__controls" aria-label="Table controls">
+    <fieldset>
+      <legend>
+        Selected rows {selection.top + 1}–{selection.bottom + 1}, columns {selection.left + 1}–{selection.right + 1}
+      </legend>
+      <Button
+        type="button"
+        variant="secondary"
+        size="sm"
+        disabled={!canMerge}
+        onClick={requestMerge}
+      >
+        Merge cells
+      </Button>
+      <Button
+        type="button"
+        variant="secondary"
+        size="sm"
+        disabled={!canSplit}
+        onClick={splitCell}
+      >
+        Split cell
+      </Button>
+    </fieldset>
+
     <fieldset>
       <legend>Focused row {activeRow + 1}</legend>
       <Button type="button" variant="secondary" size="sm" onClick={() => insertRow(0)}>
@@ -453,7 +735,11 @@
       aria-labelledby="nightfire-table-confirmation-title"
     >
       <p id="nightfire-table-confirmation-title">
-        Remove {confirmation.kind} {confirmation.index + 1}? It contains content and cannot be undone.
+        {#if confirmation.kind === "merge"}
+          Merge these cells? Their content cannot be recovered.
+        {:else}
+          Remove {confirmation.kind} {confirmation.index + 1}? It contains content and cannot be undone.
+        {/if}
       </p>
       <div>
         <Button
@@ -469,9 +755,12 @@
           type="button"
           variant="primary"
           tone="danger"
-          onClick={() => confirmation && remove(confirmation.kind, confirmation.index)}
+          onClick={() => {
+            if (confirmation?.kind === "merge") mergeSelection();
+            else if (confirmation) remove(confirmation.kind, confirmation.index);
+          }}
         >
-          Confirm removal
+          {confirmation.kind === "merge" ? "Confirm merge" : "Confirm removal"}
         </Button>
       </div>
     </div>
@@ -489,17 +778,16 @@
   }
 
   .underlay-table-editor__grid {
-    display: table;
+    display: grid;
+    grid-template-columns: repeat(var(--nightfire-table-columns), minmax(10rem, 1fr));
     min-width: 100%;
-    border-collapse: collapse;
   }
 
   .underlay-table-editor__row {
-    display: table-row;
+    display: contents;
   }
 
   .underlay-table-editor__cell {
-    display: table-cell;
     min-width: 10rem;
     padding: var(--nightfire-space-2, 0.5rem);
     border: 1px solid var(--nightfire-color-border-subtle, currentColor);
