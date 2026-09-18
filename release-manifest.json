@@ -1,0 +1,9 @@
+{
+  "npmPublication": {
+    "description": "The npm release train. Nightfire publishes one package; its path and the candidate identity manifest name are derived from this authority, never repeated in a workflow.",
+    "candidateManifestName": "nightfire-npm-candidate.json",
+    "packages": [
+      { "name": "@inflatable-cookie/nightfire", "path": "." }
+    ]
+  }
+}

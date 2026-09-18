@@ -5,3 +5,8 @@ dist/
 *.tgz
 .DS_Store
 .agents.local.env
+
+# Certificate output: the release workflow packs into here and uploads the
+# set as an artifact. Ignored because a dirty tree fails the git-consumer
+# proof, and the certificate is meant to run before the gate in a release.
+release-artifacts/
