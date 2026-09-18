@@ -23,7 +23,7 @@ export const CORE_BLOCK_TYPES: Readonly<Record<string, CoreBlockCapabilities>> =
   // The media block's reference field is `media_id`; an image block should follow
   // that precedent rather than inventing a second reference spelling.
   media: { renderer: false, editor: true, emptyChecker: true },
-  rich_text: { renderer: false, editor: false, emptyChecker: false },
+  rich_text: { renderer: true, editor: true, emptyChecker: true },
   table: { renderer: true, editor: false, emptyChecker: false },
   item_list: { renderer: true, editor: false, emptyChecker: false },
   image: { renderer: false, editor: false, emptyChecker: false },

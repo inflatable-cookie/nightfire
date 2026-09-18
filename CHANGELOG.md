@@ -13,6 +13,12 @@ immutable.
 - Core catalog self-registration through `./core-blocks`,
   `./editor-registrations`, and `./render-registrations`.
 - Block renderers for `table` and `item_list`.
+- The `rich_text` block: a renderer and an editor over Poodle's published,
+  feature-gated rich-text surface, its empty checker, and the
+  `data-nightfire-block="rich_text"` render hook. The block stores the
+  ProseMirror document at `data.document` and enables Poodle's whole admitted
+  feature set; the image node stays inert until the media-source seam supplies
+  it a host.
 - The npm release automation: candidate identity manifest, archive verifier,
   static workflow guard, and OIDC release workflow. Candidate mode has run green;
   the publish half is unexercised until the next release.

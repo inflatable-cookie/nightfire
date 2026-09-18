@@ -130,21 +130,32 @@ for (const entrypoint of ["ts/src/core.ts", "ts/src/validation.ts"]) {
 
 const rendererGraph = await sourceGraph("ts/src/renderer.ts");
 for (const path of rendererGraph) {
-  if (/(?:^|\/)(?:editor-registrations|render-registrations)\.ts$|\/editor\/|\/(?:markup|media)\/editor\.ts$/.test(path)) {
+  if (/(?:^|\/)(?:editor-registrations|render-registrations)\.ts$|\/editor\/|\/(?:markup|media|rich-text)\/editor\.ts$/.test(path)) {
     throw new Error(`renderer source graph contains editor/registration module: ${path}`);
+  }
+}
+
+// The render catalog is the entry consumers import to get every core renderer.
+// It must reach renderer modules only; a rich-text renderer that pulled its
+// editor would drag TipTap into every render-only consumer.
+const renderCatalogGraph = (await sourceGraph("ts/src/render-registrations.ts"))
+  .filter((path) => !path.endsWith("render-registrations.ts"));
+for (const path of renderCatalogGraph) {
+  if (/(?:^|\/)editor-registrations\.ts$|\/editor\/|\/(?:markup|media|rich-text)\/editor\.ts$/.test(path)) {
+    throw new Error(`render catalog source graph contains editor module: ${path}`);
   }
 }
 
 const core = await bundle("ts/src/core.ts");
 const validation = await bundle("ts/src/validator-registry.ts");
 const renderer = await bundle("ts/src/NightfireRenderer.svelte", true);
-for (const marker of ["editor-registrations", "media/editor", "markup/editor", "registerBlockEditor("]) {
+for (const marker of ["editor-registrations", "media/editor", "markup/editor", "rich-text/editor", "registerBlockEditor("]) {
   if (renderer.text.includes(marker)) {
     throw new Error(`renderer bundle contains editor/registration marker: ${marker}`);
   }
 }
 for (const input of renderer.inputs) {
-  if (/(?:^|\/)(?:editor-registrations|render-registrations)\.ts$|\/editor\/|\/(?:markup|media)\/editor\.ts$/.test(input)) {
+  if (/(?:^|\/)(?:editor-registrations|render-registrations)\.ts$|\/editor\/|\/(?:markup|media|rich-text)\/editor\.ts$/.test(input)) {
     throw new Error(`renderer bundle contains editor/registration input: ${input}`);
   }
 }

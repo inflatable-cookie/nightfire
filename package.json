@@ -19,7 +19,9 @@
     "**/*-registrations.ts",
     "**/markup/editor.ts",
     "**/markup/render.ts",
-    "**/media/editor.ts"
+    "**/media/editor.ts",
+    "**/rich-text/editor.ts",
+    "**/rich-text/render.ts"
   ],
   "exports": {
     ".": "./ts/src/index.ts",

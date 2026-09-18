@@ -4,3 +4,4 @@
 
 import "./markup/render";
 import "./layout/render";
+import "./rich-text/render";

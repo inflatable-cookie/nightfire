@@ -4,3 +4,4 @@
 
 import "./markup/editor";
 import "./media/editor";
+import "./rich-text/editor";

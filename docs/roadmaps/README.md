@@ -19,8 +19,8 @@ See [generation-index.md](generation-index.md) for status.
 ## Current Queue
 
 `0.1.0` is released: published on npm and tagged `v0.1.0`. The runway is the core
-vocabulary. The rich-text block goes first, the media-source seam and media
-shells follow it, and the layout editors come last. The three are serial because
+vocabulary. The rich-text block has landed, the media-source seam and media
+shells come next, and the layout editors come last. The three are serial because
 they share one capability declaration and two catalog files.
 
 Core schema identity is blocked on a cross-repository decision and is not a local
@@ -33,9 +33,9 @@ blast radius.
 
 ## Next Task
 
-Dispatch the rich-text lane, then the media seam behind it. Keep the layout
-editors behind their table-editing brief, and do not execute a release or a
-consumer cutover. Both remain gated.
+Dispatch the media-source seam, then the layout editors behind their
+table-editing brief, and do not execute a release or a consumer cutover. Both
+remain gated.
 <!-- northstar:lifecycle:begin schema=northstar.lifecycle.projection.v2 digest=sha256:89e91a1d2db1e70c5a415e5c612c0ff98e60fb2bbcf8f85203699df41b42b230 -->
 | Generation | Disposition | Runway state |
 | --- | --- | --- |

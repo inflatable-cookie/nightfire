@@ -83,3 +83,24 @@ the admitted feature set.
 
 On completion, record: the registered parts, the component-test names, the
 boundary and self-registration results, and the exact `effigy qa` result.
+
+Recorded 2026-09-18:
+
+- **Registered parts.** `renderer` from `ts/src/rich-text/render.ts`; `editor`
+  and `emptyChecker` from `ts/src/rich-text/editor.ts`. All three `rich_text`
+  capability flags in `ts/src/core-blocks.ts` are `true` in the same change, and
+  `ts/tests/nightfire/core-self-registration.test.ts` passes with no test-side
+  special case for the type.
+- **Component tests.** `ts/tests/components/rich-text-block.component.test.ts` —
+  "renders structured content through the registered renderer" (heading, list,
+  and link), "renders nothing without a document", and "round-trips an edit as
+  ProseMirror document JSON".
+- **Unit tests.** `ts/tests/nightfire/rich-text-empty.test.ts` (emptiness) and
+  `ts/tests/nightfire/rich-text-vocabulary.test.ts` (Poodle's vocabulary, no
+  local node, mark, feature, toolbar, style, class, or token).
+- **Boundary and self-registration.** `effigy check:boundaries` passes; the
+  renderer and render-catalog graphs now name `rich-text/editor.ts` as a module
+  that must stay out of them.
+- **`effigy qa`.** PASS (exit 0): the full sequence, from `health` and
+  `svelte-check` through the unit, component, sanitization, Rust, pack, npm and
+  cargo Git-consumer, docs, and release-automation proofs.
