@@ -41,7 +41,10 @@
     "./utils": "./ts/src/utils.ts",
     "./validation": "./ts/src/validation.ts",
     "./styles.css": "./ts/src/styles.css",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./core-blocks": "./ts/src/core-blocks.ts",
+    "./editor-registrations": "./ts/src/editor-registrations.ts",
+    "./render-registrations": "./ts/src/render-registrations.ts"
   },
   "dependencies": {
     "@inflatable-cookie/poodle-svelte": "0.4.2",
