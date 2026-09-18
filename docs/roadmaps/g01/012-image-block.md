@@ -5,7 +5,8 @@ Created: 2026-09-18
 Governing refs: `docs/architecture/core-package-vocabulary.md`,
 `docs/contracts/002-package-boundary.md`, `docs/contracts/003-styling-and-restyling.md`
 Depends on: g01.008 — it consumes the media-source registry that lane creates
-UI classification: refinement — compact brief below
+UI classification: **none** — corrected 2026-09-18. This lane emits no appearance of its own and settles
+no experience decision, so a rendered UI review does not apply.
 Ready state: ready — sizing presets settled by the operator on 2026-09-18
 
 ## Outcome
@@ -55,20 +56,35 @@ the registry, and the insert command appears exactly when a source is registered
 - **Alt text matters.** The editor surfaces it next to the picker rather than behind a disclosure. The
   data still allows it to be absent, and the renderer emits exactly what it is given.
 
-## UI design brief (compact)
+## Classification correction, and the review it cost
 
-- **Classification and workflow:** refinement. The author picks an image from the library, then writes
-  alt text, an optional title and caption, and optionally a size. The picker pattern is the one the
-  download card already established.
-- **Presentation direction:** semantic markup, `data-nightfire-block="image"`, and the preset as a
-  `data-sizing` attribute. No scoped styles, no class of our own, and no style emitted at all.
-- **States:** no `media_id` → nothing rendered; a reference with no registered source, or one the
-  source cannot resolve → inert and marked by a data attribute; resolved → the image renders, with
-  intrinsic dimensions when the source provides them; sizing absent → natural.
-- **Scenario oracle:** register a source, pick an image, add alt text and `sizing="medium"`, save,
-  reload, and confirm the reference round-trips and the renderer emits the `data-sizing` attribute. Then unregister the source and confirm the block renders inert rather than
-  breaking. Then open the rich-text editor and confirm the image command is present with a source and
-  absent without one.
+This lane was classified `refinement` and its handoff carries a compact UI brief. **That was wrong.** The
+reviewer read the brief, correctly applied the UI review route, and blocked: the route requires running
+the exact head and exercising the oracle across states, keyboard paths and viewports, and this repository
+has no runnable demo surface at all — `effigy --json demo list` reports zero.
+
+The image block has no appearance of its own. The renderer emits semantic markup, a
+`data-nightfire-block="image"` hook and a `data-sizing` preset, and **no style at all**; appearance is
+entirely the consumer's by contract 003 rule 4. No visual or experience decision was left open, so a
+rendered review had nothing to judge. The oracle below is an **implementation oracle** — markup, data
+attributes and round-trips — verifiable from this repository's own tests.
+
+Two consequences recorded rather than papered over:
+
+1. The pinned handoff cannot be amended, so a fresh reviewer reading it may reach the same conclusion.
+   The ruling is recorded here; the review surface question is the operator's, not this card's.
+2. [g01.013](013-video-embed-block.md) carried the same misclassification and is corrected the same way.
+   [g01.009](009-table-editor.md) is **genuinely** a UI lane: it introduces an authoring interaction, so
+   it needs either a runnable surface or an explicitly weaker review oracle, and that is a decision
+   rather than a wording fix.
+
+## Scenario oracle (implementation)
+
+Register a source, pick an image, add alt text and `sizing="medium"`, save and reload; the reference
+round-trips and the element carries `data-sizing="medium"` and no `style` attribute. Unregister the
+source and the block renders inert rather than breaking. Open the rich-text editor and the image command
+is present with a source registered and absent without one. Every assertion here is markup, data
+attributes or a round-trip — all of it provable inside this repository.
 
 ## Work
 

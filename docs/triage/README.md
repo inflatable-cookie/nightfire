@@ -10,4 +10,5 @@ This directory holds unpromoted observations and possible future work.
 ## Open notes
 
 - [2026-09-18 — Payload schemas are verified against hand-written examples, not the implementation](20260918-142000-payload-schema-parity.md)
+- [2026-09-18 — A UI-classified lane cannot be reviewed in this repository](20260918-143500-ui-review-without-a-surface.md)
 

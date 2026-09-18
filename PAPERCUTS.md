@@ -66,6 +66,22 @@
   accept both separators.
 - Surface: Effigy changelog parsing; `qa:docs` coverage.
 
+## A compact UI brief forces a rendered review this repository cannot perform
+
+- Friction: the Northstar UI review route requires running the exact head and
+  exercising the oracle across states, keyboard paths and viewports. Nightfire is
+  a package with no application surface: `effigy --json demo list` returns zero.
+  A handoff carrying even a compact UI brief therefore routes to a review that
+  cannot be completed.
+- Impact: a lane with a green exact head, green `effigy qa` and green CI blocked at
+  review, correctly and without implication of approval, and burned a reviewer run
+  and a coordinator recovery before escalating. The escalation cost several cycles
+  to route and needed an operator decision to resolve.
+- Plausible fix: let a repository declare its review oracle, so a package with no
+  rendered surface can register "implementation oracle, verified in-repo" and the
+  UI route applies only to lanes that ship appearance.
+- Surface: Northstar UI review route; `effigy demo list`; lane classification.
+
 ## Effigy proposes a patch bump for a release with breaking changes
 
 - Friction: `effigy release simulate` planned `0.1.1` for a release whose real

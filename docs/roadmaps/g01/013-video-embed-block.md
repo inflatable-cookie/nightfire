@@ -5,7 +5,9 @@ Created: 2026-09-18
 Governing refs: `docs/architecture/core-package-vocabulary.md`,
 `docs/contracts/002-package-boundary.md`, `docs/contracts/003-styling-and-restyling.md`
 Depends on: g01.008 — same declaration and catalog files
-UI classification: refinement — compact brief below
+UI classification: **none** — corrected 2026-09-18. The block emits no appearance of its own and settles
+no experience decision, so a rendered UI review does not apply. The same correction as
+[g01.012](012-image-block.md), made before this lane dispatches so it does not cost a review cycle.
 
 ## Outcome
 
@@ -33,17 +35,12 @@ there, so this block mirrors it rather than extending it.
   mean two things, which is what retiring `media` was meant to stop.
 - **`title` is the accessible name** on the embed frame; `caption` is visible text under it.
 
-## UI design brief (compact)
+## Scenario oracle (implementation)
 
-- **Classification and workflow:** refinement. The author pastes a URL, sees the parsed provider, and
-  optionally adds a title and caption.
-- **Presentation direction:** semantic markup, `data-nightfire-block="video"`, no scoped styles, no
-  class of our own, no new token.
-- **States:** empty value → nothing rendered; unparseable value → the editor shows the parse error and
-  stores nothing; parsed → the embed renders, with the title as the frame's accessible name.
-- **Scenario oracle:** paste a supported URL, confirm the provider is detected, save, reload, and see
-  the same embed rendered. Then paste an unsupported URL and confirm the editor refuses it rather
-  than storing a partial value.
+Paste a supported URL, confirm the provider is detected, save and reload, and assert the same embed
+markup renders. Paste an unsupported URL and assert the editor stores nothing rather than a partial
+value. Assert a hostile embed value is sanitized. Every assertion is markup, stored data or a
+sanitization result — all provable inside this repository.
 
 ## Work
 
