@@ -47,10 +47,17 @@ starts from facts rather than re-deriving them.
   paragraph, text, hard break and undo/redo always, plus formatting, headings at the core-declared
   levels, links, lists, blockquote, code block, horizontal rule, tables, and an image node whose whole
   model is `src`, `alt`, `title`. The feature vocabulary is declared in Poodle core.
-- **Styling contract**: a token layer of 23 `--nightfire-*` custom properties in `styles.css`, **no CSS
-  classes**, `data-nightfire-block="<type>"` and data attributes for structure, and **no scoped
-  styles**. Scoped styles are exactly what a consumer cannot reach, so their absence is what makes a
-  renderer restyleable. Data owns alignment and per-edge borders; tokens own appearance.
+- **Styling is unresolved and was recorded wrongly here.** The `--nightfire-*` set in
+  `ts/src/styles.css` is an **application interface**, not a content concern: 6 of its 23 tokens are
+  UI-shaped (`button-chip-padding-block|inline`, `color-field-bg`, `color-danger`, `color-surface`,
+  `surface-secondary`), and a markdown, table or list renderer needs none of them. It came across with
+  the extraction, since `PROVENANCE.md` traces the values to Underlay's `ts/src/styles.css`, an app
+  stylesheet. A contract asserting that this package owns a theme surface was written and then
+  removed for that reason. What holds: renderers carry **no scoped styles**, emit
+  `data-nightfire-block="<type>"`, **introduce no class of their own**, and retain `underlay-*`
+  classes purely as extraction artifacts that are not an integration hook. Where the interface tokens
+  belong — the desktop application, a shared design system, or nowhere — is open, and it is the first
+  question for whoever takes this over.
 
 ## Next, in order
 
@@ -63,10 +70,11 @@ starts from facts rather than re-deriving them.
    Acowtancy repository, which is why this package ships **no schemas at all** — the published tarball
    is `ts`, `fixtures`, `package.json`, `README.md`, `LICENSE`, `PROVENANCE.md`. This is a cross-repo
    matter, not a local edit.
-5. **Two styling gaps.** The token set is **undocumented** — nothing under `docs/` names
-   `--nightfire-*`, so no consumer knows what is stable. And the token *values* were **copied** from
-   Underlay's design tokens rather than depended on, while a token package exists separately and
-   privately. Decide whether this package owns its token set or depends on one.
+5. **Decide where the application interface styling lives.** `ts/src/styles.css` is a desktop-app
+   stylesheet swept in by the extraction, along with the `./styles.css` subpath export and the
+   `sideEffects` entry for CSS. It does not belong to a generic content package. Removing it touches
+   the export map — which `check-exports.ts` asserts in both directions — so it is a change with
+   blast radius rather than a file deletion.
 
 ## Repository gotchas, each of which cost time
 
