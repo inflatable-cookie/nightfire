@@ -3,6 +3,10 @@
   "version": "0.2.0",
   "type": "module",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/inflatable-cookie/nightfire.git"
+  },
   "publishConfig": {
     "access": "public"
   },

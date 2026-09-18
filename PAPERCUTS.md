@@ -85,6 +85,22 @@
   `docs/contracts/004-review-oracle.md`. The route-level gap remains: a repository still cannot
   declare an oracle to the route, so the next repository with no surface pays this again.
 
+## The first real publish is where missing provenance metadata surfaces
+
+- Friction: the OIDC publish failed with `E422 ... Error verifying sigstore
+  provenance bundle: package.json: "repository.url" is "", expected to match
+  "https://github.com/inflatable-cookie/nightfire"`. `package.json` had no
+  `repository` field, and npm refuses to attach provenance without one.
+- Impact: the repository's own gates could not see it. `check:release-automation`
+  guards the workflow's static properties, the candidate certificate validates the
+  archive and its hashes, and `check:pack` lists files — none of them reads
+  `repository.url`. Nothing failed until GitHub Actions talked to the registry, so
+  a purely local release rehearsal was impossible for this class of defect.
+- Plausible fix: assert that `package.json` declares a `repository.url` matching
+  the origin remote, in the pack or candidate proof, so the failure is local.
+- Surface: release automation; npm provenance requirements; `package.json`
+  metadata validation.
+
 ## Effigy proposes a patch bump for a release with breaking changes
 
 - Friction: `effigy release simulate` planned `0.1.1` for a release whose real
