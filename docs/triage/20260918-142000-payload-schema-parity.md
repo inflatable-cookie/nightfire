@@ -14,13 +14,16 @@ But the payload checks are driven by examples written **into the check itself** 
 ## Why it matters
 
 A payload document can disagree with the block it describes and stay green, because nothing derives the
-property set from the implementation. The first real instance is already known: g01.014 adds `title` to a
-download-card file, and `schemas/blocks/download_card.schema.json` uses `additionalProperties: false`
-without it. The check cannot see that, so the published document would reject a payload the editor writes
-— and the consumer byte-pins the published document.
+property set from the implementation. The first instance is now fixed but it is worth keeping as the
+evidence: g01.014 added `title` to a download-card file while
+`schemas/blocks/download_card.schema.json` still used `additionalProperties: false` without it, so the
+published document rejected a payload the editor writes. It shipped that way, because the check validated
+its own example and the lane's pinned handoff told it to touch no shared file. It was corrected in a
+follow-up commit, and the example now carries the field.
 
-The consumer named this exact failure mode: publishing shapes nothing verifies is what they will not
-consume. The set-equality guard is strong; the *content* agreement is not.
+The general gap is unchanged: the next shape change will do the same thing. The consumer named this exact
+failure mode — publishing shapes nothing verifies is what they will not consume. The set-equality guard is
+strong; the *content* agreement is not.
 
 ## The next check
 
