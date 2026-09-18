@@ -3,3 +3,4 @@
 // components.
 
 import "./markup/render";
+import "./layout/render";
