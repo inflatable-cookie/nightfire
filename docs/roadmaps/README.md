@@ -47,7 +47,7 @@ cleanup rather than ownership.
 The download-card lane is done and in review, having retired `media`. Dispatch the image lane, then
 the download-card title lane behind it, then the table editor and the video embed. Do not execute a
 release or a consumer cutover.
-<!-- northstar:lifecycle:begin schema=northstar.lifecycle.projection.v2 digest=sha256:a42985106cd395062f2b83f8aa53b7284a7b0cd95056279080f8b4370b681c67 -->
+<!-- northstar:lifecycle:begin schema=northstar.lifecycle.projection.v2 digest=sha256:2fd9ce7f2f1f886ca505ceb3ccdde694763b560f1a4a15dc605a6aaa77cc165d -->
 | Generation | Disposition | Runway state |
 | --- | --- | --- |
 | g01 | open | planning_required |
@@ -66,4 +66,5 @@ release or a consumer cutover.
 | g01.014 | complete | none | 8 | sha256:3405f5b7ace0c4428683d84ba06b6f5dc133e3e08d6e52d5df3d23dce98b9481 |
 | g01.015 | complete | none | 8 | sha256:c15629b929f76c9da34ae44e578921c54e0b1ee723c83b362665f94f11187dd8 |
 | g01.016 | complete | none | 8 | sha256:e70dd93fda77ecbc0febb0557ff01d20f458be0fb6f9e070f81963256af9ad86 |
+| g01.018 | complete | none | 8 | sha256:9b814e9416cd9e5cf9d1e6f3adcc46e71d97357b26a912059147f31eb8ca851a |
 <!-- northstar:lifecycle:end -->
