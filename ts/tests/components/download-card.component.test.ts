@@ -42,7 +42,7 @@ const twoFileBlock = {
   data: {
     description: "Field guides",
     files: [
-      { media_id: "m-1", description: "Print before the walk" },
+      { media_id: "m-1", title: "Trail map", description: "Print before the walk" },
       { media_id: "m-2" },
     ],
   },
@@ -82,6 +82,10 @@ describe("nightfire/download-card block", () => {
 
     const first = rows[0] as HTMLElement;
     expect(first.getAttribute("data-media-state")).toBe("resolved");
+    // The title is the row's first element, ahead of the filename link.
+    const title = first.querySelector("[data-download-card-file-title]");
+    expect(title!.textContent).toBe("Trail map");
+    expect(first.firstElementChild).toBe(title);
     const link = first.querySelector("a") as HTMLAnchorElement;
     expect(link.getAttribute("href")).toBe("https://files.example/trail-map.pdf");
     expect(link.getAttribute("download")).toBe("trail-map.pdf");
@@ -94,6 +98,9 @@ describe("nightfire/download-card block", () => {
 
     const second = rows[1] as HTMLElement;
     expect(second.getAttribute("data-media-state")).toBe("resolved");
+    // An untitled row carries no title element but is still labelled by its
+    // resolved filename.
+    expect(second.querySelector("[data-download-card-file-title]")).toBeNull();
     expect(second.querySelector("a")!.textContent).toBe("checklist.docx");
     expect(second.querySelector("[data-download-card-file-size]")).toBeNull();
     expect(second.querySelector("[data-download-card-file-description]")).toBeNull();
@@ -116,6 +123,9 @@ describe("nightfire/download-card block", () => {
       expect(row.getAttribute("data-media-state")).toBe("inert");
       expect(row.querySelector("a")).toBeNull();
     }
+    expect(view.container.querySelector("[data-download-card-file-title]")!.textContent).toBe(
+      "Trail map"
+    );
     expect(view.container.querySelector("[data-download-card-file-description]")!.textContent).toBe(
       "Print before the walk"
     );
@@ -139,7 +149,12 @@ describe("nightfire/download-card block", () => {
   it("renders nothing when no file entry carries a reference", () => {
     registerMediaSource(stubSource());
 
-    for (const data of [{ description: "x", files: [] }, {}, { files: [{ description: "no ref" }] }]) {
+    for (const data of [
+      { description: "x", files: [] },
+      {},
+      { files: [{ description: "no ref" }] },
+      { files: [{ title: "no ref" }] },
+    ]) {
       const view = render(RendererComponent as any, {
         block: { type: "download_card", version: "initial", data },
       });
@@ -181,18 +196,26 @@ describe("nightfire/download-card block", () => {
     await waitFor(() => expect(onChange.mock.calls.length).toBe(2));
 
     editor = render(EditorComponent as any, { block: onChange.mock.calls.at(-1)![0], onChange });
+    const titleInput = editor.container.querySelector(
+      'input[placeholder="File title (optional)"]'
+    ) as HTMLInputElement;
+    expect(titleInput).toBeTruthy();
+    await fireEvent.input(titleInput, { target: { value: "Trail map" } });
+    await waitFor(() => expect(onChange.mock.calls.length).toBe(3));
+
+    editor = render(EditorComponent as any, { block: onChange.mock.calls.at(-1)![0], onChange });
     const fileInput = editor.container.querySelector(
       'input[placeholder="File description (optional)"]'
     ) as HTMLInputElement;
     expect(fileInput).toBeTruthy();
     await fireEvent.input(fileInput, { target: { value: "Print before the walk" } });
-    await waitFor(() => expect(onChange.mock.calls.length).toBe(3));
+    await waitFor(() => expect(onChange.mock.calls.length).toBe(4));
 
     const last = onChange.mock.calls.at(-1)![0];
     expect(last.data).toEqual({
       description: "Field guides",
       files: [
-        { media_id: "m-1", description: "Print before the walk" },
+        { media_id: "m-1", title: "Trail map", description: "Print before the walk" },
         { media_id: "m-2" },
       ],
     });
@@ -256,29 +279,44 @@ describe("nightfire/download-card block", () => {
       onChange,
     });
     await fireEvent.input(
+      editorView.container.querySelector('input[placeholder="File title (optional)"]')!,
+      { target: { value: "Trail map" } }
+    );
+    await waitFor(() => expect(onChange.mock.calls.length).toBe(3));
+
+    editorView = render(EditorComponent as any, {
+      block: onChange.mock.calls.at(-1)![0],
+      onChange,
+    });
+    await fireEvent.input(
       editorView.container.querySelector('input[placeholder="File description (optional)"]')!,
       { target: { value: "Print before the walk" } }
     );
-    await waitFor(() => expect(onChange.mock.calls.length).toBe(3));
+    await waitFor(() => expect(onChange.mock.calls.length).toBe(4));
 
     // 2. Save: the last emitted payload is what the consumer stores.
     const saved = onChange.mock.calls.at(-1)![0];
 
-    // 3. Reload: render the stored block from the same references.
+    // 3. Reload: render the stored block from the same references. The row
+    //    reads title, then filename, then description.
     const firstRender = render(RendererComponent as any, { block: saved });
     expect(
       firstRender.container.querySelector("[data-download-card-description]")!.textContent
     ).toBe("Field guides");
     const rows = firstRender.container.querySelectorAll("[data-download-card-file]");
     expect(rows).toHaveLength(2);
-    expect((rows[0] as HTMLElement).getAttribute("data-media-state")).toBe("resolved");
-    expect((rows[0] as HTMLElement).querySelector("a")!.textContent).toBe("trail-map.pdf");
-    expect(
-      firstRender.container.querySelector("[data-download-card-file-description]")!.textContent
-    ).toBe("Print before the walk");
+    const firstRow = rows[0] as HTMLElement;
+    expect(firstRow.getAttribute("data-media-state")).toBe("resolved");
+    const title = firstRow.querySelector("[data-download-card-file-title]");
+    expect(title!.textContent).toBe("Trail map");
+    expect(firstRow.firstElementChild).toBe(title);
+    expect(firstRow.querySelector("a")!.textContent).toBe("trail-map.pdf");
+    const rowDescription = firstRow.lastElementChild!;
+    expect(rowDescription.getAttribute("data-download-card-file-description")).toBe("");
+    expect(rowDescription.textContent).toBe("Print before the walk");
 
     // 4. The consumer stops providing a source: the same block renders inert,
-    //    not broken, and the author's descriptions survive.
+    //    not broken, and the author's title and descriptions survive.
     unregisterMediaSource();
     const secondRender = render(RendererComponent as any, { block: saved });
     expect(
@@ -290,5 +328,31 @@ describe("nightfire/download-card block", () => {
     expect(
       secondRender.container.querySelector("[data-download-card-description]")!.textContent
     ).toBe("Field guides");
+    expect(
+      secondRender.container.querySelector("[data-download-card-file-title]")!.textContent
+    ).toBe("Trail map");
+
+    // 5. Clear the title: the emitted block drops the key, and the filename
+    //    still labels the row.
+    const clearChange = vi.fn();
+    const clearView = render(EditorComponent as any, { block: saved, onChange: clearChange });
+    await fireEvent.input(
+      clearView.container.querySelector('input[placeholder="File title (optional)"]')!,
+      { target: { value: "" } }
+    );
+    await waitFor(() => expect(clearChange).toHaveBeenCalled());
+    const cleared = clearChange.mock.calls.at(-1)![0];
+    expect(cleared.data.files[0]).toEqual({
+      media_id: "m-1",
+      description: "Print before the walk",
+    });
+    expect(cleared.data.files[1]).toEqual({ media_id: "m-2" });
+
+    registerMediaSource(stubSource());
+    const clearedRender = render(RendererComponent as any, { block: cleared });
+    const clearedRows = clearedRender.container.querySelectorAll("[data-download-card-file]");
+    expect(clearedRows).toHaveLength(2);
+    expect(clearedRows[0].querySelector("[data-download-card-file-title]")).toBeNull();
+    expect(clearedRows[0].querySelector("a")!.textContent).toBe("trail-map.pdf");
   });
 });

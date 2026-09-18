@@ -4,13 +4,13 @@
   // The author picks one or more files from the consumer's library through the
   // media-source registry, then optionally describes the card and each file.
   // The editor writes the whole pinned shape -- the card description and each
-  // file's `{ media_id, description }` -- and nothing else, so no field the
-  // author entered is silently dropped.
+  // file's `{ media_id, title, description }` -- and nothing else, so no field
+  // the author entered is silently dropped.
   import { Button, TextInput } from "@inflatable-cookie/poodle-svelte";
   import type { MarkdownEditorContext } from "../markup/markdown-editor-context";
   import { getMediaSource } from "../media-source";
 
-  type CardFile = { media_id: string; description?: string };
+  type CardFile = { media_id: string; title?: string; description?: string };
 
   type DownloadCardBlock = {
     type: string;
@@ -45,7 +45,11 @@
 
   let picking = $state(false);
 
-  function cardDescription(file: CardFile): string {
+  function fileTitle(file: CardFile): string {
+    return typeof file.title === "string" ? file.title : "";
+  }
+
+  function fileDescription(file: CardFile): string {
     return typeof file.description === "string" ? file.description : "";
   }
 
@@ -98,6 +102,19 @@
     emit({ files: files.filter((_, i) => i !== index) });
   }
 
+  function setFileTitle(index: number, value: string) {
+    emit({
+      files: files.map((file, i) => {
+        const next = { ...file };
+        if (i === index) {
+          if (value.length > 0) next.title = value;
+          else delete next.title;
+        }
+        return next;
+      })
+    });
+  }
+
   function setFileDescription(index: number, value: string) {
     emit({
       files: files.map((file, i) => {
@@ -134,9 +151,15 @@
           </div>
           <div class="underlay-download-card-editor__file-controls">
             <TextInput
+              id={`nightfire-download-card-file-title-${index}`}
+              placeholder="File title (optional)"
+              value={fileTitle(file)}
+              onValueChange={(nextValue) => setFileTitle(index, nextValue)}
+            />
+            <TextInput
               id={`nightfire-download-card-file-${index}`}
               placeholder="File description (optional)"
-              value={cardDescription(file)}
+              value={fileDescription(file)}
               onValueChange={(nextValue) => setFileDescription(index, nextValue)}
             />
             <Button
