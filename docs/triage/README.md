@@ -9,5 +9,5 @@ This directory holds unpromoted observations and possible future work.
 
 ## Open notes
 
-- [2026-09-18 — The schema completeness check can break main for the lane that adds the next block type](20260918-140734-schema-completeness-check-ordering.md)
+- [2026-09-18 — Payload schemas are verified against hand-written examples, not the implementation](20260918-142000-payload-schema-parity.md)
 

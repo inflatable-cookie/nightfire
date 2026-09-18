@@ -188,6 +188,21 @@ document, positive fixtures validate and negative fixtures are rejected, the Rus
 validates the same shared wire fixtures, and the pack proof requires the files. Publishing shapes that
 nothing verifies is the specific failure the consumer said it will not consume.
 
+**The published set is coupled to the declaration, deliberately.** `ts/scripts/check-schemas.ts` asserts
+exact set equality between the payload documents under `schemas/blocks/` and `CORE_BLOCK_TYPE_NAMES`, and
+it runs in `health`. So:
+
+- declaring a new core block type requires its payload document **in the same change**, or `qa` fails on
+every lane;
+- changing a block's payload shape requires the matching document change in the same commit, because the
+published document is what the consumer byte-pins;
+- removing the document for a type without removing the type fails the same way.
+
+The residual gap: payload documents are exercised by hand-written examples in `check-schemas.ts` and by
+whatever the shared wire fixture contains, not derived from the implementation. A schema can therefore
+drift from a block's real field set while the check stays green. Tightening that is tracked in
+`docs/triage/`.
+
 ## Open items
 
 1. **`item_list` nesting** — settled on the evidence: **define it as a container of child blocks.**

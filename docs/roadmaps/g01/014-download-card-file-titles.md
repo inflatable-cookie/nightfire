@@ -37,9 +37,13 @@ editor and renderer, not `ts/src/core-blocks.ts` or either catalog, so it shares
 ## Work
 
 1. Add `title?` to the block's type, the editor's field set and the renderer's row markup.
-2. Keep the editor's normalisation honest: it writes `{ media_id, title, description }` per file and
+2. **Extend `schemas/blocks/download_card.schema.json` with the same field, in the same change.** That
+   document uses `additionalProperties: false`, so today it rejects a payload the editor will write.
+   `ts/scripts/check-schemas.ts` will not catch it on its own — it validates its own examples, not the
+   implementation — so a published schema would silently disagree with the block.
+3. Keep the editor's normalisation honest: it writes `{ media_id, title, description }` per file and
    nothing else, so no stored field is silently dropped.
-3. Extend the component tests for a titled row, an untitled row, and a title with no reference.
+4. Extend the component tests for a titled row, an untitled row, and a title with no reference.
 
 ## Acceptance and review oracle
 
@@ -49,13 +53,15 @@ editor and renderer, not `ts/src/core-blocks.ts` or either catalog, so it shares
 | A row is never unlabelled | an untitled file renders an empty row | the renderer falls back to the resolved filename |
 | Nothing shared was touched | the lane edits the declaration or a catalog | the diff touches the `download_card` module and its tests only |
 | No title without a reference | a row with text and no `media_id` renders as a download | the empty checker reports it empty and the renderer skips it |
+| The published schema still accepts the block | the schema rejects a titled row | `effigy check:schemas` passes and the schema lists `title` |
 | Restyleability holds | a scoped style, a new class, or a new token | contract 003 rules 1–4 |
 
 ## Stop conditions
 
 Stop and report if the pinned g01.008 handoff turns out to be wrong about the block shape, if adding
 the field requires a declaration or catalog change after all, or if the reviewer's report on g01.008
-already contradicts the field.
+already contradicts the field. If the pinned handoff's "touch no shared file" rule is read as forbidding
+the schema edit, report that rather than leaving the published document stale.
 
 ## Evidence
 
