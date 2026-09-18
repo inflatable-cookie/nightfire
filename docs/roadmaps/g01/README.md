@@ -2,56 +2,73 @@
 
 ## Current Generation
 
-Nightfire now contains explicit TypeScript/Svelte and Rust tranches. The Rust
-crate is named `nightfire`; both languages consume the root wire fixtures.
+g01 stays open. Its aim is no longer extraction — that is done — but the core
+package's authority over its own vocabulary:
+
+- one released, dual-language package with one version and one wire fixture set;
+- every declared core block type implemented to the extent its declaration
+  claims, with the declaration and the catalog held together by a test;
+- one media-source seam serving the image block, the media block, and the
+  rich-text image node;
+- this package's identifiers on its own schemas, generated and published here;
+- one documented styling contract.
+
+Release record: `@inflatable-cookie/nightfire@0.1.0` is published on npm and the
+repository carries the annotated tag `v0.1.0`. The Rust crate is tag-only, with no
+crate-registry publication, matching Poodle and Longhorn. The identity and
+styling aims are g01.010 and contract 003's open token-provenance decision; the
+rest is the runway below.
 
 ## Roadmap Sequence
 
 1. [g01.001 — Standalone package foundation](001-standalone-package-foundation.md) — closed incomplete.
-2. [g01.002 — Dual-language repository](002-dual-language-repository.md) — in review.
-3. [g01.003 — v0.1.0 release](003-v010-release.md) — gated.
-4. Underlay Rust/TS compatibility and direct Froyo/Farmyard adoption — owned by
-   the Market roadmap after release.
+2. [g01.002 — Dual-language repository](002-dual-language-repository.md) — complete.
+3. [g01.003 — v0.1.0 release](003-v010-release.md) — complete and released.
+4. [g01.004 — Adopt the Effigy-hosted lifecycle hook](004-adopt-effigy-hosted-lifecycle-hook.md) — complete.
+5. [g01.005 — Prospective-merge protocol migration](005-prospective-merge-protocol-migration.md) — complete.
+6. [g01.006 — Adopt published Poodle 0.4.2](006-adopt-published-poodle-0-4-2.md) — complete.
+7. [g01.007 — Rich-text block](007-rich-text-block.md) — first lane on the runway.
+8. [g01.008 — Media source seam and media shells](008-media-source-seam-and-shells.md) — serial behind g01.007; one vocabulary decision open.
+9. [g01.009 — Layout block editors](009-layout-block-editors.md) — planned; needs a table-editing brief.
+10. [g01.010 — Core schema identity and publication](010-core-schema-identity.md) — blocked across repositories.
+
+g01.001–003 predate the Queue lifecycle projection, so the generated block below
+lists only the tasks the lifecycle system holds records for. Their terminal state
+is recorded here and in their own cards.
 
 ## Queue
 
-The repository reshape and Rust extraction await independent exact-head review
-under Market Card 278. The release remains blocked.
+The declared vocabulary is half implemented. `markdown` has an editor and a
+renderer, `table` and `item_list` render, `media` has an editor, and `rich_text`
+and `image` have neither part.
+
+g01.007, g01.008, and g01.009 are serial, not parallel: each changes
+`ts/src/core-blocks.ts` and the two catalog files, and those are adjacent-line
+edits to one declaration table and two import lists. Concurrent lanes would meet
+in the same lines, so each is dispatched behind the one before it through an
+explicit Queue dependency.
 
 ## Dependencies And Parallelism
 
-Underlay compatibility, Froyo adoption, and Farmyard Rust adoption may proceed
-in parallel only after an immutable dual-language release exists. Consumer work
-must pin that release rather than a mutable branch.
+Nothing in this generation runs in parallel today. The three implementation lanes
+share one declaration and two catalogs; the encoding is one line per part, so the
+shared files are small but not divisible.
+
+g01.010 sits outside this repository's dispatch. Acowtancy consumes this package,
+and Silo's pin and consumer mirrors carry whatever identifier wins, so its
+sequencing belongs to the Acowtancy Market roadmap.
 
 ## Historical Language Boundary
 
-The extraction handoff and log use the mistaken TS-only Market Card 272
-language. They are retained as execution evidence, not current architecture or
-release acceptance.
-
-## Queue lifecycle adoption
-
-- [g01.004 Effigy-hosted lifecycle hook](004-adopt-effigy-hosted-lifecycle-hook.md)
-  is an operator-approved, configuration-only maintenance lane. It follows its
-  declared Queue dependencies and may run without changing product priority.
-  Existing next-task text continues to describe product sequencing; this entry
-  authorizes no sibling product work.
-
-- [g01.005 prospective-merge protocol migration](005-prospective-merge-protocol-migration.md)
-  owns the operator-authorized v4 manifest update. It is configuration-only,
-  independent of product priority, and changes no product behavior.
+The extraction handoff and log use the mistaken TS-only Market Card 272 language.
+They are retained as execution evidence, not current architecture or release
+acceptance.
 
 ## Next Task
 
-Review the exact implementation head for [g01.002](002-dual-language-repository.md).
-Keep [g01.003](003-v010-release.md) gated.
-
-## Milestones
-
-- [g01.001 — Standalone package foundation](001-standalone-package-foundation.md)
-- [g01.002 — Dual-language repository](002-dual-language-repository.md)
-- [g01.003 — v0.1.0 release](003-v010-release.md)
+Dispatch the rich-text lane. The media seam and the layout editors follow in the
+sequence above; do not start a later lane from an earlier one, and keep the
+layout editors behind their table-editing brief.
 <!-- northstar:lifecycle:begin schema=northstar.lifecycle.projection.v2 digest=sha256:89e91a1d2db1e70c5a415e5c612c0ff98e60fb2bbcf8f85203699df41b42b230 -->
 | Generation | Disposition | Runway state |
 | --- | --- | --- |

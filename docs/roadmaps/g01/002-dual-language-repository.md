@@ -1,9 +1,17 @@
 # g01.002 — Dual-language repository
 
-- Status: In review
+- Status: Complete — recorded 2026-09-18
 - External authority: Acowtancy Market Card 278
 - Operator decision: Nightfire owns both language tranches; Rust crate is
   `nightfire`
+
+Terminal record: the repository carries explicit `ts/` and `rust/` tranches,
+the `nightfire` Rust crate, one root version and one wire fixture set, and the
+dual-language Effigy gates. `effigy qa` proves both languages from the one
+repository at the released revision. This task predates the Queue lifecycle
+projection, so it holds no lifecycle record; the generated block in
+[the generation README](README.md) lists only tasks the lifecycle system has
+records for.
 
 ## Outcome
 

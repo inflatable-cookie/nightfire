@@ -10,21 +10,29 @@
 
 ## Active generation
 
-- [g01 — Standalone package foundation](g01/README.md)
+- [g01 — Standalone package foundation](g01/README.md) — open; aim restated
+  2026-09-18 as completing the declared core vocabulary and owning the package's
+  own identity.
 
 See [generation-index.md](generation-index.md) for status.
 
 ## Current Queue
 
-Market Card 278 now has an implementation head with explicit TypeScript/Svelte
-and Rust tranches. The first immutable release remains gated on independent
-exact-head acceptance and fresh operator confirmation.
+`0.1.0` is released: published on npm and tagged `v0.1.0`. The runway is the core
+vocabulary. The rich-text block goes first, the media-source seam and media
+shells follow it, and the layout editors come last. The three are serial because
+they share one capability declaration and two catalog files.
+
+Core schema identity is blocked on a cross-repository decision and is not a local
+dispatch. The token-provenance decision is open in
+[contract 003](../contracts/003-styling-and-restyling.md) and needs an operator
+answer before the styling contract can call its token set stable.
 
 ## Next Task
 
-Review the exact head for
-[g01.002 — dual-language repository](g01/002-dual-language-repository.md).
-Do not execute the release or consumer cutovers.
+Dispatch the rich-text lane, then the media seam behind it. Keep the layout
+editors behind their table-editing brief, and do not execute a release or a
+consumer cutover. Both remain gated.
 <!-- northstar:lifecycle:begin schema=northstar.lifecycle.projection.v2 digest=sha256:89e91a1d2db1e70c5a415e5c612c0ff98e60fb2bbcf8f85203699df41b42b230 -->
 | Generation | Disposition | Runway state |
 | --- | --- | --- |

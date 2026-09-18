@@ -1,8 +1,19 @@
 # g01.003 — v0.1.0 release
 
-- Status: Gated
+- Status: Complete — released 2026-09-18
 - External authority: Acowtancy Market Card 273
 - Gates: accepted g01.002 plus explicit operator release confirmation
+
+Terminal record: `@inflatable-cookie/nightfire@0.1.0` is published on npm and the
+repository carries the annotated tag `v0.1.0`. The Rust crate is tag-only, with
+no crate-registry publication, matching Poodle and Longhorn. This task predates
+the Queue lifecycle projection, so it holds no lifecycle record.
+
+Forward gate, not part of this task: `0.1.0` was published before the release
+automation landed. `release.yml` candidate mode has run green on `main`, and its
+publish half has never run. The first post-`0.1.0` release exercises it, and the
+npm trusted publisher must name `.github/workflows/release.yml` before then.
+That configuration is operator-owned and lives outside this repository.
 
 ## Outcome
 

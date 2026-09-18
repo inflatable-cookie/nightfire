@@ -27,12 +27,12 @@ categories in the registry are profile-owned.
 
 | Type | Category | Role | State |
 | --- | --- | --- | --- |
-| `markdown` | Text | plain markdown text | implemented, editor and renderer |
-| `rich_text` | Text | structured rich text, edited through the Poodle rich-text editor (TipTap/ProseMirror) | to add; vocabulary pinned below |
-| `table` | Layout | tabular structure | to add |
-| `item_list` | Layout | ordered list of titled child-block items | rename from `content_list`; no live instances |
+| `markdown` | Text | plain markdown text | implemented: editor and renderer |
+| `rich_text` | Text | structured rich text, edited through the Poodle rich-text editor (TipTap/ProseMirror) | vocabulary and data shape pinned below; renderer and editor to add |
+| `table` | Layout | tabular structure | renderer implemented; editor to add |
+| `item_list` | Layout | ordered list of titled child-block items | renderer implemented; editor to add; renamed from `content_list`, with no live instances |
 | `image` | Media | light shell referencing a media item, with alt text and sizing | to add |
-| `media` | Media | light shell linking to a media item, rendered as a download card | to add |
+| `media` | Media | light shell linking to a media item, rendered as a download card | editor and empty checker implemented; renderer to add |
 
 ### `item_list`
 
@@ -51,11 +51,31 @@ Both carry an opaque reference and presentation metadata, and nothing about wher
 from:
 
 ```
-{ media: <opaque reference>, alt?, caption?, sizing? }
+{ media_id: <opaque reference>, alt?, caption?, sizing? }
 ```
 
 The core defines the reference slot. It does not define a library, a storage shape, or a URL form.
-A consumer without a registered media source still has a valid block that renders inert.
+A consumer without a registered media source still has a valid block that renders inert. The slot is
+spelled `media_id` everywhere, following the existing media block rather than adding a second name for
+the same reference.
+
+## Block data shapes
+
+The shape is pinned here so a worker implements a decision rather than inventing one. `item_list` is
+`{ title?, intro?, variant?, items: [{ title?, body: <blocks> }] }`; `table` is
+`{ caption?, rows: [{ section, cells }] }` with cell markdown, header, span, alignment, and border
+facts; `media` is `{ media_id, caption?, alt?, display? }`, matching the editor that already exists;
+and `rich_text` is `{ document: ProseMirrorDocumentJSON }` — one field, no envelope.
+
+`image` is `{ media_id, alt?, caption?, sizing? }`. Whether `media` keeps its `alt` and `display`
+fields or the clean break moves alt and sizing to `image` only is **open**; see the open items below.
+
+## Appearance
+
+Renderer appearance is governed by [contract 003](../contracts/003-styling-and-restyling.md): the
+`--nightfire-*` set is public API, a new presentational need adds a token, a renderer carries no scoped
+styles and emits `data-nightfire-block="<type>"`, and content-presentational facts live in the data
+rather than in the theme.
 
 ## The rich-text vocabulary
 
@@ -130,11 +150,18 @@ authority rather than a mirror of one.
    define, and the more capable definition costs nothing because nothing depends on the current one.
    That also makes the rename free: there are no instances to migrate.
 2. **Rich text vocabulary** — settled above, pinned from the editor's feature-gated extension set.
-   Rich text can hold an image node, which is why the media-source seam must reach it.
+   Rich text can hold an image node, which is why the media-source seam must reach it. The document
+   lives at `data.document`.
 3. **Two media types or one** — settled: **two**, because they differ in admin and renderer. `image`
    carries alt text and sizing; `media` is a generalised linkage rendered as a download card.
 4. **Self-registration** — the package ships the mechanism but no default catalog. A complete core
    registers its own vocabulary so a consumer gets working blocks without composing them.
+5. **`media` alt and display fields** — **open**. The existing `media` editor reads `alt` and
+   `display`; the vocabulary above gives alt and sizing to `image` and a download card to `media`.
+   Either `media` keeps those fields or the clean break moves them to `image` only. Decide before
+   [g01.008](../roadmaps/g01/008-media-source-seam-and-shells.md) is dispatched.
+6. **Schema identity** — the identifiers and generation home are decided in
+   [g01.010](../roadmaps/g01/010-core-schema-identity.md), which is blocked across repositories.
 
 ## Consequences
 
