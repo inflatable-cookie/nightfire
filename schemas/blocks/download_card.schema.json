@@ -13,6 +13,7 @@
         "required": ["media_id"],
         "properties": {
           "media_id": { "type": "string", "minLength": 1 },
+          "title": { "type": "string" },
           "description": { "type": "string" }
         },
         "additionalProperties": false

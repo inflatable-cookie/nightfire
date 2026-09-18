@@ -250,7 +250,7 @@ for (const testCase of fixture.validationCases) {
 const payloadExamples: Record<string, unknown> = {
   markdown: { text: "Hello" },
   rich_text: { document: { type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: "Hello", marks: [{ type: "bold" }] }] }] } },
-  download_card: { description: "Files", files: [{ media_id: "media-1", description: "Source" }] },
+  download_card: { description: "Files", files: [{ media_id: "media-1", title: "Source sheet", description: "Source" }] },
   table: { caption: "Totals", rows: [{ section: "body", cells: [{ markdown: "42", horizontal_align: "right", borders: { bottom: true } }] }] },
   item_list: { title: "Steps", items: [{ title: "First", body: [{ type: "markdown", version: "initial", data: { text: "Start" } }] }] },
   image: { media_id: "media-1", alt: "Example", sizing: "large" },
