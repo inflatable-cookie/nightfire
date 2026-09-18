@@ -5,14 +5,14 @@
   // synchronously through the media-source registry — no editor module in
   // this graph, no Svelte context, no suspending. A missing source or an
   // unknown reference renders the row inert and marked; it never throws and
-  // never hides the description the author wrote.
+  // never hides the title or description the author wrote.
   //
   // The same styling rule as every other renderer applies: semantic markup, a
   // `data-nightfire-block` hook, data attributes for structure, no scoped
   // styles, no class of our own, no token.
   import { getMediaSource, type ResolvedMedia } from "../media-source";
 
-  type CardFile = { media_id?: unknown; description?: unknown };
+  type CardFile = { media_id?: unknown; title?: unknown; description?: unknown };
 
   type DownloadCardBlock = {
     data?: {
@@ -36,7 +36,7 @@
   // a row, so it contributes nothing rather than rendering a broken one.
   const files = $derived(
     (Array.isArray(block?.data?.files) ? block.data.files : []).filter(
-      (file): file is { media_id: string; description?: unknown } =>
+      (file): file is { media_id: string; title?: unknown; description?: unknown } =>
         file !== null &&
         typeof file === "object" &&
         typeof (file as { media_id?: unknown }).media_id === "string" &&
@@ -46,6 +46,10 @@
 
   function resolveReference(mediaId: string): ResolvedMedia | null {
     return getMediaSource()?.resolve({ media_id: mediaId }) ?? null;
+  }
+
+  function fileTitle(file: { title?: unknown }): string {
+    return typeof file.title === "string" ? file.title : "";
   }
 
   function fileDescription(file: { description?: unknown }): string {
@@ -76,6 +80,9 @@
         {@const resolved = resolveReference(file.media_id)}
         {@const size = resolved && typeof resolved.size === "number" ? formatSize(resolved.size) : ""}
         <li data-download-card-file data-media-state={resolved ? "resolved" : "inert"}>
+          {#if fileTitle(file)}
+            <p data-download-card-file-title>{fileTitle(file)}</p>
+          {/if}
           {#if resolved}
             <a data-download-card-file-link href={resolved.url} download={resolved.filename}>
               {resolved.filename}
