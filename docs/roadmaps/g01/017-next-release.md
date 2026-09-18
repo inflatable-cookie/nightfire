@@ -57,6 +57,7 @@ to suit it.
 | Version set to 0.2.0 in both manifests | not yet | `check:version-sync` enforces npm and the Cargo workspace agreeing. |
 | Changelog carries the breaking surface | not yet | A `### Removed` section, or the release has no record of why the minor moved. |
 | Full `effigy qa` at the release commit, both languages | not yet | Plus the clean pushed head the Git-consumer proofs need. |
+| Review oracle settled for every scoped lane | **done** | [Contract 004](../contracts/004-review-oracle.md) declares the repository's oracle: implementation and interaction tests, no rendered surface. Recorded because a UI-classified lane blocked at review for want of one. |
 
 ## Work
 

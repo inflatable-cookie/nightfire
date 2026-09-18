@@ -81,6 +81,9 @@
   rendered surface can register "implementation oracle, verified in-repo" and the
   UI route applies only to lanes that ship appearance.
 - Surface: Northstar UI review route; `effigy demo list`; lane classification.
+- Resolved locally on 2026-09-18 by declaring the repository's review oracle in
+  `docs/contracts/004-review-oracle.md`. The route-level gap remains: a repository still cannot
+  declare an oracle to the route, so the next repository with no surface pays this again.
 
 ## Effigy proposes a patch bump for a release with breaking changes
 

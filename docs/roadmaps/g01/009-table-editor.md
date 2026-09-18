@@ -5,7 +5,9 @@ Created: 2026-09-18
 Governing refs: `docs/architecture/core-package-vocabulary.md`,
 `docs/contracts/002-package-boundary.md`, `docs/contracts/003-styling-and-restyling.md`
 Depends on: g01.012 — same declaration and catalog files
-UI classification: workflow change — full brief below
+UI classification: workflow change — an authoring interaction changes, so contract 004's interaction
+oracle applies. No rendered inspection is required; this repository has no demo surface and
+[contract 004](../contracts/004-review-oracle.md) says it does not need one.
 Ready state: ready — the four material questions were settled by the operator on 2026-09-18
 
 ## Outcome
@@ -84,6 +86,22 @@ field shell for the block's caption. The editor may carry scoped styles, as the 
 - The caption is a single optional string at the top.
 - Long cell text wraps; the grid scrolls horizontally rather than shrinking columns below a usable
   width.
+
+## Interaction oracle
+
+The keyboard model, the structural actions, the header toggle, alignment, borders and the confirmation
+path are the parts a running review would have exercised. [Contract 004](../contracts/004-review-oracle.md)
+makes them this repository's job to prove instead, so they are asserted rather than demonstrated:
+
+- **Keyboard reach** for every structural action, and a single tab stop for the grid.
+- **Focus order** through the grid and its controls, with a visible indicator that survives the consumer's
+  stylesheet.
+- **State transitions** from the brief: empty table, filled table, row removal with confirmation, header
+  rows appearing and disappearing as the toggle changes, alignment and border writes.
+- **Roles** asserted rather than assumed: `grid`, `row`, `gridcell`, and header cells exposed as headers.
+- **Markup and data**, not appearance: contract 003 leaves the rendered table's look to the consumer.
+
+These are acceptance items in the table below, not extras.
 
 ## Accessibility
 
