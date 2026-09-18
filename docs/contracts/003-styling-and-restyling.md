@@ -21,7 +21,7 @@ interface**, not this package's concern. The rules below replace that revision.
 
 `ts/src/styles.css` defines 24 `--nightfire-*` values. **Every one of them is consumed, and only by
 editor surfaces** — `NightfireEditor`, `NightfireBlockEditor`, `SlashCommandPalette`, the field shell,
-the multi-block item, the markdown, media, image, download-card, video, item-list and table editors.
+the multi-block item, the markdown, image, download-card, video, item-list and table editors.
 **No renderer references a token**:
 `layout/TableRenderer.svelte`, `layout/ItemListRenderer.svelte` and `markup/MarkdownRenderer.svelte` are
 appearance-free, which is what rules 1–4 above require of them.
