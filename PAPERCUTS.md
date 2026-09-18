@@ -85,23 +85,26 @@
   `docs/contracts/004-review-oracle.md`. The route-level gap remains: a repository still cannot
   declare an oracle to the route, so the next repository with no surface pays this again.
 
-## Northstar Queue's snapshot RPC closes the service socket
+## Northstar Queue's whole-history snapshot outgrows the CLI transport
 
-- Friction: `node bin/queue-cli.mjs snapshot` fails every time with
+- Friction: `node bin/queue-cli.mjs snapshot` now returns nothing and reports
   `DaemonRpcError: Request failed: Service socket closed ... code=handler_error`,
-  while `detail` for a single task succeeds against the same service. The daemon log
-  shows the plugin service socket closing (`PluginRuntime.handleChildMessage`), seven
-  times in a few minutes, and the failure is now deterministic rather than a restart
-  window.
-- Impact: the board view reads this call, so it is likely unavailable to the operator
-  too, and orchestration monitoring degrades to one `detail` call per task. The
-  snapshot is how the runway state has been checked all session, so losing it removes
-  the cheap overview exactly when the release work needs it.
-- Plausible fix: the handler is throwing or the response is exceeding a transport
-  bound — the store holds more than a thousand tasks and each carries an event log.
-  Diagnose in `paseo-northstar-queue`, not here, and consider paging or summarising the
-  snapshot rather than returning the whole history in one message.
-- Surface: Northstar Queue plugin `queue.snapshot`; daemon plugin host; queue board UI.
+  while `queue.detail` for a single task succeeds against the same service. The
+  response is the whole store: snapshots saved earlier in this session measured
+  14–19 MB, and the store holds more than a thousand tasks each carrying an event
+  log, so the payload has grown past what the CLI's websocket path will carry.
+- Impact: bulk monitoring from a CLI is unavailable, so runway checks degrade to one
+  `detail` call per task. The plugin itself is healthy — the operator's board
+  recovered and shows the same data — so this is a transport-bound problem on the
+  bulk read, not a crash.
+- Corrected: an earlier version of this entry inferred the board was broken too. It
+  was not; the operator's board was fine while this path failed, which is what
+  narrowed the diagnosis to the bulk call.
+- Plausible fix: page or filter the snapshot — the store already supports per-project
+  and per-task reads, and the board reads a filtered view — rather than returning the
+  entire history in one message.
+- Surface: Northstar Queue plugin `queue.snapshot`; the CLI's daemon websocket
+  transport. Diagnose in `paseo-northstar-queue`, not here.
 
 ## A successful publish reports failure when the registry propagates slowly
 
