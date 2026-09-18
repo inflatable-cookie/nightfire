@@ -37,6 +37,7 @@ styling aims are g01.010 and g01.011; the rest is the runway below.
 14. [g01.014 — Download-card file titles](014-download-card-file-titles.md) — queued behind g01.008; parallel with g01.012.
 15. [g01.015 — Table cell spans](015-table-cell-spans.md) — planned; serial behind g01.009.
 16. [g01.016 — Item list editor](016-item-list-editor.md) — ready; serial behind g01.009.
+17. [g01.017 — Next release](017-next-release.md) — planned; gated on published schemas and the untested publish path.
 
 g01.001–003 predate the Queue lifecycle projection, so the generated block below
 lists only the tasks the lifecycle system holds records for. Their terminal state
@@ -59,7 +60,9 @@ g01.014 is the exception. It adds one optional field to the download card's own 
 shared file, so it runs in parallel with g01.012 once g01.008 has landed.
 
 Dispatch order: the download card first, then the image and title lanes together, then the table
-editor, then the video embed, then the item list and the span refinement.
+editor, then the video embed, then the item list and the span refinement. Published schemas are a
+[next-release](017-next-release.md) gate and need a serial edge behind g01.008 because both edit the
+export map.
 
 ## Dependencies And Parallelism
 
@@ -81,7 +84,9 @@ acceptance.
 ## Next Task
 
 g01.008 is in review, with g01.012 and g01.014 queued behind it. Then comes the table editor, the video
-embed, and the item list and span refinements. Do not execute a release or a consumer cutover.
+embed, and the item list and span refinements. Published schemas (g01.010) are required in the next
+release and wait on a scope answer from the Farmyard chatterbox. Do not execute a release or a consumer
+cutover.
 <!-- northstar:lifecycle:begin schema=northstar.lifecycle.projection.v2 digest=sha256:ac30ee8e536e321d1ed79b80dafb4cbbd9669ebf80764a1dffd52aa3a4f3b0fc -->
 | Generation | Disposition | Runway state |
 | --- | --- | --- |

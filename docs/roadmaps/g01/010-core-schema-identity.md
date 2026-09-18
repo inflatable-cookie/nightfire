@@ -5,7 +5,8 @@ Created: 2026-09-18
 Governing refs: `docs/architecture/core-package-vocabulary.md`,
 `docs/contracts/002-package-boundary.md`
 Depends on: the three decisions below, then a Market/Silo follow-up
-Ready state: blocked — decision-ready, waiting on the operator
+Ready state: blocked — the operator requires this in the next release; the scope question is with the
+Farmyard chatterbox as of 2026-09-18
 
 ## Outcome
 
@@ -79,5 +80,11 @@ sequencing.
 
 ## Next step
 
-Operator decision on the three items. Cross-repository sequencing stays with the Market roadmap, and
-the consumer mirrors have to follow the chosen identifier whatever it is.
+Operator decision on the three items, plus the Farmyard chatterbox's answer on scope. Cross-repository
+sequencing stays with the Market roadmap, and the consumer mirrors have to follow the chosen identifier
+whatever it is.
+
+This lane is a **[next-release](017-next-release.md) gate**, so it has to be accepted before that
+release rather than after it. Sequencing locally: it edits `package.json` `exports`, which g01.008 also
+edits, so it needs a serial edge behind that lane; it touches neither the declaration nor the catalogs,
+so it runs in parallel with the media and table lanes otherwise.
