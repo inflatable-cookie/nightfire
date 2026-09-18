@@ -87,7 +87,7 @@ g01.008 is complete and in review, with g01.012 and g01.014 queued behind it. Th
 editor, the video embed, and the item list and span refinements. Published schemas (g01.010) are
 required in the next release and wait on a scope answer from the Farmyard chatterbox. Do not execute a
 release or a consumer cutover.
-<!-- northstar:lifecycle:begin schema=northstar.lifecycle.projection.v2 digest=sha256:7f9d8feecc55c803ec4dfe6af0c819901485bba372e56d441b39c60cdb9910b7 -->
+<!-- northstar:lifecycle:begin schema=northstar.lifecycle.projection.v2 digest=sha256:c520457f1bd75f706693c27bc3f1f50874975998c4f37431e181f3c91fd1ea73 -->
 | Generation | Disposition | Runway state |
 | --- | --- | --- |
 | g01 | open | planning_required |
@@ -101,6 +101,7 @@ release or a consumer cutover.
 | g01.009 | complete | none | 8 | sha256:adc2e91246401c3faf1cd60ee9bbc7e47d7d64a03b4c2654b57e6ba8a4b23e64 |
 | g01.010 | complete | none | 8 | sha256:6147b9e25bccc07dc6dd493a72169c824b652b9b895dc34a59818661ac42974e |
 | g01.012 | complete | none | 8 | sha256:570eb134fcb7ce2de0a50489d17342b906130b230d29a095ea1965b398400b0d |
+| g01.013 | complete | none | 8 | sha256:627b5fd51c7f778ba6dab710e43ffbcfe31a63a6dd4a5853d4ff6390de05318f |
 | g01.014 | complete | none | 8 | sha256:3405f5b7ace0c4428683d84ba06b6f5dc133e3e08d6e52d5df3d23dce98b9481 |
 | g01.015 | complete | none | 8 | sha256:c15629b929f76c9da34ae44e578921c54e0b1ee723c83b362665f94f11187dd8 |
 <!-- northstar:lifecycle:end -->
