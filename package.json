@@ -22,6 +22,8 @@
     "**/markup/render.ts",
     "**/download-card/editor.ts",
     "**/download-card/render.ts",
+    "**/image/editor.ts",
+    "**/image/render.ts",
     "**/rich-text/editor.ts",
     "**/rich-text/render.ts"
   ],
