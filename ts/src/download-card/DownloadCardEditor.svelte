@@ -193,12 +193,12 @@
 <style>
   .underlay-download-card-editor {
     display: grid;
-    gap: var(--nightfire-space-3, 0.75rem);
+    gap: var(--nightfire-space-3);
   }
 
   .underlay-download-card-editor__files {
     display: grid;
-    gap: var(--nightfire-space-2, 0.5rem);
+    gap: var(--nightfire-space-2);
     margin: 0;
     padding: 0;
     list-style: none;
@@ -206,40 +206,40 @@
 
   .underlay-download-card-editor__file {
     display: grid;
-    gap: var(--nightfire-space-2, 0.5rem);
-    padding: var(--nightfire-space-3, 0.75rem);
-    border: 1px solid var(--nightfire-color-border-subtle, rgba(148, 163, 184, 0.35));
-    border-radius: var(--nightfire-radius-md, 0.375rem);
-    background: var(--nightfire-color-surface-secondary, rgba(255, 255, 255, 0.03));
+    gap: var(--nightfire-space-2);
+    padding: var(--nightfire-space-3);
+    border: 1px solid var(--nightfire-color-border-subtle);
+    border-radius: var(--nightfire-radius-md);
+    background: var(--nightfire-color-surface-secondary);
   }
 
   .underlay-download-card-editor__file-info {
     display: flex;
     flex-direction: column;
-    gap: var(--nightfire-space-1, 0.25rem);
+    gap: var(--nightfire-space-1);
     min-width: 0;
   }
 
   .underlay-download-card-editor__file-name {
     font-weight: 600;
-    font-size: calc(1em * var(--nightfire-font-scale-sm, 0.875));
+    font-size: calc(1em * var(--nightfire-font-scale-sm));
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
   .underlay-download-card-editor__file-id {
-    font-size: calc(1em * var(--nightfire-font-scale-xs, 0.75));
-    color: var(--nightfire-color-text-muted, rgba(148, 163, 184, 0.7));
+    font-size: calc(1em * var(--nightfire-font-scale-xs));
+    color: var(--nightfire-color-text-muted);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-family: var(--nightfire-font-mono, monospace);
+    font-family: var(--nightfire-font-mono);
   }
 
   .underlay-download-card-editor__file-controls {
     display: flex;
-    gap: var(--nightfire-space-2, 0.5rem);
+    gap: var(--nightfire-space-2);
     align-items: center;
   }
 
@@ -254,7 +254,7 @@
 
   .underlay-download-card-editor__no-source {
     margin: 0;
-    font-size: calc(1em * var(--nightfire-font-scale-sm, 0.875));
-    color: var(--nightfire-color-text-muted, rgba(148, 163, 184, 0.7));
+    font-size: calc(1em * var(--nightfire-font-scale-sm));
+    color: var(--nightfire-color-text-muted);
   }
 </style>

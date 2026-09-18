@@ -770,7 +770,7 @@
 <style>
   .underlay-table-editor {
     display: grid;
-    gap: var(--nightfire-space-3, 0.75rem);
+    gap: var(--nightfire-space-3);
   }
 
   .underlay-table-editor__scroller {
@@ -789,8 +789,8 @@
 
   .underlay-table-editor__cell {
     min-width: 10rem;
-    padding: var(--nightfire-space-2, 0.5rem);
-    border: 1px solid var(--nightfire-color-border-subtle, currentColor);
+    padding: var(--nightfire-space-2);
+    border: 1px solid var(--nightfire-color-border-subtle);
     vertical-align: top;
     overflow-wrap: anywhere;
     cursor: text;
@@ -798,7 +798,7 @@
 
   .underlay-table-editor__cell:focus,
   .underlay-table-editor__cell--active {
-    outline: 3px solid var(--nightfire-color-focus, currentColor);
+    outline: 3px solid var(--nightfire-color-focus);
     outline-offset: -3px;
   }
 
@@ -819,29 +819,29 @@
   }
 
   .underlay-table-editor__empty-cell {
-    color: var(--nightfire-color-text-muted, currentColor);
+    color: var(--nightfire-color-text-muted);
     font-style: italic;
   }
 
   .underlay-table-editor__controls {
     display: grid;
-    gap: var(--nightfire-space-2, 0.5rem);
+    gap: var(--nightfire-space-2);
   }
 
   .underlay-table-editor__controls fieldset {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--nightfire-space-2, 0.5rem);
+    gap: var(--nightfire-space-2);
     margin: 0;
-    padding: var(--nightfire-space-2, 0.5rem);
-    border: 1px solid var(--nightfire-color-border-subtle, currentColor);
+    padding: var(--nightfire-space-2);
+    border: 1px solid var(--nightfire-color-border-subtle);
   }
 
   .underlay-table-editor__confirmation {
     display: grid;
-    gap: var(--nightfire-space-2, 0.5rem);
-    padding: var(--nightfire-space-3, 0.75rem);
-    border: 1px solid var(--nightfire-color-danger, currentColor);
+    gap: var(--nightfire-space-2);
+    padding: var(--nightfire-space-3);
+    border: 1px solid var(--nightfire-color-danger);
   }
 
   .underlay-table-editor__confirmation p {
@@ -850,6 +850,6 @@
 
   .underlay-table-editor__confirmation div {
     display: flex;
-    gap: var(--nightfire-space-2, 0.5rem);
+    gap: var(--nightfire-space-2);
   }
 </style>

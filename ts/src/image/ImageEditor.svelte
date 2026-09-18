@@ -172,47 +172,47 @@
 <style>
   .underlay-image-editor {
     display: grid;
-    gap: var(--nightfire-space-3, 0.75rem);
+    gap: var(--nightfire-space-3);
   }
 
   .underlay-image-editor__pick {
     display: grid;
-    gap: var(--nightfire-space-2, 0.5rem);
+    gap: var(--nightfire-space-2);
     align-items: start;
   }
 
   .underlay-image-editor__file-info {
     display: flex;
     flex-direction: column;
-    gap: var(--nightfire-space-1, 0.25rem);
+    gap: var(--nightfire-space-1);
     min-width: 0;
   }
 
   .underlay-image-editor__file-name {
     font-weight: 600;
-    font-size: calc(1em * var(--nightfire-font-scale-sm, 0.875));
+    font-size: calc(1em * var(--nightfire-font-scale-sm));
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
   .underlay-image-editor__file-id {
-    font-size: calc(1em * var(--nightfire-font-scale-xs, 0.75));
-    color: var(--nightfire-color-text-muted, rgba(148, 163, 184, 0.7));
+    font-size: calc(1em * var(--nightfire-font-scale-xs));
+    color: var(--nightfire-color-text-muted);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-family: var(--nightfire-font-mono, monospace);
+    font-family: var(--nightfire-font-mono);
   }
 
   .underlay-image-editor__meta {
     display: grid;
-    gap: var(--nightfire-space-2, 0.5rem);
+    gap: var(--nightfire-space-2);
   }
 
   .underlay-image-editor__no-source {
     margin: 0;
-    font-size: calc(1em * var(--nightfire-font-scale-sm, 0.875));
-    color: var(--nightfire-color-text-muted, rgba(148, 163, 184, 0.7));
+    font-size: calc(1em * var(--nightfire-font-scale-sm));
+    color: var(--nightfire-color-text-muted);
   }
 </style>

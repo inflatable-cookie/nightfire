@@ -19,16 +19,21 @@ interface**, not this package's concern. The rules below replace that revision.
 
 ## The stylesheet that is present today, and what it is for
 
-`ts/src/styles.css` defines 23 `--nightfire-*` values. **Every one of them is consumed, and only by
+`ts/src/styles.css` defines 24 `--nightfire-*` values. **Every one of them is consumed, and only by
 editor surfaces** — `NightfireEditor`, `NightfireBlockEditor`, `SlashCommandPalette`, the field shell,
-the multi-block item, the markdown surface and the media editor. **No renderer references a token**:
+the multi-block item, the markdown, media, image, download-card, video, item-list and table editors.
+**No renderer references a token**:
 `layout/TableRenderer.svelte`, `layout/ItemListRenderer.svelte` and `markup/MarkdownRenderer.svelte` are
 appearance-free, which is what rules 1–4 above require of them.
 
 So the stylesheet is the **editors' default appearance layer**, not a theme surface for rendered
 content, and the `./styles.css` subpath is load-bearing. A consumer that follows `README.md` and loads
-it gets the shipped light palette; a consumer that does not falls back to whatever each `var()` declares
-inline, and several references declare nothing.
+it gets the shipped light palette; a consumer that does not load it gets no Nightfire default appearance
+and must provide its own editor styling.
+
+The public token API is the set of names declared in `styles.css`. The table editor's
+`--nightfire-table-columns` custom property is per-instance layout state set inline, not a theme token;
+the `--nightfire-*` prefix is not by itself a promise that a name is public.
 
 **This section previously concluded that the stylesheet does not belong here and named removing it and
 its subpath as the open question. The usage evidence above does not support that, and the conclusion
@@ -39,33 +44,40 @@ it:
 
 1. **The values are copied from an application stylesheet.** `PROVENANCE.md` traces them to Underlay's
    `ts/src/styles.css`, so this package ships values it did not design and does not track.
-2. **The inline fallbacks contradict the shipped values.** Several references carry fallbacks that are
+2. **Inline fallbacks contradicted the shipped values.** Several references carried fallbacks that were
    dark — a `15, 23, 42` surface, `#f8fafc` text — while the stylesheet defines a light palette
-   (`#fff` surface, `#111827` text). That is a second, undeclared theme scattered through components,
-   and it would silently become the appearance the moment the stylesheet stopped loading.
+   (`#fff` surface, `#111827` text). The g01.011 audit removes that second, undeclared theme.
 
-## Open question
+## Settled decisions
 
 Not whether the stylesheet belongs here: it is the editors' default layer, the operator confirmed it
 stays, and the `./styles.css` subpath remains public API.
 
-Nor is it where the values come from. That framing was wrong. These are **defaults**, and rule 7 above
-already makes every one of them overridable without a fork, a build step or a dependency, so the values
-can change freely and the upstream relationship is provenance.
+Nor is it where the values come from. That framing was wrong. These are **defaults** and every one is
+overridable without a fork, a build step or a dependency, so the values can change freely and the
+upstream relationship is provenance.
 
-What the token set really is, is **public API by name**. A consumer's override binds to a name, so
-renaming or removing one breaks every mapping, and nothing fails to compile when it happens. The names
-are the part worth getting right, and the part worth settling while no consumer has mapped them.
+The token set is **public API by name**. A consumer's override binds to a name,
+so renaming or removing one breaks every mapping, and nothing fails to compile
+when it happens.
 
-The work that remains is small and lives in
-[g01.011](../roadmaps/g01/011-editor-default-styling.md):
+The six app-shaped names are retained as this package's interface:
+`color-surface`, `color-surface-secondary`, `color-danger`, `color-field-bg`,
+`button-chip-padding-block` and `button-chip-padding-inline`. They are ordinary
+editor-chrome concepts, and renaming them would be a breaking change that buys
+vocabulary tidiness rather than capability.
 
-- the six app-shaped names are kept or renamed as a decision rather than by drift;
-- the mapping onto Poodle's semantic variables is documented as a consumer recipe rather than taken as a
-  dependency, because Poodle's components are editor-side only and its token package is unpublished;
-- every `var(--nightfire-*)` reference has exactly one declared value, so a fallback cannot silently
-  disagree with the stylesheet.
+The Poodle mapping is a consumer recipe, documented in `README.md`, rather than
+a dependency. It can become an optional stylesheet if Poodle publishes its
+tokens later without changing any Nightfire token name.
 
-Either way the contradicting inline fallbacks go, so every token has exactly one declared value, and
-the app-shaped names (`color-surface`, `color-danger`, `color-field-bg`, `button-chip-padding-*`) are
-either renamed to editor concepts or accepted as the editor's own interface.
+One declared value per token: the editor references no inline fallback, so the
+stylesheet value or a consumer override is the only declared theme value.
+
+## Audit result
+
+The g01.011 audit added `--nightfire-color-focus` to the stylesheet and removed
+all inline `var(--nightfire-*, fallback)` values from editor chrome. Every
+public token reference under `ts/src` now resolves to one declaration in
+`styles.css`; renderers remain token-free. The inline table-column property is
+the documented per-instance exception and is not part of the public token set.

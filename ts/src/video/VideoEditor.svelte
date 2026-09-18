@@ -127,11 +127,11 @@
 <style>
   .underlay-video-editor {
     display: grid;
-    gap: var(--nightfire-space-3, 0.75rem);
+    gap: var(--nightfire-space-3);
   }
 
   .underlay-video-editor__meta {
     display: grid;
-    gap: var(--nightfire-space-2, 0.5rem);
+    gap: var(--nightfire-space-2);
   }
 </style>

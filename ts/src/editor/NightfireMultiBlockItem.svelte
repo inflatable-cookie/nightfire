@@ -96,7 +96,7 @@
     gap: var(--nightfire-space-2);
     padding-bottom: var(--nightfire-space-2);
     margin-bottom: var(--nightfire-space-1);
-    border-bottom: 1px solid var(--nightfire-color-border-subtle, rgba(148, 163, 184, 0.35));
+    border-bottom: 1px solid var(--nightfire-color-border-subtle);
   }
 
   .underlay-nightfire-field__multi-item {

@@ -105,12 +105,12 @@
 <style>
   .underlay-markdown-editor-root {
     display: grid;
-    gap: var(--nightfire-space-2, 0.5rem);
+    gap: var(--nightfire-space-2);
   }
 
   .underlay-markdown-editor-label {
     display: grid;
-    gap: var(--nightfire-space-1, 0.25rem);
+    gap: var(--nightfire-space-1);
   }
 
   .underlay-markdown-editor-label__text {
@@ -118,7 +118,7 @@
   }
 
   .underlay-markdown-editor-help {
-    color: var(--nightfire-color-text-muted, rgba(148, 163, 184, 0.8));
+    color: var(--nightfire-color-text-muted);
     font-size: 0.875rem;
   }
 </style>
