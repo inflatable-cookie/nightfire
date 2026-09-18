@@ -98,3 +98,37 @@ the `media` type. Do not keep `media` as an alias, and do not add a migration.
 
 On completion, record: the registry shape, the retired paths, the `media` references that had to
 change, the component tests, and the exact `effigy qa` result.
+
+Recorded 2026-09-18:
+
+- **Registry shape.** `ts/src/media-source.ts` is Svelte-free and editor-free, exported as
+  `./media-source`. `registerMediaSource({ pick, resolve })` holds one module-level source;
+  `pick({ multiple })` returns `MediaReference[] | null`, and `resolve` is synchronous and returns
+  `{ url, filename, size?, mime? } | null`. `MediaKind` moved here from the retired `media-kind.ts`,
+  and `unregisterMediaSource()` is the test seam for proving inert rendering.
+- **Block.** `download_card` data is `{ description?, files: [{ media_id, description? }] }`; the
+  editor writes exactly that shape, and the renderer resolves each reference and emits
+  `data-nightfire-block="download_card"` with `data-download-card-*` structure attributes and
+  `data-media-state="resolved" | "inert"` per row. No scoped styles, no class, no token. The empty
+  checker treats a card with no referenced file as empty, matching what the renderer draws.
+- **Retired paths.** `ts/src/media/` (editor, `MediaEditor.svelte`, Svelte picker context),
+  `ts/src/media.ts`, `ts/src/media-kind.ts`, the `./media` export, its `sideEffects` entry, and
+  `ts/tests/nightfire/media-context.test.ts`. `./media-locator` keeps its own subpath; a consumer
+  that imported locator helpers from `./media` must move to `./media-locator`, and `MediaKind` now
+  comes from `./media-source`.
+- **`media` references that had to change.** `ts/src/core-blocks.ts` (declaration), both catalogs,
+  `package.json`, `ts/scripts/check-exports.ts`, `ts/scripts/check-boundaries.ts` (editor-path
+  patterns now name `download-card`, and the renderer and render-catalog graphs must contain no
+  Svelte runtime edge in a `.ts` module), the self-registration, editor-registry and slash-command
+  tests, and the two slash-command component suites.
+- **Component tests.** `ts/tests/components/download-card.component.test.ts`: resolved rows,
+  inert rows with no source registered, per-row inert marking, nothing rendered without a referenced
+  file, the pick/describe round-trip, cancelled and duplicate picks, and the scenario oracle
+  (pick, save, reload, unregister — inert, not throwing). Unit coverage:
+  `ts/tests/nightfire/media-source.test.ts`.
+- **Boundary and self-registration.** `effigy check:boundaries` and `effigy check:exports` pass;
+  the renderer and render-catalog graphs now name `download-card/editor.ts` as a module that must
+  stay out of them, and neither graph may take a Svelte runtime edge through a `.ts` module.
+- **`effigy qa`.** PASS (exit 0): the full sequence — `health` and `svelte-check` through the unit,
+  component, sanitization, Rust, pack, npm and cargo Git-consumer, docs, and release-automation
+  proofs.

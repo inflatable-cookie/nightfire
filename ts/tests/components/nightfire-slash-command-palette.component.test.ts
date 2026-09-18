@@ -14,12 +14,12 @@ const commands: NightfireSlashCommand[] = [
     keywords: ["title"]
   },
   {
-    id: "insert-media",
-    type: "media",
-    label: "Media",
-    description: "Insert a media block.",
-    aliases: ["image"],
-    keywords: ["photo"]
+    id: "insert-download_card",
+    type: "download_card",
+    label: "Download card",
+    description: "Insert a download card block.",
+    aliases: ["file"],
+    keywords: ["attachment"]
   }
 ];
 
@@ -36,8 +36,8 @@ describe("nightfire/SlashCommandPalette.svelte", () => {
     });
 
     const input = screen.getByLabelText("Filter commands") as HTMLInputElement;
-    await fireEvent.input(input, { target: { value: "pho" } });
-    expect(queryChanges).toHaveBeenCalledWith("pho");
+    await fireEvent.input(input, { target: { value: "atta" } });
+    expect(queryChanges).toHaveBeenCalledWith("atta");
 
     await fireEvent.keyDown(input, { key: "ArrowDown" });
     await fireEvent.keyDown(input, { key: "Enter" });

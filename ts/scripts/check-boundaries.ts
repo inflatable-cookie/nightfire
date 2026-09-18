@@ -130,7 +130,7 @@ for (const entrypoint of ["ts/src/core.ts", "ts/src/validation.ts"]) {
 
 const rendererGraph = await sourceGraph("ts/src/renderer.ts");
 for (const path of rendererGraph) {
-  if (/(?:^|\/)(?:editor-registrations|render-registrations)\.ts$|\/editor\/|\/(?:markup|media|rich-text)\/editor\.ts$/.test(path)) {
+  if (/(?:^|\/)(?:editor-registrations|render-registrations)\.ts$|\/editor\/|\/(?:markup|download-card|rich-text)\/editor\.ts$/.test(path)) {
     throw new Error(`renderer source graph contains editor/registration module: ${path}`);
   }
 }
@@ -141,21 +141,32 @@ for (const path of rendererGraph) {
 const renderCatalogGraph = (await sourceGraph("ts/src/render-registrations.ts"))
   .filter((path) => !path.endsWith("render-registrations.ts"));
 for (const path of renderCatalogGraph) {
-  if (/(?:^|\/)editor-registrations\.ts$|\/editor\/|\/(?:markup|media|rich-text)\/editor\.ts$/.test(path)) {
+  if (/(?:^|\/)editor-registrations\.ts$|\/editor\/|\/(?:markup|download-card|rich-text)\/editor\.ts$/.test(path)) {
     throw new Error(`render catalog source graph contains editor module: ${path}`);
+  }
+}
+
+// A renderer resolves media references, so no TypeScript module in the renderer
+// or render-catalog graph may take a Svelte runtime edge: type-only imports are
+// fine, a context or a reactive primitive is not.
+for (const path of [...rendererGraph, ...renderCatalogGraph]) {
+  if (!path.endsWith(".ts")) continue;
+  const source = await Bun.file(path).text();
+  if (/import\s+(?!type\b)[^;]*from\s+["']svelte(?:\/|["'])/.test(source)) {
+    throw new Error(`render-side graph has a Svelte runtime edge through ${path}`);
   }
 }
 
 const core = await bundle("ts/src/core.ts");
 const validation = await bundle("ts/src/validator-registry.ts");
 const renderer = await bundle("ts/src/NightfireRenderer.svelte", true);
-for (const marker of ["editor-registrations", "media/editor", "markup/editor", "rich-text/editor", "registerBlockEditor("]) {
+for (const marker of ["editor-registrations", "download-card/editor", "markup/editor", "rich-text/editor", "registerBlockEditor("]) {
   if (renderer.text.includes(marker)) {
     throw new Error(`renderer bundle contains editor/registration marker: ${marker}`);
   }
 }
 for (const input of renderer.inputs) {
-  if (/(?:^|\/)(?:editor-registrations|render-registrations)\.ts$|\/editor\/|\/(?:markup|media|rich-text)\/editor\.ts$/.test(input)) {
+  if (/(?:^|\/)(?:editor-registrations|render-registrations)\.ts$|\/editor\/|\/(?:markup|download-card|rich-text)\/editor\.ts$/.test(input)) {
     throw new Error(`renderer bundle contains editor/registration input: ${input}`);
   }
 }

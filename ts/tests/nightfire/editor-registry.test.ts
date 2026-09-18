@@ -54,18 +54,18 @@ describe("nightfire/editor-registry", () => {
 		expect(isBlockContentEmpty({ type: "markdown", data: { text: "hello" } })).toBe(false);
 	});
 
-	it("loads editor registrations for markup and media", async () => {
-		const loaded = { markup: false, media: false };
+	it("loads editor registrations for markup and download-card", async () => {
+		const loaded = { markup: false, downloadCard: false };
 		vi.resetModules();
 		vi.doMock("../../src/markup/editor", () => {
 			loaded.markup = true;
 			return {};
 		});
-		vi.doMock("../../src/media/editor", () => {
-			loaded.media = true;
+		vi.doMock("../../src/download-card/editor", () => {
+			loaded.downloadCard = true;
 			return {};
 		});
 		await import("../../src/editor-registrations");
-		expect(loaded).toEqual({ markup: true, media: true });
+		expect(loaded).toEqual({ markup: true, downloadCard: true });
 	});
 });

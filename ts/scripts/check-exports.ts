@@ -12,8 +12,8 @@ const expected = [
   "./editor-registrations",
   "./editor-registry",
   "./markdown",
-  "./media",
   "./media-locator",
+  "./media-source",
   "./package.json",
   "./render-registrations",
   "./render-registry",
@@ -40,5 +40,6 @@ await import("@inflatable-cookie/nightfire/core");
 await import("@inflatable-cookie/nightfire/validation");
 await import("@inflatable-cookie/nightfire/editor-registry");
 await import("@inflatable-cookie/nightfire/render-registry");
+await import("@inflatable-cookie/nightfire/media-source");
 
 console.log(`export proof passed: ${actual.length} explicit subpaths resolve`);

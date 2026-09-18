@@ -18,9 +18,27 @@ immutable.
   `data-nightfire-block="rich_text"` render hook. The block stores the
   ProseMirror document at `data.document` and enables Poodle's whole admitted
   feature set; the image node stays inert until a media source is registered.
+- The `download_card` block: a renderer, an editor, and an empty checker over
+  `{ description?, files: [{ media_id, description? }] }`, with the
+  `data-nightfire-block="download_card"` render hook. Rows resolve their
+  reference through the media-source registry and render inert and marked when
+  no source is registered or a reference is unknown; the card description and
+  the author's file descriptions survive.
+- The Svelte-free media-source registry, exported as `./media-source`:
+  `registerMediaSource({ pick, resolve })` with a synchronous `resolve`, plus
+  `MediaKind`. Module-level rather than a Svelte context, so a renderer resolves
+  too, and SSR-safe.
 - The npm release automation: candidate identity manifest, archive verifier,
   static workflow guard, and OIDC release workflow. Candidate mode has run green;
   the publish half is unexercised until the next release.
+
+### Removed
+
+- **Breaking:** the `media` block type, its editor, its Svelte picker context
+  (`createNightfireMediaContext` / `useNightfireMedia`), and the `./media`
+  subpath. `MediaKind` moved to `./media-source`. `./media-locator` keeps its own
+  subpath, so a consumer that imported locator helpers from `./media` moves them
+  to `./media-locator`. There is no alias and no migration.
 
 ### Changed
 

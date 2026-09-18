@@ -3,5 +3,5 @@
 // not renderer-only views.
 
 import "./markup/editor";
-import "./media/editor";
+import "./download-card/editor";
 import "./rich-text/editor";

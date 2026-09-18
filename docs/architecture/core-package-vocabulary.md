@@ -33,11 +33,11 @@ categories in the registry are profile-owned.
 | `item_list` | Layout | ordered list of titled child-block items | renderer implemented; editor to add; renamed from `content_list`, with no live instances |
 | `image` | Media | one image held as a media-library reference, with alt text and opt-in sizing | to add |
 | `video` | Media | an embed reference, authored through Poodle's embed input | to add |
-| `download_card` | Media | a card of downloadable files held in a media library, each with an optional description | to add |
+| `download_card` | Media | a card of downloadable files held in a media library, each with an optional description | implemented: editor and renderer |
 
-`ts/src/core-blocks.ts` still declares `media` until the download-card lane lands. The table above is
-the target vocabulary and the declaration follows it; after that lane there is no `media` type, no
-`./media` subpath, and no Svelte picker context.
+`ts/src/core-blocks.ts` declares the target vocabulary: the download-card lane retired `media`, so
+there is no `media` type, no `./media` subpath, and no Svelte picker context. The declaration and
+the catalog registrations are held together by the self-registration test.
 
 ### `item_list`
 
@@ -212,9 +212,9 @@ nothing verifies is the specific failure the consumer said it will not consume.
 6. **`download_card` per-file titles** — decided after g01.008 was dispatched on a pinned handoff, so
    its PR carries `{ media_id, description? }` only. [g01.014](../roadmaps/g01/014-download-card-file-titles.md)
    adds `title?`, and it can run in parallel with the image lane because it touches no shared file.
-7. **Retiring `media`** — settled: the type, its editor, its Svelte picker context, and the published
-   `./media` subpath go together. `media-locator` stays: it locates a reference anywhere in a block
-   value and is independent of the retired block.
+7. **Retiring `media`** — settled and done: the type, its editor, its Svelte picker context, and the
+   published `./media` subpath went together in the download-card lane. `media-locator` stays: it
+   locates a reference anywhere in a block value and is independent of the retired block.
 8. **Schema identity and publication** — settled by the consumer requirement above and implemented in
    [g01.010](../roadmaps/g01/010-core-schema-identity.md), which must land in the next release because
    the consumer repins from the tag rather than following it.

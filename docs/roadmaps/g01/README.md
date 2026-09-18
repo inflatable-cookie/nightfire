@@ -28,7 +28,7 @@ styling aims are g01.010 and g01.011; the rest is the runway below.
 5. [g01.005 — Prospective-merge protocol migration](005-prospective-merge-protocol-migration.md) — complete.
 6. [g01.006 — Adopt published Poodle 0.4.2](006-adopt-published-poodle-0-4-2.md) — complete.
 7. [g01.007 — Rich-text block](007-rich-text-block.md) — complete.
-8. [g01.008 — Download card replaces the media block](008-download-card-replaces-media.md) — in review.
+8. [g01.008 — Download card replaces the media block](008-download-card-replaces-media.md) — complete.
 9. [g01.009 — Table editor](009-table-editor.md) — ready; serial behind g01.012.
 10. [g01.010 — Publish core schemas](010-core-schema-identity.md) — ready; release-gated, serial behind g01.008.
 11. [g01.011 — Editor default styling and token names](011-editor-default-styling.md) — ready; token naming and fallback cleanup, not a release gate.
@@ -45,11 +45,11 @@ is recorded here and in their own cards.
 
 ## Queue
 
-`markdown` and `rich_text` have an editor and a renderer, `table` and `item_list` render, and the media
-family is mid-change. The extracted `media` type is replaced by `download_card`, which presents files
-held in a media library, and by `image`, which holds a single image from the same library. Both render
-through one media-source registry. `video` is separate: an embed addressed by provider and id, with no
-library involved.
+`markdown`, `rich_text` and `download_card` have an editor and a renderer, `table` and `item_list`
+render, `media` is retired, and `image` and `video` have no part. The download card presents files
+held in a media library; `image`, which will hold a single image from the same library, is still to
+add. Both render through one media-source registry. `video` is separate: an embed addressed by
+provider and id, with no library involved.
 
 g01.008, g01.009, g01.012 and g01.013 are serial, not parallel: each changes `ts/src/core-blocks.ts` and
 the catalog files, and those are adjacent-line edits to one declaration table and two import lists.
@@ -83,10 +83,10 @@ acceptance.
 
 ## Next Task
 
-g01.008 is in review, with g01.012 and g01.014 queued behind it. Then comes the table editor, the video
-embed, and the item list and span refinements. Published schemas (g01.010) are required in the next
-release and wait on a scope answer from the Farmyard chatterbox. Do not execute a release or a consumer
-cutover.
+g01.008 is complete and in review, with g01.012 and g01.014 queued behind it. Then comes the table
+editor, the video embed, and the item list and span refinements. Published schemas (g01.010) are
+required in the next release and wait on a scope answer from the Farmyard chatterbox. Do not execute a
+release or a consumer cutover.
 <!-- northstar:lifecycle:begin schema=northstar.lifecycle.projection.v2 digest=sha256:ac30ee8e536e321d1ed79b80dafb4cbbd9669ebf80764a1dffd52aa3a4f3b0fc -->
 | Generation | Disposition | Runway state |
 | --- | --- | --- |
