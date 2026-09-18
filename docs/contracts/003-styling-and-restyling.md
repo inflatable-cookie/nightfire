@@ -31,8 +31,10 @@ it gets the shipped light palette; a consumer that does not falls back to whatev
 inline, and several references declare nothing.
 
 **This section previously concluded that the stylesheet does not belong here and named removing it and
-its subpath as the open question. The usage evidence above does not support that**, and the conclusion
-is withdrawn. Two things about the stylesheet are genuinely wrong, and neither is answered by deleting
+its subpath as the open question. The usage evidence above does not support that, and the conclusion
+is withdrawn.** The operator confirmed on 2026-09-18 that the stylesheet stays: the removal question
+came from reading an application stylesheet as this package's claim to own a theme surface, which is
+not what it is. Two things about the stylesheet are genuinely wrong, and neither is answered by deleting
 it:
 
 1. **The values are copied from an application stylesheet.** `PROVENANCE.md` traces them to Underlay's
@@ -44,10 +46,11 @@ it:
 
 ## Open question
 
-Not whether the stylesheet belongs here: it is the editors' default layer and it stays. The question is
-**where its values come from** — this package owns them and the upstream relationship becomes
-provenance, or they align with Poodle's own token source so both packages share one theme surface. That
-second route needs Poodle's tokens published and versioned first.
+Not whether the stylesheet belongs here: it is the editors' default layer, the operator confirmed it
+stays, and the `./styles.css` subpath remains public API. The question is **where its values come
+from** — this package owns them and the upstream relationship becomes provenance, or they align with
+Poodle's own token source so both packages share one theme surface. That second route needs Poodle's
+tokens published and versioned first.
 
 Either way the contradicting inline fallbacks go, so every token has exactly one declared value, and
 the app-shaped names (`color-surface`, `color-danger`, `color-field-bg`, `button-chip-padding-*`) are

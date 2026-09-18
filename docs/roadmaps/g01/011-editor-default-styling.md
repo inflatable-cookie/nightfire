@@ -4,12 +4,18 @@ Owner: repo maintainers
 Created: 2026-09-18
 Governing refs: `docs/contracts/003-styling-and-restyling.md`, `PROVENANCE.md`
 Depends on: an operator decision, plus Poodle if the alignment route is chosen
-Ready state: blocked — decision on where the token values come from
+Ready state: blocked on the value-source decision; the stylesheet question is settled
+
+**The stylesheet stays.** The operator confirmed it on 2026-09-18 after the removal question turned out
+to come from the previous Acowtancy chatterbox reading an application stylesheet as this package's
+claim to own a theme surface. That reading is withdrawn in contract 003, and no removal is planned.
 
 ## Outcome
 
-`ts/src/styles.css` has a declared owner for its values, exactly one declared value per token, and the
-editor surfaces keep working defaults.
+`ts/src/styles.css` keeps its subpath and its role as the editors' default appearance layer, its values
+have a declared owner, and each token has exactly one declared value.
+
+Nothing here is breaking any more, so it carries no release-gate obligation.
 
 ## What is actually true today
 
@@ -32,17 +38,22 @@ Checked rather than inferred, because an earlier version of this card got it wro
 - **Six names are app-shaped**: `color-surface`, `color-surface-secondary`, `color-danger`,
   `color-field-bg`, `button-chip-padding-block`, `button-chip-padding-inline`.
 
-## Why removal is off the table
+## Why removal was off the table
 
 An earlier revision of this card, following an earlier revision of contract 003, offered removing
-`ts/src/styles.css` and the `./styles.css` subpath. The usage evidence rules that out: it is the
-editors' only default appearance, and the scattered dark fallbacks would silently become the look for
-any consumer who currently loads the stylesheet. The contract's conclusion is withdrawn and this card
-is corrected to match.
+`ts/src/styles.css` and the `./styles.css` subpath. The operator confirmed on 2026-09-18 that the
+stylesheet stays, and the usage evidence agrees: it is the editors' only default appearance, no renderer
+uses a token, and the scattered dark fallbacks would silently become the look for any consumer who
+currently loads the stylesheet. Contract 003's removal conclusion is withdrawn and this card is
+corrected to match.
+
+The cleanup also covers chrome added by lanes landing in the meantime —
+[g01.009](009-table-editor.md)'s grid among them — so no new component copies the contradictory
+fallback pattern.
 
 ## The decision
 
-**Where do the token values come from?**
+**Where do the token values come from?** The stylesheet's role is settled; only its values are open.
 
 - **This package owns them.** The names and values here become the authority for its editor chrome,
   the upstream relationship becomes provenance, and app-shaped names are either renamed to editor

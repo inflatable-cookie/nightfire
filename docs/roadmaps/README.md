@@ -31,14 +31,13 @@ capability declaration and two catalog files, except the title lane, which share
 no file.
 
 Retiring `media` is a consumer-visible break, and the Acowtancy adoption lane
-carries it. Core schema identity is not yet resourced: this package ships no
-schemas and has no generator, and
-[g01.010](g01/010-core-schema-identity.md) waits on three decisions — the
-identifier spelling, the generation home, and the publication shape. The styling
-question is also open and needs an operator answer, but it is narrower than it
-first looked: every `--nightfire-*` token in `ts/src/styles.css` is consumed by
-editor chrome and none by a renderer, so the stylesheet stays and the real
-question is where its *values* come from.
+carries it. Published schemas are now settled rather than pending: the consumer
+requirement arrived from the Market/Silo Chatterbox, and
+[g01.010](g01/010-core-schema-identity.md) is ready and release-gated, because the
+consumer repins from the tag rather than following it. The styling question is
+narrower than it first looked: every `--nightfire-*` token in `ts/src/styles.css`
+is consumed by editor chrome and none by a renderer, and the operator confirmed
+the stylesheet stays, so the only open part is where its *values* come from.
 [Contract 003](../contracts/003-styling-and-restyling.md) states it, and
 [g01.011](g01/011-editor-default-styling.md) tracks the decision.
 

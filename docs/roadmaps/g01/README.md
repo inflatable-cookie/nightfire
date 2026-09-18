@@ -30,14 +30,14 @@ styling aims are g01.010 and g01.011; the rest is the runway below.
 7. [g01.007 — Rich-text block](007-rich-text-block.md) — complete.
 8. [g01.008 — Download card replaces the media block](008-download-card-replaces-media.md) — in review.
 9. [g01.009 — Table editor](009-table-editor.md) — ready; serial behind g01.012.
-10. [g01.010 — Core schema identity and publication](010-core-schema-identity.md) — blocked on three decisions: identifier, generation home, publication shape.
-11. [g01.011 — Editor default styling and token provenance](011-editor-default-styling.md) — blocked on where the token values come from.
+10. [g01.010 — Publish core schemas](010-core-schema-identity.md) — ready; release-gated, serial behind g01.008.
+11. [g01.011 — Editor default styling and token provenance](011-editor-default-styling.md) — blocked on where the token values come from; the stylesheet itself stays.
 12. [g01.012 — Image block](012-image-block.md) — queued behind g01.008.
 13. [g01.013 — Video embed block](013-video-embed-block.md) — serial behind g01.009.
 14. [g01.014 — Download-card file titles](014-download-card-file-titles.md) — queued behind g01.008; parallel with g01.012.
 15. [g01.015 — Table cell spans](015-table-cell-spans.md) — planned; serial behind g01.009.
 16. [g01.016 — Item list editor](016-item-list-editor.md) — ready; serial behind g01.009.
-17. [g01.017 — Next release](017-next-release.md) — planned; gated on published schemas and the untested publish path.
+17. [g01.017 — Next release](017-next-release.md) — planned; gated on the whole generation including published schemas and the untested publish path.
 
 g01.001–003 predate the Queue lifecycle projection, so the generated block below
 lists only the tasks the lifecycle system holds records for. Their terminal state
@@ -59,10 +59,10 @@ an explicit Queue dependency. g01.015 and g01.016 sit behind the table editor fo
 g01.014 is the exception. It adds one optional field to the download card's own module and touches no
 shared file, so it runs in parallel with g01.012 once g01.008 has landed.
 
-Dispatch order: the download card first, then the image and title lanes together, then the table
-editor, then the video embed, then the item list and the span refinement. Published schemas are a
-[next-release](017-next-release.md) gate and need a serial edge behind g01.008 because both edit the
-export map.
+Dispatch order: the download card first, then the image and title lanes together, then published
+schemas and the table editor, then the video embed, then the item list and the span refinement. Published
+schemas are a [next-release](017-next-release.md) gate: the consumer repins from the tag, so they have to
+be in it, and they need a serial edge behind g01.008 because both edit `package.json`.
 
 ## Dependencies And Parallelism
 

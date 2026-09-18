@@ -39,8 +39,8 @@ The operator put the whole runway in this release:
 | Media | g01.013 | queued |
 | Layout | g01.009 | queued |
 | Layout | g01.015, g01.016 | planned, behind g01.009 |
-| Schemas | g01.010 | scope answer out with the Farmyard chatterbox |
-| Styling | g01.011 | decision-blocked |
+| Schemas | g01.010 | ready; release-gated |
+| Styling | g01.011 | value-source decision only; the stylesheet stays |
 
 Anything not accepted by the release commit moves to the following release. The version does not change
 to suit it.
@@ -50,7 +50,7 @@ to suit it.
 | Gate | State | Note |
 | --- | --- | --- |
 | Every scoped lane accepted and merged | in progress | See the table above. |
-| Published core schemas — [g01.010](010-core-schema-identity.md) | scope pending | Required by the operator. Three decisions plus the consumer requirement. |
+| Published core schemas — [g01.010](010-core-schema-identity.md) | **ready, release-gated** | The consumer requirement is settled: generic mechanics plus core block payloads, `nightfire.*@1` identifiers, relative `$ref`s, and an executable parity proof. The consumer repins from the tag rather than following it, so this cannot slip. |
 | npm trusted publisher names `.github/workflows/release.yml` | **operator-confirmed 2026-09-18** | Outside the repository; no local check can see it. |
 | The publish half of `release.yml` has never run | unexercised | `0.1.0` was published by hand. This release is the first OIDC publish. |
 | Version set to 0.2.0 in both manifests | not yet | `check:version-sync` enforces npm and the Cargo workspace agreeing. |
