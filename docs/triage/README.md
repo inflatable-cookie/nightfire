@@ -10,5 +10,5 @@ This directory holds unpromoted observations and possible future work.
 ## Open notes
 
 - [2026-09-18 — Payload schemas are verified against hand-written examples, not the implementation](20260918-142000-payload-schema-parity.md)
-- [2026-09-18 — The token audit is blind to hardcoded literals](20260918-163000-literals-invisible-to-the-token-audit.md)
+- [2026-09-18 — Radii, spacing and font literals still escape the style guard](20260918-163000-literal-families-not-guarded.md)
 
