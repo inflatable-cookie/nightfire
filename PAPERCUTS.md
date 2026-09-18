@@ -85,6 +85,21 @@
   `docs/contracts/004-review-oracle.md`. The route-level gap remains: a repository still cannot
   declare an oracle to the route, so the next repository with no surface pays this again.
 
+## A successful publish reports failure when the registry propagates slowly
+
+- Friction: `release.yml` publish mode polls `npm view <pkg>@<version>` twelve
+  times over sixty seconds after publishing. `@inflatable-cookie/nightfire@0.2.0`
+  had not propagated inside that window, so the step reported `unavailable` and
+  failed the run — after the publish had already succeeded.
+- Impact: a released version looks like a failed release. A re-run is impossible,
+  because npm refuses to publish over an existing version, so the red run is
+  permanent and the only record of success is manual. It also invites a worse
+  mistake: reaching for a new version number to get a green run.
+- Plausible fix: treat registry propagation as eventual rather than immediate —
+  extend the window substantially, or downgrade to a warning when the publish step
+  itself exited zero and the published tarball hash matches the candidate manifest.
+- Surface: release workflow; npm registry propagation; release verification.
+
 ## The first real publish is where missing provenance metadata surfaces
 
 - Friction: the OIDC publish failed with `E422 ... Error verifying sigstore
