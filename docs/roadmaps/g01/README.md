@@ -32,8 +32,9 @@ styling aims are g01.010 and g01.011; the rest is the runway below.
 9. [g01.009 — Layout block editors](009-layout-block-editors.md) — planned; needs a table-editing brief.
 10. [g01.010 — Core schema identity and publication](010-core-schema-identity.md) — blocked across repositories.
 11. [g01.011 — Application interface styling](011-application-interface-styling.md) — blocked on where the interface tokens live.
-12. [g01.012 — Image block](012-image-block.md) — serial behind g01.008; sizing preset names unconfirmed.
+12. [g01.012 — Image block](012-image-block.md) — ready; serial behind g01.008.
 13. [g01.013 — Video embed block](013-video-embed-block.md) — serial behind g01.012.
+14. [g01.014 — Download-card file titles](014-download-card-file-titles.md) — ready; parallel with g01.012.
 
 g01.001–003 predate the Queue lifecycle projection, so the generated block below
 lists only the tasks the lifecycle system holds records for. Their terminal state
@@ -51,6 +52,9 @@ g01.008, g01.012 and g01.013 are serial, not parallel: each changes `ts/src/core
 catalog files, and those are adjacent-line edits to one declaration table and two import lists.
 Concurrent lanes would meet in the same lines, so each is dispatched behind the one before it through
 an explicit Queue dependency.
+
+g01.014 is the exception. It adds one optional field to the download card's own module and touches no
+shared file, so it runs in parallel with g01.012 once g01.008 has landed.
 
 ## Dependencies And Parallelism
 

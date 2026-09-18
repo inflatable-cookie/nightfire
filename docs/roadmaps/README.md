@@ -24,8 +24,10 @@ vocabulary. The rich-text block landed; the media family is next. The extracted
 library, and by `image`, which holds a single image from the same library. Both
 render through one media-source registry. `video` is separate: an embed
 addressed by provider and id, with no library involved. The image and video lanes
-follow the download card, and the layout editors come last. They are serial
-because they share one capability declaration and two catalog files.
+follow the download card, a small title-field lane runs alongside the image lane,
+and the layout editors come last. They are serial because they share one
+capability declaration and two catalog files, except the title lane, which shares
+no file.
 
 Retiring `media` is a consumer-visible break, and the Acowtancy adoption lane
 carries it. Core schema identity is blocked on a cross-repository decision and is

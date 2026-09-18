@@ -60,7 +60,9 @@ now says what it is:
 - **`video`** is an embed. It carries Poodle's own `ParsedEmbed`, so provider parsing, previewing and
   rendering stay Poodle's, and it needs no library.
 - **`download_card`** presents files the consumer manages, so it holds references and a resolver
-  supplies the filename, size and URL. It is `image`'s sibling, not its replacement.
+  supplies the filename, size and URL. Each file carries an optional author-written title and an
+  optional description, and the card itself carries an optional description. It is `image`'s sibling,
+  not its replacement.
 
 ## Block data shapes
 
@@ -74,7 +76,7 @@ The media blocks are:
 ```
 image         { media_id, alt?, title?, caption?, sizing? }
 video         { embed: ParsedEmbed, title?, caption? }
-download_card { description?, files: [{ media_id, description? }] }
+download_card { description?, files: [{ media_id, title?, description? }] }
 ```
 
 `image.sizing` is absent by default. A media reference is never a URL: the source resolves it, so a
@@ -178,16 +180,18 @@ authority rather than a mirror of one.
    through the registry; `video` is a Poodle embed and does not.
 4. **Self-registration** — the package ships the mechanism but no default catalog. A complete core
    registers its own vocabulary so a consumer gets working blocks without composing them.
-5. **`image.sizing` representation** — recommended and promoted as
-   `"small" | "medium" | "large" | "full"`, absent for natural size, with each preset resolving to a
-   token-backed maximum inline size. A free-form width was rejected: it puts an appearance value into
-   content, which contract 003 keeps out. The exact preset names are the one piece still open for
-   operator confirmation, and they must settle before
-   [g01.012](../roadmaps/g01/012-image-block.md) is dispatched.
-6. **Retiring `media`** — settled: the type, its editor, its Svelte picker context, and the published
+5. **`image.sizing` representation** — settled: `"small" | "medium" | "large" | "full"`, absent for
+   natural size. The renderer emits the preset as a **data attribute and nothing else**; the consumer's
+   own stylesheet decides what each preset means, which is what contract 003 rule 4 requires. A
+   free-form width stays rejected: it puts an appearance value into content. Adding or renaming a preset
+   is a public API change.
+6. **`download_card` per-file titles** — decided after g01.008 was dispatched on a pinned handoff, so
+   its PR carries `{ media_id, description? }` only. [g01.014](../roadmaps/g01/014-download-card-file-titles.md)
+   adds `title?`, and it can run in parallel with the image lane because it touches no shared file.
+7. **Retiring `media`** — settled: the type, its editor, its Svelte picker context, and the published
    `./media` subpath go together. `media-locator` stays: it locates a reference anywhere in a block
    value and is independent of the retired block.
-7. **Schema identity** — the identifiers and generation home are decided in
+8. **Schema identity** — the identifiers and generation home are decided in
    [g01.010](../roadmaps/g01/010-core-schema-identity.md), which is blocked across repositories.
 
 ## Consequences

@@ -25,6 +25,11 @@ The registry this lane builds is shared. The `image` block in
 g01.012 is its second consumer, alongside the image node inside rich text, so keep it resource-scoped:
 extending it there is additive, and forking or renaming it is not.
 
+One refinement arrived after this lane was dispatched, so its pinned handoff cannot carry it: the
+per-file object also gains an optional `title`
+([g01.014](014-download-card-file-titles.md)). Do not add it here. Build the row so a title is a
+presentational addition when that lane lands, and do not treat its absence as a finding.
+
 ## Decisions
 
 - **Block data.** `{ description?, files: [{ media_id, description? }] }`. The file's name, size and
