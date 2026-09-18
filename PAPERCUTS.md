@@ -85,6 +85,24 @@
   `docs/contracts/004-review-oracle.md`. The route-level gap remains: a repository still cannot
   declare an oracle to the route, so the next repository with no surface pays this again.
 
+## Northstar Queue's snapshot RPC closes the service socket
+
+- Friction: `node bin/queue-cli.mjs snapshot` fails every time with
+  `DaemonRpcError: Request failed: Service socket closed ... code=handler_error`,
+  while `detail` for a single task succeeds against the same service. The daemon log
+  shows the plugin service socket closing (`PluginRuntime.handleChildMessage`), seven
+  times in a few minutes, and the failure is now deterministic rather than a restart
+  window.
+- Impact: the board view reads this call, so it is likely unavailable to the operator
+  too, and orchestration monitoring degrades to one `detail` call per task. The
+  snapshot is how the runway state has been checked all session, so losing it removes
+  the cheap overview exactly when the release work needs it.
+- Plausible fix: the handler is throwing or the response is exceeding a transport
+  bound — the store holds more than a thousand tasks and each carries an event log.
+  Diagnose in `paseo-northstar-queue`, not here, and consider paging or summarising the
+  snapshot rather than returning the whole history in one message.
+- Surface: Northstar Queue plugin `queue.snapshot`; daemon plugin host; queue board UI.
+
 ## A successful publish reports failure when the registry propagates slowly
 
 - Friction: `release.yml` publish mode polls `npm view <pkg>@<version>` twelve
