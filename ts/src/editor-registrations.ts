@@ -5,4 +5,5 @@
 import "./markup/editor";
 import "./download-card/editor";
 import "./image/editor";
+import "./layout/editor";
 import "./rich-text/editor";
