@@ -95,9 +95,13 @@
   because npm refuses to publish over an existing version, so the red run is
   permanent and the only record of success is manual. It also invites a worse
   mistake: reaching for a new version number to get a green run.
-- Plausible fix: treat registry propagation as eventual rather than immediate —
-  extend the window substantially, or downgrade to a warning when the publish step
-  itself exited zero and the published tarball hash matches the candidate manifest.
+- Fixed in the same change: the step now allows a five-minute propagation budget
+  and, once the version resolves, downloads the published tarball and asserts its
+  sha256 against the candidate manifest. A version that resolves is not proof that
+  the certified artifact is what the registry serves, so the stronger check costs
+  one download and closes the gap that made the old step both too weak and too
+  impatient. Tested locally across four paths: retry-then-success, live registry,
+  hash mismatch and exhausted budget.
 - Surface: release workflow; npm registry propagation; release verification.
 
 ## The first real publish is where missing provenance metadata surfaces

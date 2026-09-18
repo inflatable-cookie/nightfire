@@ -161,26 +161,54 @@ jobs:
             npm publish "./$tarball" --access public
           done
 
-      - name: Verify registry availability
+      - name: Verify the published artifact
         if: ${{ inputs.mode == 'publish' }}
         run: |
           set -euo pipefail
+          # Publishing is one-way: npm refuses to publish over an existing version, so a
+          # false negative here cannot be retried. Two consequences shape this step.
+          #
+          #  1. Give the registry a real propagation budget. Sixty seconds was too short:
+          #     0.2.0 published successfully and had not propagated, which failed the run
+          #     and left a released version looking unreleased.
+          #  2. Assert the published bytes, not only the version string. A version that
+          #     resolves is not proof that the certified artifact is what the registry
+          #     serves, and the candidate manifest already records the hash to compare.
+          manifest="$(find release-artifacts -name '*candidate.json' -print -quit)"
+          if [ -z "$manifest" ]; then
+            echo "no candidate manifest to verify the published artifact against" >&2
+            exit 1
+          fi
           node --input-type=module -e '
-            import { readFileSync, readdirSync } from "node:fs";
-            const manifestFile = readdirSync("release-artifacts").find((n) => n.endsWith("candidate.json"));
-            const manifest = JSON.parse(readFileSync(`release-artifacts/${manifestFile}`, "utf8"));
-            for (const entry of manifest.packages) console.log(`${entry.name}@${entry.version}`);
-          ' | while IFS= read -r spec; do
-            expected="${spec##*@}"
+            import { readFileSync } from "node:fs";
+            const manifest = JSON.parse(readFileSync(process.argv[1], "utf8"));
+            for (const entry of manifest.packages) {
+              console.log([entry.name, entry.version, entry.sha256].join("\t"));
+            }
+          ' "$manifest" | while IFS=$'\t' read -r name version digest; do
+            spec="$name@$version"
             published=""
-            for attempt in {1..12}; do
-              if published="$(npm view "$spec" version 2>/dev/null)" && [ "$published" = "$expected" ]; then
+            deadline=$((SECONDS + 300))
+            while :; do
+              if published="$(npm view "$spec" version 2>/dev/null)" && [ "$published" = "$version" ]; then
                 break
               fi
-              if [ "$attempt" -eq 12 ]; then
-                echo "$spec did not resolve version $expected from the registry (last result: ${published:-unavailable})" >&2
+              if [ "$SECONDS" -ge "$deadline" ]; then
+                echo "$spec did not resolve version $version within 300s (last result: ${published:-unavailable})." >&2
+                echo "The publish step exited zero, so this is most likely propagation lag rather than a failure." >&2
+                echo "Confirm by hand. Do not re-run: npm refuses to publish over an existing version." >&2
                 exit 1
               fi
               sleep 5
             done
+
+            url="$(npm view "$spec" dist.tarball 2>/dev/null)"
+            actual="$(curl -fsSL "$url" | sha256sum | cut -d' ' -f1)"
+            if [ "$actual" != "$digest" ]; then
+              echo "$spec resolved, but the registry is not serving the certified artifact." >&2
+              echo "  certified: $digest" >&2
+              echo "  published: $actual" >&2
+              exit 1
+            fi
+            echo "$spec verified: present, and the published tarball matches the certified hash."
           done

@@ -129,10 +129,13 @@ payload documents — `value.schema.json` types `schema` as a **string** rather 
    that attempt. Fixed at `1931cfc`, and the tag was re-cut to that commit because nothing had been
    published under the first one.
 2. **The publish run is red although the release succeeded.** The workflow's post-publish
-   "Verify registry availability" step polls the registry twelve times over sixty seconds, and `0.2.0`
-   had not propagated inside that window; it reported `unavailable` and exited non-zero. The publish
-   itself had already succeeded. A re-run is not possible, because npm refuses to publish over an
-   existing version. Recorded in `PAPERCUTS.md`.
+   "Verify registry availability" step polled the registry twelve times over sixty seconds, and `0.2.0`
+   had not propagated inside that window; it reported `unavailable` and exited non-zero after the publish
+   had already succeeded. A re-run is not possible, because npm refuses to publish over an existing
+   version. **Fixed the same day:** the step is now "Verify the published artifact", it allows five
+   minutes, and once the version resolves it downloads the published tarball and asserts its sha256
+   against this manifest — the same equality this table records, checked by the workflow rather than by
+   hand. Recorded in `PAPERCUTS.md`.
 
 ## Stop conditions
 
