@@ -39,9 +39,9 @@ is recorded here and in their own cards.
 
 ## Queue
 
-The declared vocabulary is half implemented. `markdown` has an editor and a
-renderer, `table` and `item_list` render, `media` has an editor, and `rich_text`
-and `image` have neither part.
+The declared vocabulary is nearly implemented. `markdown` and `rich_text` have
+an editor and a renderer, `table` and `item_list` render, `media` has an editor,
+and `image` has no part and `media` no renderer.
 
 g01.007, g01.008, and g01.009 are serial, not parallel: each changes
 `ts/src/core-blocks.ts` and the two catalog files, and those are adjacent-line
@@ -67,7 +67,7 @@ acceptance.
 
 ## Next Task
 
-Dispatch the rich-text lane. The media seam and the layout editors follow in the
+Dispatch the media-source seam (g01.008). The layout editors follow in the
 sequence above; do not start a later lane from an earlier one, and keep the
 layout editors behind their table-editing brief.
 <!-- northstar:lifecycle:begin schema=northstar.lifecycle.projection.v2 digest=sha256:89e91a1d2db1e70c5a415e5c612c0ff98e60fb2bbcf8f85203699df41b42b230 -->
