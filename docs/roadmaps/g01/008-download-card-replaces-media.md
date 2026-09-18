@@ -21,6 +21,10 @@ dropped the next time an author saves a block. It also predates the vocabulary i
 `display` offers inline, block, float-left and thumbnail, which are image presentation, and there is
 no download presentation at all.
 
+The registry this lane builds is shared. The `image` block in
+g01.012 is its second consumer, alongside the image node inside rich text, so keep it resource-scoped:
+extending it there is additive, and forking or renaming it is not.
+
 ## Decisions
 
 - **Block data.** `{ description?, files: [{ media_id, description? }] }`. The file's name, size and

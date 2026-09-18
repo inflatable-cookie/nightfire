@@ -8,7 +8,8 @@ package's authority over its own vocabulary:
 - one released, dual-language package with one version and one wire fixture set;
 - every declared core block type implemented to the extent its declaration
   claims, with the declaration and the catalog held together by a test;
-- one media-source registry, serving the download card alone, with images and embeds addressed by URL;
+- one media-source registry, serving the image block, the download card, and the
+  rich-text image node;
 - this package's identifiers on its own schemas, generated and published here;
 - a decided home for the application-interface styling that the extraction swept
   in.
@@ -41,8 +42,10 @@ is recorded here and in their own cards.
 ## Queue
 
 `markdown` and `rich_text` have an editor and a renderer, `table` and `item_list` render, and the media
-family is mid-change. The extracted `media` type is replaced by `download_card`, which is the one block
-that keeps a media-library reference, and by `image` and `video`, which are URL- and embed-based.
+family is mid-change. The extracted `media` type is replaced by `download_card`, which presents files
+held in a media library, and by `image`, which holds a single image from the same library. Both render
+through one media-source registry. `video` is separate: an embed addressed by provider and id, with no
+library involved.
 
 g01.008, g01.012 and g01.013 are serial, not parallel: each changes `ts/src/core-blocks.ts` and the two
 catalog files, and those are adjacent-line edits to one declaration table and two import lists.

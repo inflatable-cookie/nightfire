@@ -20,11 +20,12 @@ See [generation-index.md](generation-index.md) for status.
 
 `0.1.0` is released: published on npm and tagged `v0.1.0`. The runway is the core
 vocabulary. The rich-text block landed; the media family is next. The extracted
-`media` type is replaced by `download_card`, which keeps the one media-library
-reference, and by `image` and `video`, which are addressed by URL and by embed.
-The image and video lanes follow the download card, and the layout editors come
-last. They are serial because they share one capability declaration and two
-catalog files.
+`media` type is replaced by `download_card`, which presents files held in a media
+library, and by `image`, which holds a single image from the same library. Both
+render through one media-source registry. `video` is separate: an embed
+addressed by provider and id, with no library involved. The image and video lanes
+follow the download card, and the layout editors come last. They are serial
+because they share one capability declaration and two catalog files.
 
 Retiring `media` is a consumer-visible break, and the Acowtancy adoption lane
 carries it. Core schema identity is blocked on a cross-repository decision and is

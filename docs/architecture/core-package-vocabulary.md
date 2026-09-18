@@ -31,7 +31,7 @@ categories in the registry are profile-owned.
 | `rich_text` | Text | structured rich text, edited through the Poodle rich-text editor (TipTap/ProseMirror) | implemented: editor and renderer |
 | `table` | Layout | tabular structure | renderer implemented; editor to add |
 | `item_list` | Layout | ordered list of titled child-block items | renderer implemented; editor to add; renamed from `content_list`, with no live instances |
-| `image` | Media | one image addressed by URL, with alt text and opt-in sizing | to add |
+| `image` | Media | one image held as a media-library reference, with alt text and opt-in sizing | to add |
 | `video` | Media | an embed reference, authored through Poodle's embed input | to add |
 | `download_card` | Media | a card of downloadable files held in a media library, each with an optional description | to add |
 
@@ -55,13 +55,12 @@ unpick.
 The old `media` type was three different things wearing one name, and it is retired. Each replacement
 now says what it is:
 
-- **`image`** is content in flow. It carries a URL, alt text, and opt-in sizing. It does not reference
-  a media library, because an image that must be looked up before it can render is not a generic
-  content block.
+- **`image`** is content in flow, and it holds a **library reference** so the file's URL, intrinsic
+  size and title come from the source that owns them. It carries alt text and opt-in sizing.
 - **`video`** is an embed. It carries Poodle's own `ParsedEmbed`, so provider parsing, previewing and
   rendering stay Poodle's, and it needs no library.
-- **`download_card`** is the one block that genuinely needs the library: it presents files the
-  consumer manages, so it holds references and a resolver supplies the filename, size and URL.
+- **`download_card`** presents files the consumer manages, so it holds references and a resolver
+  supplies the filename, size and URL. It is `image`'s sibling, not its replacement.
 
 ## Block data shapes
 
@@ -73,13 +72,15 @@ facts; and `rich_text` is `{ document: ProseMirrorDocumentJSON }` — one field,
 The media blocks are:
 
 ```
-image         { src, alt?, title?, caption?, sizing? }
+image         { media_id, alt?, title?, caption?, sizing? }
 video         { embed: ParsedEmbed, title?, caption? }
 download_card { description?, files: [{ media_id, description? }] }
 ```
 
-`image.sizing` is absent by default. The file name, size and URL of a download are resolved, never
-copied into the block, so a file renamed in the library updates every card that shows it.
+`image.sizing` is absent by default. A media reference is never a URL: the source resolves it, so a
+file moved or renamed in the library updates every block that shows it, and a block whose reference
+cannot be resolved renders inert instead of breaking. The file name, size and URL of a download are
+resolved the same way.
 
 ## Appearance
 
@@ -118,25 +119,30 @@ extending it.
 | `tables` | table, table row, table header, table cell |
 | `images` | image, with `src`, `alt` and `title` as its whole model |
 
-The image node's model is Poodle's and is `src`-based, which is why the rich-text insert path takes a
-host function returning `{ src, alt, title }` rather than a media reference. The consumer supplies the
-function; no registry is involved, and the block stays inert without one.
+The image node's model is Poodle's and takes `src`, `alt` and `title`; the block's model is a
+reference. Nightfire bridges the two: it supplies Poodle's host function from the registry, so
+inserting an image in rich text picks a reference and resolves it to a URL. No source registered means
+no insert command, which is Poodle's own behaviour.
 
 ## The media-source registry
 
-One consumer: `download_card`. The old plan gave the seam three consumers — the image block, the media
-block, and the rich-text image node — and that plan is superseded: images are URL-based, and the
-rich-text node takes a host function. What remains is a registry over a resource the consumer owns.
+Two block consumers — `image` and `download_card` — plus the image node inside `rich_text`. The old
+plan named a media block third; that block is retired and its two jobs became `image` and
+`download_card`, both of which sit on this one registry. `video` is not a consumer: an embed is
+addressed by provider and id.
 
 ```
 registerMediaSource({
-  pick(options: { multiple: boolean }): Promise<MediaReference[] | null>,
+  pick(options: { multiple: boolean, filterKind?: MediaKind }): Promise<MediaReference[] | null>,
   resolve(reference: MediaReference): ResolvedMedia | null
 })
 ```
 
-`ResolvedMedia` carries what a download row needs: at least `url` and `filename`, optionally `size`
-and `mime`. Two constraints make it usable where it is needed:
+`ResolvedMedia` carries what its consumers need: `url` always, plus `filename` and `size` for a
+download row, and `width`, `height` and `title` for an image. A consumer reads the fields it needs and
+ignores the rest, so one source serves both.
+
+Two constraints make it usable where it is needed:
 
 - **Module-level, not a Svelte context.** A renderer must resolve references too, and a context
   provider is unreachable from a renderer.
@@ -166,10 +172,10 @@ authority rather than a mirror of one.
    define, and the more capable definition costs nothing because nothing depends on the current one.
    That also makes the rename free: there are no instances to migrate.
 2. **Rich text vocabulary** — settled above, pinned from the editor's feature-gated extension set. The
-   document lives at `data.document`; the image insert path is a consumer-supplied host function.
+   document lives at `data.document`; the image insert path is supplied from the media-source registry.
 3. **Media block count** — settled: **three**, because the old `media` shell was an image, an embed
-   and a download card wearing one name. `image` is URL-based, `video` is a Poodle embed, and
-   `download_card` holds library references.
+   and a download card wearing one name. `image` and `download_card` hold library references and render
+   through the registry; `video` is a Poodle embed and does not.
 4. **Self-registration** — the package ships the mechanism but no default catalog. A complete core
    registers its own vocabulary so a consumer gets working blocks without composing them.
 5. **`image.sizing` representation** — recommended and promoted as
