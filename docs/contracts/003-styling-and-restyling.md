@@ -24,8 +24,14 @@ the same sense as the export map.
    consumer cannot reach, so their absence is what makes the renderer restyleable.
 4. A block renderer emits **`data-nightfire-block="<type>"`** on its root, plus data attributes for
    any structural fact a consumer may need to target.
-5. **No CSS classes are introduced.** Structure is targeted through data attributes; appearance
+5. **No new CSS classes are introduced.** Structure is targeted through data attributes; appearance
    through tokens.
+
+   This package **retains `underlay-*` class selectors** on extracted markup — `PROVENANCE.md` records
+   them as preserving extracted markup and style behaviour, explicitly *"not an import, dependency, or
+   integration hook"*. Consumers must not rely on them, and this package does not style them from the
+   token layer. The supported hook is the data attribute. A new component introduces no class of its
+   own.
 
 ## Data owns content, tokens own appearance
 
