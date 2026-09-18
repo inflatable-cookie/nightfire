@@ -72,10 +72,18 @@ fields or the clean break moves alt and sizing to `image` only is **open**; see 
 
 ## Appearance
 
-Renderer appearance is governed by [contract 003](../contracts/003-styling-and-restyling.md): the
-`--nightfire-*` set is public API, a new presentational need adds a token, a renderer carries no scoped
-styles and emits `data-nightfire-block="<type>"`, and content-presentational facts live in the data
-rather than in the theme.
+Renderers carry no scoped styles, emit `data-nightfire-block="<type>"`, and introduce no class of
+their own. Data attributes carry structural facts, and a content-presentational fact belongs to the
+block's data rather than to a theme. The retained `underlay-*` class selectors are extraction
+artifacts — `PROVENANCE.md` is explicit that they are not an import, dependency, or integration hook —
+and no renderer may depend on them.
+
+`ts/src/styles.css` and its 23 `--nightfire-*` values are an **application interface** swept in by the
+extraction, not a content concern: six of the tokens are UI-shaped — button chip padding, field
+background, danger, and surface colours — and no markdown, table, or list renderer needs any of them.
+Where that interface styling belongs is open and is
+[g01.011](../roadmaps/g01/011-application-interface-styling.md). Until it is settled, a block renderer
+adds no token and takes no dependency on one.
 
 ## The rich-text vocabulary
 
