@@ -51,6 +51,7 @@ to suit it.
 | --- | --- | --- |
 | Every scoped lane accepted and merged | in progress | See the table above. |
 | Published core schemas — [g01.010](010-core-schema-identity.md) | **ready, release-gated** | The consumer requirement is settled: generic mechanics plus core block payloads, `nightfire.*@1` identifiers, relative `$ref`s, and an executable parity proof. The consumer repins from the tag rather than following it, so this cannot slip. |
+| The published set covers the final declaration | **verify after g01.013** | The completeness check runs on every lane. `g01.013` adds the last block type, so confirm every declared type has a payload document, in the right order — see the triage note on the check's direction. |
 | npm trusted publisher names `.github/workflows/release.yml` | **operator-confirmed 2026-09-18** | Outside the repository; no local check can see it. |
 | The publish half of `release.yml` has never run | unexercised | `0.1.0` was published by hand. This release is the first OIDC publish. |
 | Version set to 0.2.0 in both manifests | not yet | `check:version-sync` enforces npm and the Cargo workspace agreeing. |
@@ -62,12 +63,14 @@ to suit it.
 1. Confirm every scoped lane is accepted, and that nothing half-landed is in the release commit.
 2. Set `0.2.0` in `package.json` and the root `Cargo.toml`; run `effigy check:version-sync`.
 3. Add the `### Removed` changelog section for the retired media surface.
-4. Run `release:npm-admission`, then `release:npm-archive`, then `check:release-candidate` for the
+4. Confirm the published schema set covers the final declaration, including the block type `g01.013`
+   adds last.
+5. Run `release:npm-admission`, then `release:npm-archive`, then `check:release-candidate` for the
    candidate identity.
-5. Run `release.yml` in candidate mode on `main`, then in publish mode.
-6. Verify the published artifact by consuming it, including the schemas, rather than by reading the
+6. Run `release.yml` in candidate mode on `main`, then in publish mode.
+7. Verify the published artifact by consuming it, including the schemas, rather than by reading the
    workflow log.
-7. Record the immutable version, commit, tag and artifact hashes here, and close the release row.
+8. Record the immutable version, commit, tag and artifact hashes here, and close the release row.
 
 ## Acceptance and review oracle
 
@@ -78,6 +81,7 @@ to suit it.
 | Published schemas ship | the schemas exist in the repo but not in the tarball | unpack the published tarball and find them |
 | A consumer can pin it | the artifact is only reachable from the repository | a disposable consumer resolves the published version |
 | The break is documented | a consumer upgrades and cannot find out why | the changelog has a Removed section naming the retired surface |
+| The schema set is complete at the tag | a declared block type has no payload document | the completeness check passes at the release commit |
 
 ## Stop conditions
 
