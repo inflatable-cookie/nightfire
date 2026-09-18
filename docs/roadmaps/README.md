@@ -19,23 +19,27 @@ See [generation-index.md](generation-index.md) for status.
 ## Current Queue
 
 `0.1.0` is released: published on npm and tagged `v0.1.0`. The runway is the core
-vocabulary. The rich-text block has landed, the media-source seam and media
-shells come next, and the layout editors come last. The three are serial because
-they share one capability declaration and two catalog files.
+vocabulary. The rich-text block landed; the media family is next. The extracted
+`media` type is replaced by `download_card`, which keeps the one media-library
+reference, and by `image` and `video`, which are addressed by URL and by embed.
+The image and video lanes follow the download card, and the layout editors come
+last. They are serial because they share one capability declaration and two
+catalog files.
 
-Core schema identity is blocked on a cross-repository decision and is not a local
-dispatch. The styling question is also open and needs an operator answer: the
-`--nightfire-*` set in `ts/src/styles.css` is an application interface swept in by
-the extraction rather than a content concern.
+Retiring `media` is a consumer-visible break, and the Acowtancy adoption lane
+carries it. Core schema identity is blocked on a cross-repository decision and is
+not a local dispatch. The styling question is also open and needs an operator
+answer: the `--nightfire-*` set in `ts/src/styles.css` is an application interface
+swept in by the extraction rather than a content concern.
 [Contract 003](../contracts/003-styling-and-restyling.md) states it, and
 [g01.011](g01/011-application-interface-styling.md) tracks the decision and its
 blast radius.
 
 ## Next Task
 
-Dispatch the media-source seam, then the layout editors behind their
-table-editing brief, and do not execute a release or a consumer cutover. Both
-remain gated.
+Dispatch the download-card lane, which retires `media`, then the image and video
+lanes behind it. Keep the layout editors behind their table-editing brief, and do
+not execute a release or a consumer cutover.
 <!-- northstar:lifecycle:begin schema=northstar.lifecycle.projection.v2 digest=sha256:ac30ee8e536e321d1ed79b80dafb4cbbd9669ebf80764a1dffd52aa3a4f3b0fc -->
 | Generation | Disposition | Runway state |
 | --- | --- | --- |

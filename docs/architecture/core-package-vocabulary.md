@@ -12,7 +12,7 @@ Acowtancy package. Profile blocks interleave with this vocabulary and are owned 
 | --- | --- |
 | Generic block vocabulary, their schemas and renderers | **this package** |
 | Block id and version mechanics, registries, strategies | **this package** |
-| The media reference format and the media-source seam | **this package** |
+| The media reference format and the media-source registry | **this package** |
 | The media library, and any picker or resolver implementation | the library owner |
 | Profile block types and profile strategies | the profile owner |
 
@@ -22,17 +22,22 @@ content library) and is not generic, which makes any generic type beginning `con
 
 ## The vocabulary
 
-Six generic blocks, in four categories. `Text`, `Layout` and `Media` are generic; the remaining
+Seven generic blocks, in three generic categories: `Text`, `Layout` and `Media`. The remaining
 categories in the registry are profile-owned.
 
 | Type | Category | Role | State |
 | --- | --- | --- | --- |
 | `markdown` | Text | plain markdown text | implemented: editor and renderer |
-| `rich_text` | Text | structured rich text, edited through the Poodle rich-text editor (TipTap/ProseMirror) | vocabulary and data shape pinned below; renderer and editor to add |
+| `rich_text` | Text | structured rich text, edited through the Poodle rich-text editor (TipTap/ProseMirror) | implemented: editor and renderer |
 | `table` | Layout | tabular structure | renderer implemented; editor to add |
 | `item_list` | Layout | ordered list of titled child-block items | renderer implemented; editor to add; renamed from `content_list`, with no live instances |
-| `image` | Media | light shell referencing a media item, with alt text and sizing | to add |
-| `media` | Media | light shell linking to a media item, rendered as a download card | editor and empty checker implemented; renderer to add |
+| `image` | Media | one image addressed by URL, with alt text and opt-in sizing | to add |
+| `video` | Media | an embed reference, authored through Poodle's embed input | to add |
+| `download_card` | Media | a card of downloadable files held in a media library, each with an optional description | to add |
+
+`ts/src/core-blocks.ts` still declares `media` until the download-card lane lands. The table above is
+the target vocabulary and the declaration follows it; after that lane there is no `media` type, no
+`./media` subpath, and no Svelte picker context.
 
 ### `item_list`
 
@@ -45,30 +50,36 @@ The previous name `content_list` is retired. It collides with the `content.*` se
 being a `Layout` block, and the collision misleads in exactly the direction that is expensive to
 unpick.
 
-### `image` and `media` are shells
+### The three media blocks
 
-Both carry an opaque reference and presentation metadata, and nothing about where the bytes come
-from:
+The old `media` type was three different things wearing one name, and it is retired. Each replacement
+now says what it is:
 
-```
-{ media_id: <opaque reference>, alt?, caption?, sizing? }
-```
-
-The core defines the reference slot. It does not define a library, a storage shape, or a URL form.
-A consumer without a registered media source still has a valid block that renders inert. The slot is
-spelled `media_id` everywhere, following the existing media block rather than adding a second name for
-the same reference.
+- **`image`** is content in flow. It carries a URL, alt text, and opt-in sizing. It does not reference
+  a media library, because an image that must be looked up before it can render is not a generic
+  content block.
+- **`video`** is an embed. It carries Poodle's own `ParsedEmbed`, so provider parsing, previewing and
+  rendering stay Poodle's, and it needs no library.
+- **`download_card`** is the one block that genuinely needs the library: it presents files the
+  consumer manages, so it holds references and a resolver supplies the filename, size and URL.
 
 ## Block data shapes
 
 The shape is pinned here so a worker implements a decision rather than inventing one. `item_list` is
 `{ title?, intro?, variant?, items: [{ title?, body: <blocks> }] }`; `table` is
 `{ caption?, rows: [{ section, cells }] }` with cell markdown, header, span, alignment, and border
-facts; `media` is `{ media_id, caption?, alt?, display? }`, matching the editor that already exists;
-and `rich_text` is `{ document: ProseMirrorDocumentJSON }` — one field, no envelope.
+facts; and `rich_text` is `{ document: ProseMirrorDocumentJSON }` — one field, no envelope.
 
-`image` is `{ media_id, alt?, caption?, sizing? }`. Whether `media` keeps its `alt` and `display`
-fields or the clean break moves alt and sizing to `image` only is **open**; see the open items below.
+The media blocks are:
+
+```
+image         { src, alt?, title?, caption?, sizing? }
+video         { embed: ParsedEmbed, title?, caption? }
+download_card { description?, files: [{ media_id, description? }] }
+```
+
+`image.sizing` is absent by default. The file name, size and URL of a download are resolved, never
+copied into the block, so a file renamed in the library updates every card that shows it.
 
 ## Appearance
 
@@ -107,39 +118,35 @@ extending it.
 | `tables` | table, table row, table header, table cell |
 | `images` | image, with `src`, `alt` and `title` as its whole model |
 
-The image node is the extension point: Poodle extends it to keep that public model closed, and the
-consumer supplies the `src`. That is the read path of the media-source seam below, and it is why the
-seam cannot be block-scoped.
+The image node's model is Poodle's and is `src`-based, which is why the rich-text insert path takes a
+host function returning `{ src, alt, title }` rather than a media reference. The consumer supplies the
+function; no registry is involved, and the block stays inert without one.
 
-## Image and media are two types
+## The media-source registry
 
-They differ in admin and in renderer, so they are separate blocks rather than one with a kind.
-
-- **`image`** carries alt text and sizing, because an image is content a reader must be able to
-  interpret and a layout must be able to place. Poodle's image node independently admits `alt` and
-  `title`, which corroborates that alt belongs in the image model rather than beside it.
-- **`media`** is a generalised linkage: a reference plus whatever a **download card** needs to
-  present it. No alt text, no sizing, because it is not rendered as content in flow.
-
-## The media-source seam
-
-One seam, three consumers: the `image` block, the `media` block, and the image node **inside**
-`rich_text` — the rich-text editor carries an image extension that it leaves for consumers to
-implement.
-
-Because rich text consumes it, **the seam is not block-scoped**. It registers a source for media
-references, with two capabilities because the read and write paths differ:
+One consumer: `download_card`. The old plan gave the seam three consumers — the image block, the media
+block, and the rich-text image node — and that plan is superseded: images are URL-based, and the
+rich-text node takes a host function. What remains is a registry over a resource the consumer owns.
 
 ```
-registerMediaSource({ pick, resolve })
-
-pick(reference?) -> opaque reference     // creation: open a chooser, return a reference
-resolve(reference) -> renderable source  // reading: turn a reference into something renderable
+registerMediaSource({
+  pick(options: { multiple: boolean }): Promise<MediaReference[] | null>,
+  resolve(reference: MediaReference): ResolvedMedia | null
+})
 ```
+
+`ResolvedMedia` carries what a download row needs: at least `url` and `filename`, optionally `size`
+and `mime`. Two constraints make it usable where it is needed:
+
+- **Module-level, not a Svelte context.** A renderer must resolve references too, and a context
+  provider is unreachable from a renderer.
+- **`resolve` is synchronous.** A renderer renders synchronously and should work under SSR, so the
+  consumer resolves over metadata it has already loaded. An unknown reference renders inert rather
+  than suspending.
 
 The block-scoped registration family (`registerBlockEditor`, `registerBlockRenderer`,
 `registerBlockValidator`, `registerBlockEmptyChecker`, `registerBlockVersions`) is unchanged. This
-seam sits beside it because its scope is a resource rather than a block, and a name in the
+registry sits beside it because its scope is a resource rather than a block, and a name in the
 `registerBlock*` form would describe the wrong scope.
 
 ## Identity
@@ -158,18 +165,23 @@ authority rather than a mirror of one.
    so the corpus contains no instance, no producer and no origin. The shape is therefore ours to
    define, and the more capable definition costs nothing because nothing depends on the current one.
    That also makes the rename free: there are no instances to migrate.
-2. **Rich text vocabulary** — settled above, pinned from the editor's feature-gated extension set.
-   Rich text can hold an image node, which is why the media-source seam must reach it. The document
-   lives at `data.document`.
-3. **Two media types or one** — settled: **two**, because they differ in admin and renderer. `image`
-   carries alt text and sizing; `media` is a generalised linkage rendered as a download card.
+2. **Rich text vocabulary** — settled above, pinned from the editor's feature-gated extension set. The
+   document lives at `data.document`; the image insert path is a consumer-supplied host function.
+3. **Media block count** — settled: **three**, because the old `media` shell was an image, an embed
+   and a download card wearing one name. `image` is URL-based, `video` is a Poodle embed, and
+   `download_card` holds library references.
 4. **Self-registration** — the package ships the mechanism but no default catalog. A complete core
    registers its own vocabulary so a consumer gets working blocks without composing them.
-5. **`media` alt and display fields** — **open**. The existing `media` editor reads `alt` and
-   `display`; the vocabulary above gives alt and sizing to `image` and a download card to `media`.
-   Either `media` keeps those fields or the clean break moves them to `image` only. Decide before
-   [g01.008](../roadmaps/g01/008-media-source-seam-and-shells.md) is dispatched.
-6. **Schema identity** — the identifiers and generation home are decided in
+5. **`image.sizing` representation** — recommended and promoted as
+   `"small" | "medium" | "large" | "full"`, absent for natural size, with each preset resolving to a
+   token-backed maximum inline size. A free-form width was rejected: it puts an appearance value into
+   content, which contract 003 keeps out. The exact preset names are the one piece still open for
+   operator confirmation, and they must settle before
+   [g01.012](../roadmaps/g01/012-image-block.md) is dispatched.
+6. **Retiring `media`** — settled: the type, its editor, its Svelte picker context, and the published
+   `./media` subpath go together. `media-locator` stays: it locates a reference anywhere in a block
+   value and is independent of the retired block.
+7. **Schema identity** — the identifiers and generation home are decided in
    [g01.010](../roadmaps/g01/010-core-schema-identity.md), which is blocked across repositories.
 
 ## Consequences

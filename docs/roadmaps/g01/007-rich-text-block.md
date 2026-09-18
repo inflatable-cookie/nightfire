@@ -35,7 +35,7 @@ not a block. The data shape is therefore ours to define rather than recover.
 - **Admitted features.** The block enables the whole admitted set
   (`RICH_TEXT_FEATURES`), images included. Poodle omits the image-insert command
   while no `requestImage` host function is present, so an unwired image node is
-  inert rather than an error. [g01.008](008-media-source-seam-and-shells.md)
+  inert rather than an error. [g01.008](008-download-card-replaces-media.md)
   supplies the host function.
 - **Empty content.** `data.document` is empty when it is absent, is not an
   object, or is a document with no text and no non-text node.

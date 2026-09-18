@@ -4,6 +4,12 @@ Date: 2026-09-18. From the Acowtancy Market/Silo Chatterbox, which is returning 
 scope. This records what exists, what was decided, and what cost time — so the incoming authority
 starts from facts rather than re-deriving them.
 
+**Partly superseded on 2026-09-18.** The media vocabulary below is no longer current: `media` is
+retired in favour of `download_card`, `image` and `video`, and the media-source seam serves the
+download card alone. `docs/architecture/core-package-vocabulary.md` is the authority. The styling
+bullet was also corrected in place, and the `origin` gotcha was wrong. Everything else still
+describes the state it recorded.
+
 ## State, all verified
 
 - **Released.** `@inflatable-cookie/nightfire` 0.1.0 on npm, sha256

@@ -8,8 +8,7 @@ package's authority over its own vocabulary:
 - one released, dual-language package with one version and one wire fixture set;
 - every declared core block type implemented to the extent its declaration
   claims, with the declaration and the catalog held together by a test;
-- one media-source seam serving the image block, the media block, and the
-  rich-text image node;
+- one media-source registry, serving the download card alone, with images and embeds addressed by URL;
 - this package's identifiers on its own schemas, generated and published here;
 - a decided home for the application-interface styling that the extraction swept
   in.
@@ -27,11 +26,13 @@ styling aims are g01.010 and g01.011; the rest is the runway below.
 4. [g01.004 — Adopt the Effigy-hosted lifecycle hook](004-adopt-effigy-hosted-lifecycle-hook.md) — complete.
 5. [g01.005 — Prospective-merge protocol migration](005-prospective-merge-protocol-migration.md) — complete.
 6. [g01.006 — Adopt published Poodle 0.4.2](006-adopt-published-poodle-0-4-2.md) — complete.
-7. [g01.007 — Rich-text block](007-rich-text-block.md) — first lane on the runway.
-8. [g01.008 — Media source seam and media shells](008-media-source-seam-and-shells.md) — serial behind g01.007; one vocabulary decision open.
+7. [g01.007 — Rich-text block](007-rich-text-block.md) — complete.
+8. [g01.008 — Download card replaces the media block](008-download-card-replaces-media.md) — next lane.
 9. [g01.009 — Layout block editors](009-layout-block-editors.md) — planned; needs a table-editing brief.
 10. [g01.010 — Core schema identity and publication](010-core-schema-identity.md) — blocked across repositories.
 11. [g01.011 — Application interface styling](011-application-interface-styling.md) — blocked on where the interface tokens live.
+12. [g01.012 — Image block](012-image-block.md) — serial behind g01.008; sizing preset names unconfirmed.
+13. [g01.013 — Video embed block](013-video-embed-block.md) — serial behind g01.012.
 
 g01.001–003 predate the Queue lifecycle projection, so the generated block below
 lists only the tasks the lifecycle system holds records for. Their terminal state
@@ -39,15 +40,14 @@ is recorded here and in their own cards.
 
 ## Queue
 
-The declared vocabulary is nearly implemented. `markdown` and `rich_text` have
-an editor and a renderer, `table` and `item_list` render, `media` has an editor,
-and `image` has no part and `media` no renderer.
+`markdown` and `rich_text` have an editor and a renderer, `table` and `item_list` render, and the media
+family is mid-change. The extracted `media` type is replaced by `download_card`, which is the one block
+that keeps a media-library reference, and by `image` and `video`, which are URL- and embed-based.
 
-g01.007, g01.008, and g01.009 are serial, not parallel: each changes
-`ts/src/core-blocks.ts` and the two catalog files, and those are adjacent-line
-edits to one declaration table and two import lists. Concurrent lanes would meet
-in the same lines, so each is dispatched behind the one before it through an
-explicit Queue dependency.
+g01.008, g01.012 and g01.013 are serial, not parallel: each changes `ts/src/core-blocks.ts` and the two
+catalog files, and those are adjacent-line edits to one declaration table and two import lists.
+Concurrent lanes would meet in the same lines, so each is dispatched behind the one before it through
+an explicit Queue dependency.
 
 ## Dependencies And Parallelism
 
@@ -57,7 +57,8 @@ shared files are small but not divisible.
 
 g01.010 sits outside this repository's dispatch. Acowtancy consumes this package,
 and Silo's pin and consumer mirrors carry whatever identifier wins, so its
-sequencing belongs to the Acowtancy Market roadmap.
+sequencing belongs to the Acowtancy Market roadmap. Retiring `media` is also a
+consumer-visible break that the adoption lane has to carry.
 
 ## Historical Language Boundary
 
@@ -67,9 +68,9 @@ acceptance.
 
 ## Next Task
 
-Dispatch the media-source seam (g01.008). The layout editors follow in the
-sequence above; do not start a later lane from an earlier one, and keep the
-layout editors behind their table-editing brief.
+Dispatch the download-card lane, which retires `media`, then the image and video lanes behind it. Keep
+the layout editors behind their table-editing brief, and do not execute a release or a consumer
+cutover.
 <!-- northstar:lifecycle:begin schema=northstar.lifecycle.projection.v2 digest=sha256:ac30ee8e536e321d1ed79b80dafb4cbbd9669ebf80764a1dffd52aa3a4f3b0fc -->
 | Generation | Disposition | Runway state |
 | --- | --- | --- |
