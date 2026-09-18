@@ -1,0 +1,186 @@
+name: Release
+
+# Two modes, deliberately separated.
+#   candidate — pack once and certify the archive set, with the candidate
+#               identity manifest that binds the source commit and every hash.
+#   publish   — consume that certified set and ship it. It never rebuilds, and
+#               it verifies tag, commit, version, package set and hashes before
+#               any npm mutation.
+#
+# Publication is an act against a versioned tag, never a branch tip. The npm
+# trusted publisher is configured on the package and names this workflow file; a
+# long-lived token is never used.
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: candidate certifies the archive set; publish ships a certified run
+        type: choice
+        options: [candidate, publish]
+        default: candidate
+      candidate-run-id:
+        description: Candidate run ID whose archive set is published
+        type: string
+        required: false
+      release-tag:
+        description: Certified tag to publish when dispatching this workflow from main
+        type: string
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  npm:
+    name: npm release (${{ inputs.mode }})
+    runs-on: ubuntu-latest
+    # Hard ten-minute ceiling. An over-budget npm run is a process failure, not a
+    # reason to wait.
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      # Mints the OIDC token npm exchanges for publish rights.
+      id-token: write
+      # Reads the named candidate run's uploaded archive set.
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Publish runs on the tag. `release-tag` is the fail-closed recovery
+          # route when the tagged workflow needs a wrapper-only correction: the
+          # current workflow still checks out and verifies the certified tag.
+          ref: ${{ inputs.mode == 'publish' && inputs.release-tag || github.ref }}
+          fetch-depth: 0
+
+      - run: git fetch --no-tags origin main:refs/remotes/origin/main
+
+      - name: Require an explicit supported mode
+        run: |
+          set -euo pipefail
+          case "${{ inputs.mode }}" in
+            candidate|publish) ;;
+            *) echo "Unsupported release mode: ${{ inputs.mode }}" >&2; exit 1 ;;
+          esac
+
+      - name: Require a versioned release tag when publishing
+        if: ${{ inputs.mode == 'publish' && inputs.release-tag == '' && !startsWith(github.ref, 'refs/tags/v') }}
+        run: |
+          set -euo pipefail
+          echo "publish mode requires refs/tags/v* (got ${GITHUB_REF})." >&2
+          exit 1
+
+      - name: Require a candidate run ID when publishing
+        if: ${{ inputs.mode == 'publish' && inputs.candidate-run-id == '' }}
+        run: |
+          set -euo pipefail
+          echo "publish mode requires candidate-run-id naming a successful candidate run." >&2
+          exit 1
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: "1.3.14"
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22.22.2"
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+
+      # npm trusted publishing requires npm >=11.5.1 and Node >=22.14.0.
+      - name: Install the reviewed npm trusted-publishing CLI
+        run: |
+          set -euo pipefail
+          npm_cli="$RUNNER_TEMP/npm-cli"
+          npm install --prefix "$npm_cli" --no-save npm@12.0.2
+          test "$("$npm_cli/node_modules/.bin/npm" --version)" = "12.0.2"
+          echo "$npm_cli/node_modules/.bin" >> "$GITHUB_PATH"
+
+      - run: bun install --frozen-lockfile
+
+      - uses: inflatable-cookie/setup-effigy@987fd556617ea2c3e0ab5cef6b47b250817f50c8 # v1.0.0
+        with:
+          version: "0.12.1"
+
+      # Candidate mode: admission then archive. It builds and packs exactly once
+      # and writes the candidate identity manifest into the archive directory.
+      - name: npm certificate
+        if: ${{ inputs.mode == 'candidate' }}
+        env:
+          NIGHTFIRE_NPM_ARCHIVE_OUT: ${{ github.workspace }}/release-artifacts
+        run: effigy release:npm-certificate
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: ${{ inputs.mode == 'candidate' }}
+        with:
+          name: nightfire-npm-candidate
+          path: release-artifacts/**
+          if-no-files-found: error
+
+      # Publish mode: consume the named candidate run's exact bytes. No build.
+      - name: Download the certified candidate archive set
+        if: ${{ inputs.mode == 'publish' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p release-artifacts
+          gh run download "${{ inputs.candidate-run-id }}" \
+            --name nightfire-npm-candidate \
+            --dir release-artifacts
+
+      - name: Verify tag, commit, version, packages and hashes
+        if: ${{ inputs.mode == 'publish' }}
+        env:
+          RELEASE_TAG: ${{ inputs.release-tag != '' && inputs.release-tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+          bun ts/scripts/verify-npm-candidate.ts \
+            --root . \
+            --dir release-artifacts \
+            --tag-version "${RELEASE_TAG#v}" \
+            --source-commit "$(git rev-parse HEAD)"
+
+      # Publish the archives, never a package directory. Public access is the
+      # package-release guard.
+      - name: Publish the certified archives
+        if: ${{ inputs.mode == 'publish' }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          tarballs=(release-artifacts/*.tgz)
+          if [ "${#tarballs[@]}" -eq 0 ]; then
+            echo "no certified tarballs to publish" >&2
+            exit 1
+          fi
+          for tarball in "${tarballs[@]}"; do
+            npm publish "./$tarball" --access public
+          done
+
+      - name: Verify registry availability
+        if: ${{ inputs.mode == 'publish' }}
+        run: |
+          set -euo pipefail
+          node --input-type=module -e '
+            import { readFileSync, readdirSync } from "node:fs";
+            const manifestFile = readdirSync("release-artifacts").find((n) => n.endsWith("candidate.json"));
+            const manifest = JSON.parse(readFileSync(`release-artifacts/${manifestFile}`, "utf8"));
+            for (const entry of manifest.packages) console.log(`${entry.name}@${entry.version}`);
+          ' | while IFS= read -r spec; do
+            expected="${spec##*@}"
+            published=""
+            for attempt in {1..12}; do
+              if published="$(npm view "$spec" version 2>/dev/null)" && [ "$published" = "$expected" ]; then
+                break
+              fi
+              if [ "$attempt" -eq 12 ]; then
+                echo "$spec did not resolve version $expected from the registry (last result: ${published:-unavailable})" >&2
+                exit 1
+              fi
+              sleep 5
+            done
+          done

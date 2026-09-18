@@ -39,6 +39,7 @@ section = "Vision Artifacts"
   { task = "release:npm-archive" },
 ]
 "check:release-candidate" = "cd {repo} && bun ts/scripts/verify-npm-candidate.ts"
+"check:release-automation" = "cd {repo} && bun ts/scripts/check-release-automation.ts"
 check = "cd {repo} && bun x svelte-check --tsconfig ts/tsconfig.json"
 "check:types" = "cd {repo} && bun x tsc --project ts/tsconfig.json --noEmit"
 "check:exports" = "cd {repo} && bun ts/scripts/check-exports.ts"
@@ -110,6 +111,7 @@ qa = [
   { task = "qa:docs" },
   { task = "qa:northstar" },
   { task = "check:format" },
+  { task = "check:release-automation" },
 ]
 
 [test.suites]
