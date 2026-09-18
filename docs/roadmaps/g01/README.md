@@ -30,14 +30,15 @@ styling aims are g01.010 and g01.011; the rest is the runway below.
 7. [g01.007 — Rich-text block](007-rich-text-block.md) — complete.
 8. [g01.008 — Download card replaces the media block](008-download-card-replaces-media.md) — complete.
 9. [g01.009 — Table editor](009-table-editor.md) — complete.
-10. [g01.010 — Publish core schemas](010-core-schema-identity.md) — ready; release-gated, serial behind g01.008.
-11. [g01.011 — Editor default styling and token names](011-editor-default-styling.md) — ready; token audit, last of the implementation lanes.
+10. [g01.010 — Publish core schemas](010-core-schema-identity.md) — complete.
+11. [g01.011 — Editor default styling and token names](011-editor-default-styling.md) — complete.
 12. [g01.012 — Image block](012-image-block.md) — complete.
-13. [g01.013 — Video embed block](013-video-embed-block.md) — in flight.
+13. [g01.013 — Video embed block](013-video-embed-block.md) — complete.
 14. [g01.014 — Download-card file titles](014-download-card-file-titles.md) — complete.
-15. [g01.015 — Table cell spans](015-table-cell-spans.md) — ready; parallel with g01.013.
-16. [g01.016 — Item list editor](016-item-list-editor.md) — ready; serial behind g01.013.
-17. [g01.017 — Next release](017-next-release.md) — planned; gated on the whole generation including published schemas and the untested publish path.
+15. [g01.015 — Table cell spans](015-table-cell-spans.md) — complete.
+16. [g01.016 — Item list editor](016-item-list-editor.md) — complete.
+17. [g01.017 — Next release](017-next-release.md) — complete; `0.2.0` is published on npm and tagged.
+18. [g01.018 — Editor chrome literals](018-editor-chrome-literals.md) — ready; a measured legibility defect in the slash palette, and the guard that stops the next literal.
 
 g01.001–003 predate the Queue lifecycle projection, so the generated block below
 lists only the tasks the lifecycle system holds records for. Their terminal state
@@ -83,10 +84,15 @@ acceptance.
 
 ## Next Task
 
-g01.008 is complete and in review, with g01.012 and g01.014 queued behind it. Then comes the table
-editor, the video embed, and the item list and span refinements. Published schemas (g01.010) are
-required in the next release and wait on a scope answer from the Farmyard chatterbox. Do not execute a
-release or a consumer cutover.
+`0.2.0` is released: published on npm, tagged, and verified by consuming it. One lane remains open.
+g01.018 repairs a measured legibility defect in the slash palette — with the shipped light token defaults
+its search field measures 1.00:1 contrast and its command labels 1.23:1, because the component hardcodes a
+dark chrome over the light defaults and lets its labels inherit the host's text colour. It also closes the
+method gap that let those literals past the token audit, which swept for `var()` references and could not
+see a value written directly.
+
+Do not execute a further release or a consumer cutover without explicit authority.
+
 <!-- northstar:lifecycle:begin schema=northstar.lifecycle.projection.v2 digest=sha256:a42985106cd395062f2b83f8aa53b7284a7b0cd95056279080f8b4370b681c67 -->
 | Generation | Disposition | Runway state |
 | --- | --- | --- |
