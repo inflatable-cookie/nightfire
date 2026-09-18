@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "nightfire.block.video@1",
+  "title": "Nightfire video block payload",
+  "type": "object",
+  "required": ["embed"],
+  "properties": {
+    "embed": {
+      "type": "object",
+      "required": ["provider", "id"],
+      "properties": {
+        "provider": { "type": "string", "minLength": 1 },
+        "id": { "type": "string", "minLength": 1 },
+        "originalUrl": { "type": "string" },
+        "originalEmbed": { "type": "string" },
+        "width": { "type": "number" },
+        "height": { "type": "number" },
+        "embedType": { "enum": ["video", "audio", "playlist", "generic"] }
+      },
+      "additionalProperties": false
+    },
+    "title": { "type": "string" },
+    "caption": { "type": "string" }
+  },
+  "additionalProperties": false
+}

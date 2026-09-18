@@ -27,6 +27,7 @@ export const CORE_BLOCK_TYPES: Readonly<Record<string, CoreBlockCapabilities>> =
   table: { renderer: true, editor: true, emptyChecker: true },
   item_list: { renderer: true, editor: false, emptyChecker: false },
   image: { renderer: true, editor: true, emptyChecker: true },
+  video: { renderer: true, editor: true, emptyChecker: true },
 };
 
 export type CoreBlockType = keyof typeof CORE_BLOCK_TYPES;
