@@ -38,7 +38,7 @@ effigy doctor
 effigy test --plan
 effigy qa
 ```
-<!-- northstar:lifecycle:begin schema=northstar.lifecycle.projection.v2 digest=sha256:03f8e9851401b699d577abcc10949a14b96c656872cf07cbb9658e546ee340ae -->
+<!-- northstar:lifecycle:begin schema=northstar.lifecycle.projection.v2 digest=sha256:853453149add25d501b3546766da3a726d4cd937d34f539860a264232d269e06 -->
 | Generation | Disposition | Runway state |
 | --- | --- | --- |
 | g01 | open | planning_required |
@@ -50,4 +50,5 @@ effigy qa
 | g01.007 | complete | none | 8 | sha256:882b928392ab0186c8694ff47c06e9f61d7aefab52bea88e9ff5ecd2c1df8bfd |
 | g01.008 | complete | none | 8 | sha256:a885ca6074934bbe9dbca84278a6515b9861b944b68b0e6d3861500de6d817ba |
 | g01.010 | complete | none | 8 | sha256:6147b9e25bccc07dc6dd493a72169c824b652b9b895dc34a59818661ac42974e |
+| g01.014 | complete | none | 8 | sha256:3405f5b7ace0c4428683d84ba06b6f5dc133e3e08d6e52d5df3d23dce98b9481 |
 <!-- northstar:lifecycle:end -->
