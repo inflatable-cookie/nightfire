@@ -193,6 +193,17 @@ authority rather than a mirror of one.
    value and is independent of the retired block.
 8. **Schema identity** — the identifiers and generation home are decided in
    [g01.010](../roadmaps/g01/010-core-schema-identity.md), which is blocked across repositories.
+9. **Named row sections** — **deferred, with a trigger.** `table` rows carry a `section` string and the
+   renderer emits it as `data-section` on the `<thead>` or `<tbody>` group, but nothing anywhere authors
+   one: there is no instance in the tests, the fixtures, the Rust crate or the docs, and no consumer is
+   known to target the attribute. The editor does not author it and must round-trip a value it does not
+   manage, so nothing is lost by waiting. Add an authoring control when a consumer needs to target a
+   row group — styling or behaviour keyed on `data-section` — and design it as its own lane. It is not
+   a per-row text box: sections define groups, and the renderer groups **consecutive** rows, so the
+   lane must answer how a row joins a group, what happens to a group when a row is reordered out of
+   it, and whether a header row can sit inside a named group. The renderer's group key
+   (`section + rows.length`) also collides for two same-named groups of equal length, which suggests
+   the path has never been exercised and would need fixing before it became authorable.
 
 ## Consequences
 
