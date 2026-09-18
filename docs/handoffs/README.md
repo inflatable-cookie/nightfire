@@ -5,4 +5,5 @@ They do not replace architecture, contracts, or roadmap authority.
 
 ## Entries
 
+- [2026-09-18 — Nightfire Chatterbox handover](20260918-123357-nightfire-chatterbox-handover.md)
 - [2026-09-04 — Card 272 repository extraction worker](20260904-220300-card-272-nightfire-repository-extraction-worker.md)
