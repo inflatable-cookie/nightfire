@@ -12,6 +12,9 @@ name: CI
 # export, for instance). Installing first makes the gate's verdict about the code.
 
 on:
+  # A manual trigger so the gate can be run on demand, and so the first run
+  # after enabling Actions is observable without an empty push.
+  workflow_dispatch:
   pull_request:
   push:
     branches: [main]
