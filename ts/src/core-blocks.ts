@@ -24,8 +24,8 @@ export const CORE_BLOCK_TYPES: Readonly<Record<string, CoreBlockCapabilities>> =
   // that precedent rather than inventing a second reference spelling.
   media: { renderer: false, editor: true, emptyChecker: true },
   rich_text: { renderer: false, editor: false, emptyChecker: false },
-  table: { renderer: false, editor: false, emptyChecker: false },
-  item_list: { renderer: false, editor: false, emptyChecker: false },
+  table: { renderer: true, editor: false, emptyChecker: false },
+  item_list: { renderer: true, editor: false, emptyChecker: false },
   image: { renderer: false, editor: false, emptyChecker: false },
 };
 
