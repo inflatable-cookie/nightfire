@@ -43,7 +43,15 @@ values. So "who owns the values" was never the real issue.
 - **Five `currentColor` fallbacks exist across the package.** For `color-text-muted` a `currentColor`
   fallback makes muted text unmuted, and for `color-border-subtle` it makes a subtle border the text
   colour. They are not broken, but they are a second declared value that applies whenever the stylesheet
-  is absent — the same defect as the dark fallbacks in a quieter form.
+  is absent — the same defect as the dark fallbacks in a quieter form. The table editor now carries
+  thirteen fallback references on its own.
+- **An internal variable wears the public prefix.** `ts/src/layout/TableEditor.svelte` sets
+  `style:--nightfire-table-columns={columnCount}` inline and reads it in its own scoped grid rule. That is
+  per-instance state, not a theme token: a consumer who declared `--nightfire-table-columns` on an
+  ancestor would be silently overridden by the inline value. Contract 003 defines the theme surface as
+  the `--nightfire-*` set in `styles.css`, so either the prefix stops meaning "public" or the variable is
+  renamed to something internal. This is a boundary question, not tidy-up, and it is the reason the audit
+  is worth running after every editor lane rather than once.
 
 ## What remains a real decision
 
@@ -95,12 +103,16 @@ One declared value per token: either no fallback, or one that matches the shippe
 
 1. **Declare `--nightfire-color-focus` in `ts/src/styles.css`.** Shipped editor chrome references it and
    the token does not exist, so a consumer cannot theme the focus ring by name.
-2. Decide the naming question, and record the answer in contract 003.
-3. Audit every `var(--nightfire-*)` reference across `ts/src` and give each token exactly one declared
+2. **Resolve the prefix boundary.** Decide whether `--nightfire-*` means "public theme token" or merely
+   "a custom property this package uses", and act on it: rename the internal per-instance variables, or
+   record in contract 003 that the prefix is not exclusively public and that only the names declared in
+   `styles.css` are API. The second is cheaper and honest, but it must be written down.
+3. Decide the naming question for the six app-shaped tokens, and record the answer in contract 003.
+4. Audit every `var(--nightfire-*)` reference across `ts/src` and give each token exactly one declared
    value: no fallback, or one that matches the stylesheet. The audit now covers chrome added by the media,
-   image and table lanes, and by the video and item-list lanes landing before it.
-4. Add the Poodle mapping recipe to `README.md` if that route is chosen.
-5. Confirm contract 003 states the editor default layer, its overridability, and that names are the
+   image, table, span, video and item-list lanes.
+5. Add the Poodle mapping recipe to `README.md` if that route is chosen.
+6. Confirm contract 003 states the editor default layer, its overridability, and which names are the
    public API.
 
 ## Sequencing
