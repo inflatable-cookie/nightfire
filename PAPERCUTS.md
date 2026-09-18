@@ -38,3 +38,19 @@
   the planning commit is staged.
 - Surface: shared integration checkout; more than one thread planning one
   repository.
+
+## Queue rejects GitHub's canonical ssh:// origin form
+
+- Friction: Northstar Queue's GitHub resolver accepts
+  `https://github.com/<owner>/<repo>` and `git@github.com:<owner>/<repo>` but not
+  `ssh://git@github.com/<owner>/<repo>`. That third form is what a Cargo git
+  dependency needs, and this repository used it. Every PR-identity check failed
+  with "Resolution requires a GitHub origin".
+- Impact: a finished, QA-green lane sat in `working` with attention raised; the
+  recovery path then tried `resume_worker` on a healthy idle worker and produced a
+  second, misleading error ("Pre-PR worker resume requires a blocked result or
+  stopped pre-callback worker").
+- Plausible fix: widen the resolver to the third legal GitHub spelling in
+  `server/forge.ts` and `server/git.ts`, and record the accepted forms.
+- Surface: Northstar Queue forge and PR resolution; any repository whose `origin`
+  is an `ssh://` URL.

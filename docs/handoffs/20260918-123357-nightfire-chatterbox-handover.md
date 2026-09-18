@@ -78,9 +78,15 @@ starts from facts rather than re-deriving them.
 
 ## Repository gotchas, each of which cost time
 
-- **The remote must be `ssh://git@github.com/inflatable-cookie/nightfire.git`.** The SCP-style form
-  pushes fine but breaks `check:git-consumer:cargo`, which feeds the remote URL to Cargo; and HTTPS
-  pushes are refused by the OAuth `workflow` scope for files under `.github/workflows/`.
+- **The repository's `origin` must be SCP-style, `git@github.com:inflatable-cookie/nightfire.git`.**
+  This was recorded the other way round and the correction cost a stalled lane. Northstar Queue parses
+  only `https://github.com/<owner>/<repo>` or `git@github.com:<owner>/<repo>`, so an `ssh://` origin
+  fails every PR-identity check with "Resolution requires a GitHub origin". The Cargo claim that made
+  `ssh://` look necessary is stale: `check:git-consumer:cargo` normalises both forms to HTTPS before
+  use, and it passes on the SCP form at `7dd41bb`. The `ssh://` spelling still belongs in a
+  **consumer's** `Cargo.toml`, which is what `README.md` shows, and that is a different string from
+  this repository's remote. HTTPS pushes are still refused by the OAuth `workflow` scope for files
+  under `.github/workflows/`.
 - **`release-artifacts/` must stay gitignored.** Untracked certificate output dirties the tree and
   fails the git-consumer proof, so running the certificate would break the gate it serves.
 - **The git-consumer proofs need a clean, pushed head.** They install from the pushed commit, so an
