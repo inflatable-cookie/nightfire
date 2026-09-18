@@ -35,12 +35,12 @@ carries it. Core schema identity is not yet resourced: this package ships no
 schemas and has no generator, and
 [g01.010](g01/010-core-schema-identity.md) waits on three decisions — the
 identifier spelling, the generation home, and the publication shape. The styling
-question is also open and needs an operator answer: the `--nightfire-*` set in
-`ts/src/styles.css` is an application interface swept in by the extraction rather
-than a content concern.
+question is also open and needs an operator answer, but it is narrower than it
+first looked: every `--nightfire-*` token in `ts/src/styles.css` is consumed by
+editor chrome and none by a renderer, so the stylesheet stays and the real
+question is where its *values* come from.
 [Contract 003](../contracts/003-styling-and-restyling.md) states it, and
-[g01.011](g01/011-application-interface-styling.md) tracks the decision and its
-blast radius.
+[g01.011](g01/011-editor-default-styling.md) tracks the decision.
 
 ## Next Task
 

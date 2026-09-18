@@ -24,8 +24,8 @@ Rust consumers use the same immutable repository tag:
 nightfire = { git = "ssh://git@github.com/inflatable-cookie/nightfire.git", tag = "v0.1.0" }
 ```
 
-Svelte 5 is a peer dependency. Consumers using the editor or renderer must also
-load the standalone design tokens:
+Svelte 5 is a peer dependency. Consumers using the **editor** must load the
+default editor styling; renderers carry no appearance and need none of it:
 
 ```ts
 import "@inflatable-cookie/nightfire/styles.css";

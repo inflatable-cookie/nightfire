@@ -93,12 +93,12 @@ content-presentational fact belongs to the block's data rather than to a theme. 
 `underlay-*` class selectors are extraction artifacts — `PROVENANCE.md` is explicit that they are not
 an import, dependency, or integration hook — and no renderer may depend on them.
 
-`ts/src/styles.css` and its 23 `--nightfire-*` values are an **application interface** swept in by the
-extraction, not a content concern: six of the tokens are UI-shaped — button chip padding, field
-background, danger, and surface colours — and no markdown, table, or list renderer needs any of them.
-Where that interface styling belongs is open and is
-[g01.011](../roadmaps/g01/011-application-interface-styling.md). Until it is settled, a block renderer
-adds no token and takes no dependency on one.
+`ts/src/styles.css` and its 23 `--nightfire-*` values are the **editor surfaces' default appearance
+layer**: every token is consumed, and only by editor chrome — no renderer references one. Its
+`./styles.css` subpath therefore stays. What is open in
+[g01.011](../roadmaps/g01/011-editor-default-styling.md) is where those **values** come from, because
+`PROVENANCE.md` traces them to an application stylesheet and several inline fallbacks contradict the
+shipped palette. A block renderer still adds no token and takes no dependency on one.
 
 ## The rich-text vocabulary
 

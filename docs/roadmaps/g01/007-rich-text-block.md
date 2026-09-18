@@ -43,7 +43,7 @@ not a block. The data shape is therefore ours to define rather than recover.
   `data-nightfire-block="rich_text"` on its root, and introduces no class of its
   own. Structural facts go in data attributes. This package adds no token: the
   `--nightfire-*` set is an application interface, not a content concern, and its
-  ownership is open in [g01.011](011-application-interface-styling.md).
+  ownership is open in [g01.011](011-editor-default-styling.md).
 - **Version.** Initial version for a new type. No migration, and unknown
   versions stay rejected.
 
