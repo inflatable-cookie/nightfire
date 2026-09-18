@@ -37,6 +37,12 @@ Checked rather than inferred, because an earlier version of this card got it wro
   Whichever loads, the other is a second undeclared value for the same token.
 - **Six names are app-shaped**: `color-surface`, `color-surface-secondary`, `color-danger`,
   `color-field-bg`, `button-chip-padding-block`, `button-chip-padding-inline`.
+- **The same concepts exist in Poodle under different names.** Poodle ships 79 `--poodle-*` properties,
+  and some describe exactly what Nightfire's describe: `--poodle-color-status-danger` next to
+  `--nightfire-color-danger`, and `--poodle-color-border-default` next to
+  `--nightfire-color-border-subtle` and `--nightfire-color-border-strong`. The editors embed Poodle
+  components (`Button`, `TextInput`, `Select`, `MediaThumbnail`), so a consumer theming an editor sets
+  both vocabularies by hand and nothing relates them: change one and the other silently disagrees.
 
 ## Why removal was off the table
 
@@ -58,9 +64,17 @@ fallback pattern.
 - **This package owns them.** The names and values here become the authority for its editor chrome,
   the upstream relationship becomes provenance, and app-shaped names are either renamed to editor
   concepts or accepted as the editor's own interface. Cost: nothing to publish first.
-- **Align with Poodle's token source.** One theme surface across both packages, with the values defined
-  once. Cost: Poodle's tokens are private at `0.0.0` with no exports, so they must be published and
-  versioned first, and this becomes a cross-repository dependency.
+- **Align with Poodle's token source.** One source of values for a surface that is already visually one
+  surface, with the overlapping pairs (`danger`, borders, surfaces) related by construction rather than
+  by hand. Note this is a **build-time value source, not a shared runtime variable set**: Poodle's
+  runtime properties are its own internal surface, so aligning means both stylesheets derive from one
+  source. Cost: Poodle's tokens are private at `0.0.0` with no exports, so they must be published and
+  versioned first, making this a cross-repository dependency that a release has to wait on.
+
+**Recommendation for this release: own them here.** Nothing has to be published first, it unblocks the
+fallback cleanup, and it does not prevent aligning later — it makes alignment a follow-up rather than a
+prerequisite. Either way the overlapping pairs get a recorded relationship, so the drift becomes a
+decision rather than an accident.
 
 Whichever is chosen, two things happen in the same change:
 
