@@ -3,7 +3,8 @@
 Owner: repo maintainers
 Created: 2026-09-18
 Governing refs: `docs/architecture/core-package-vocabulary.md`,
-`docs/contracts/002-package-boundary.md`, `docs/contracts/003-styling-and-restyling.md`
+`docs/contracts/002-package-boundary.md`,
+`docs/contracts/003-styling-and-restyling.md`
 Depends on: g01.007 — the seam is consumed by the rich-text image node, so the
 block that consumes it lands first
 UI classification: refinement — compact brief below
@@ -53,9 +54,9 @@ The existing `media` block already has an editor and reads `media_id`, `caption`
 - **Classification and workflow.** Refinement. The author picks a media item and
   sees a reference in the block; the image editor reuses the field and picker
   pattern the `media` editor already established.
-- **Presentation direction.** No new visual language. Poodle components and the
-  `--nightfire-*` tokens; renderers carry no scoped styles. The download card
-  emits semantic markup and data attributes only.
+- **Presentation direction.** No new visual language. Poodle components; careful
+  semantic markup. Renderers carry no scoped styles, emit the data hook, and
+  introduce no class of their own. This package adds no token.
 - **States.** No source registered → the picker action is unavailable and the
   block renders inert. Registered but unresolved reference → inert, marked by a
   data attribute. Resolved reference → the image or the download card.
@@ -84,7 +85,7 @@ The existing `media` block already has an editor and reads `media_id`, `caption`
 | The render path needs no editor | resolution requires Svelte context or an editor module | `effigy check:boundaries` passes with the renderers using `resolve` |
 | An unregistered consumer still has a valid block | the renderer throws or renders a broken element | a test renders both blocks with no source registered and asserts inert, attribute-marked output |
 | Declaration and registration agree | a capability flag is true and nothing is registered | the self-registration test passes |
-| Restyleability holds | a scoped style or a literal theme value | contract 003 acceptance for both renderers |
+| Restyleability holds | a scoped style, a new class, or a token dependency | contract 003 rules 1–4 for both renderers: no scoped styles, data hook present, no class or token added |
 
 ## Stop conditions
 

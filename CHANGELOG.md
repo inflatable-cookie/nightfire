@@ -19,8 +19,9 @@ immutable.
 
 ### Changed
 
-- Added the styling and restyling contract: the `--nightfire-*` set is public
-  API, renderers carry no scoped styles, and renames are breaking.
+- Removed the styling and restyling contract recorded earlier the same day. It
+  asserted that this package owns a theme surface; the `--nightfire-*` set is an
+  application interface swept in by the extraction, and where it belongs is open.
 
 ## [0.1.0] — 2026-09-18
 

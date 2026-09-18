@@ -11,13 +11,13 @@ package's authority over its own vocabulary:
 - one media-source seam serving the image block, the media block, and the
   rich-text image node;
 - this package's identifiers on its own schemas, generated and published here;
-- one documented styling contract.
+- a decided home for the application-interface styling that the extraction swept
+  in.
 
 Release record: `@inflatable-cookie/nightfire@0.1.0` is published on npm and the
 repository carries the annotated tag `v0.1.0`. The Rust crate is tag-only, with no
 crate-registry publication, matching Poodle and Longhorn. The identity and
-styling aims are g01.010 and contract 003's open token-provenance decision; the
-rest is the runway below.
+styling aims are g01.010 and g01.011; the rest is the runway below.
 
 ## Roadmap Sequence
 
@@ -31,6 +31,7 @@ rest is the runway below.
 8. [g01.008 — Media source seam and media shells](008-media-source-seam-and-shells.md) — serial behind g01.007; one vocabulary decision open.
 9. [g01.009 — Layout block editors](009-layout-block-editors.md) — planned; needs a table-editing brief.
 10. [g01.010 — Core schema identity and publication](010-core-schema-identity.md) — blocked across repositories.
+11. [g01.011 — Application interface styling](011-application-interface-styling.md) — blocked on where the interface tokens live.
 
 g01.001–003 predate the Queue lifecycle projection, so the generated block below
 lists only the tasks the lifecycle system holds records for. Their terminal state

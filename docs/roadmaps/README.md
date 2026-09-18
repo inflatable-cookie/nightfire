@@ -24,9 +24,12 @@ shells follow it, and the layout editors come last. The three are serial because
 they share one capability declaration and two catalog files.
 
 Core schema identity is blocked on a cross-repository decision and is not a local
-dispatch. The token-provenance decision is open in
-[contract 003](../contracts/003-styling-and-restyling.md) and needs an operator
-answer before the styling contract can call its token set stable.
+dispatch. The styling question is also open and needs an operator answer: the
+`--nightfire-*` set in `ts/src/styles.css` is an application interface swept in by
+the extraction rather than a content concern.
+[Contract 003](../contracts/003-styling-and-restyling.md) states it, and
+[g01.011](g01/011-application-interface-styling.md) tracks the decision and its
+blast radius.
 
 ## Next Task
 

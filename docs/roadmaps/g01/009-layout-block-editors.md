@@ -3,7 +3,8 @@
 Owner: repo maintainers
 Created: 2026-09-18
 Governing refs: `docs/architecture/core-package-vocabulary.md`,
-`docs/contracts/002-package-boundary.md`, `docs/contracts/003-styling-and-restyling.md`
+`docs/contracts/002-package-boundary.md`,
+`docs/contracts/003-styling-and-restyling.md`
 Depends on: g01.008 — the lanes share the declaration and the two catalog files
 UI classification: workflow change — brief not yet written
 Ready state: not ready — needs a UI design brief before dispatch
@@ -23,8 +24,8 @@ Both types render today; neither edits. The two halves are not equally settled:
 - **`table`** is not settled. A table editor is a new authoring workflow: cell
   editing, row and column insertion and removal, borders, alignment, and spans.
   Nothing in this repository fixes that experience, so a worker would have to
-  invent it. Contract 003 fixes only how the *rendered* result is styled, not how
-  it is authored.
+  invent it. The architecture fixes only how the *rendered* result is marked up,
+  not how it is authored.
 
 ## Ready-state rubric
 

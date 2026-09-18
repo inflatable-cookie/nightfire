@@ -72,11 +72,12 @@ fields or the clean break moves alt and sizing to `image` only is **open**; see 
 
 ## Appearance
 
-Renderers carry no scoped styles, emit `data-nightfire-block="<type>"`, and introduce no class of
-their own. Data attributes carry structural facts, and a content-presentational fact belongs to the
-block's data rather than to a theme. The retained `underlay-*` class selectors are extraction
-artifacts — `PROVENANCE.md` is explicit that they are not an import, dependency, or integration hook —
-and no renderer may depend on them.
+[Contract 003](../contracts/003-styling-and-restyling.md) owns the renderer appearance rules:
+renderers carry no scoped styles, emit `data-nightfire-block="<type>"`, introduce no class of their
+own, and leave appearance entirely to the consumer. Data attributes carry structural facts, and a
+content-presentational fact belongs to the block's data rather than to a theme. The retained
+`underlay-*` class selectors are extraction artifacts — `PROVENANCE.md` is explicit that they are not
+an import, dependency, or integration hook — and no renderer may depend on them.
 
 `ts/src/styles.css` and its 23 `--nightfire-*` values are an **application interface** swept in by the
 extraction, not a content concern: six of the tokens are UI-shaped — button chip padding, field

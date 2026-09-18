@@ -3,10 +3,11 @@
 Owner: repo maintainers
 Created: 2026-09-18
 Governing refs: `docs/architecture/core-package-vocabulary.md`,
-`docs/contracts/002-package-boundary.md`, `docs/contracts/003-styling-and-restyling.md`
+`docs/contracts/002-package-boundary.md`,
+`docs/contracts/003-styling-and-restyling.md`
 Depends on: no other Queue task
 UI classification: none — component wiring; the editing experience is Poodle's
-and the appearance contract is contract 003
+and appearance is limited to the no-scoped-styles, data-hook rule
 
 ## Outcome
 
@@ -38,9 +39,11 @@ not a block. The data shape is therefore ours to define rather than recover.
   supplies the host function.
 - **Empty content.** `data.document` is empty when it is absent, is not an
   object, or is a document with no text and no non-text node.
-- **Appearance.** Contract 003 governs: no scoped styles,
-  `data-nightfire-block="rich_text"` on the root, and every presentational value
-  comes from the `--nightfire-*` set or is added to it here.
+- **Appearance.** A renderer carries no scoped styles, emits
+  `data-nightfire-block="rich_text"` on its root, and introduces no class of its
+  own. Structural facts go in data attributes. This package adds no token: the
+  `--nightfire-*` set is an application interface, not a content concern, and its
+  ownership is open in [g01.011](011-application-interface-styling.md).
 - **Version.** Initial version for a new type. No migration, and unknown
   versions stay rejected.
 
@@ -65,7 +68,7 @@ not a block. The data shape is therefore ours to define rather than recover.
 | The vocabulary is Poodle's, not a second copy | a local feature list, node schema, or toolbar definition appears | no rich-text node, mark, feature, or toolbar definition exists under `ts/src`; the feature list is Poodle's exported set |
 | The renderer renders structured content | it falls back to raw text or unsanitised HTML | a component test renders a document with a heading, a list, and a link through the registered renderer |
 | Editing round-trips | the editor writes a shape the renderer does not read | a component test edits and asserts `data.document` stays ProseMirror document JSON |
-| Restyleability holds | a scoped style or a literal colour, space, or radius | contract 003 acceptance: no scoped styles, root `data-nightfire-block`, values tokenised |
+| Restyleability holds | a scoped style, a new class, or a token dependency | contract 003 rules 1–4: no scoped styles, the `data-nightfire-block="rich_text"` root hook is present, and the diff adds no class and no `--nightfire-*` name |
 | The render path stays editor-free | the renderer graph picks up an editor module | `effigy check:boundaries` passes |
 
 ## Stop conditions

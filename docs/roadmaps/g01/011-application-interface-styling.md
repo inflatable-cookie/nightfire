@@ -2,9 +2,13 @@
 
 Owner: repo maintainers
 Created: 2026-09-18
-Governing refs: `docs/architecture/core-package-vocabulary.md`, `PROVENANCE.md`
+Governing refs: `docs/architecture/core-package-vocabulary.md`,
+`docs/contracts/003-styling-and-restyling.md`, `PROVENANCE.md`
 Depends on: an operator decision
 Ready state: blocked — operator decision on where the interface styling lives
+
+The contract already states the open question and the rules. This card tracks the
+decision and its blast radius as roadmap work.
 
 ## Outcome
 
