@@ -18,6 +18,10 @@ initial-tag-current-version = true
 [release.gates]
 qa = "effigy qa"
 
+[release.gates.headless]
+command = "effigy release:npm-certificate"
+description = "Pack once and certify the npm archive set with its candidate identity manifest"
+
 [bootstrap]
 setup = ["bootstrap:deps"]
 
@@ -28,6 +32,13 @@ section = "Vision Artifacts"
 
 [tasks]
 "bootstrap:deps" = "cd {repo} && bun install --frozen-lockfile"
+"release:npm-admission" = "cd {repo} && bun ts/scripts/npm-admission.ts"
+"release:npm-archive" = "cd {repo} && bun ts/scripts/npm-archive.ts"
+"release:npm-certificate" = [
+  { task = "release:npm-admission" },
+  { task = "release:npm-archive" },
+]
+"check:release-candidate" = "cd {repo} && bun ts/scripts/verify-npm-candidate.ts"
 check = "cd {repo} && bun x svelte-check --tsconfig ts/tsconfig.json"
 "check:types" = "cd {repo} && bun x tsc --project ts/tsconfig.json --noEmit"
 "check:exports" = "cd {repo} && bun ts/scripts/check-exports.ts"
