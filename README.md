@@ -8,7 +8,7 @@ application integrations stay in consumers.
 
 The repository keeps the TypeScript/Svelte implementation under `ts/`, the
 Rust crate `nightfire` under `rust/`, and shared wire fixtures at the root.
-The first release remains separately gated.
+`0.1.0` is published on npm and tagged `v0.1.0`.
 
 ## Install
 

@@ -30,7 +30,7 @@ styling aims are g01.010 and g01.011; the rest is the runway below.
 7. [g01.007 — Rich-text block](007-rich-text-block.md) — complete.
 8. [g01.008 — Download card replaces the media block](008-download-card-replaces-media.md) — in review.
 9. [g01.009 — Table editor](009-table-editor.md) — ready; serial behind g01.012.
-10. [g01.010 — Core schema identity and publication](010-core-schema-identity.md) — blocked across repositories.
+10. [g01.010 — Core schema identity and publication](010-core-schema-identity.md) — blocked on three decisions: identifier, generation home, publication shape.
 11. [g01.011 — Application interface styling](011-application-interface-styling.md) — blocked on where the interface tokens live.
 12. [g01.012 — Image block](012-image-block.md) — queued behind g01.008.
 13. [g01.013 — Video embed block](013-video-embed-block.md) — serial behind g01.009.
