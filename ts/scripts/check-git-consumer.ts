@@ -7,6 +7,16 @@ if (kind !== "npm" && kind !== "cargo") {
   throw new Error("usage: bun ts/scripts/check-git-consumer.ts <npm|cargo>");
 }
 
+// A published package is consumed over https, whatever transport the developer
+// happens to push with. Echoing the remote's transport made this proof fail for
+// anyone on an ssh remote: `bun add git+ssh://` is not fetchable, and the failure
+// looked like a dependency problem rather than a transport one.
+function normalizePublicGitUrl(remote: string): string {
+  return remote
+    .replace(/^ssh:\/\/git@github\.com\//, "https://github.com/")
+    .replace(/^git@github\.com:/, "https://github.com/");
+}
+
 function run(command: string[], cwd?: string, env?: Record<string, string>) {
   const child = Bun.spawnSync(command, {
     cwd,
@@ -25,7 +35,8 @@ const revision = Bun.spawnSync(["git", "rev-parse", "HEAD"], { stdout: "pipe" })
   .stdout.toString().trim();
 const origin = Bun.spawnSync(["git", "remote", "get-url", "origin"], { stdout: "pipe" });
 if (origin.exitCode !== 0) throw new Error("origin Git URL is required for consumer proof");
-const repository = process.env.NIGHTFIRE_GIT_URL ?? origin.stdout.toString().trim();
+const repository =
+  process.env.NIGHTFIRE_GIT_URL ?? normalizePublicGitUrl(origin.stdout.toString().trim());
 const destination = await mkdtemp(join(tmpdir(), `nightfire-${kind}-consumer-`));
 
 try {
