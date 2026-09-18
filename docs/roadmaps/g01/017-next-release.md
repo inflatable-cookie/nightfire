@@ -59,19 +59,35 @@ to suit it.
 | Full `effigy qa` at the release commit, both languages | not yet | Plus the clean pushed head the Git-consumer proofs need. |
 | Review oracle settled for every scoped lane | **done** | [Contract 004](../contracts/004-review-oracle.md) declares the repository's oracle: implementation and interaction tests, no rendered surface. Recorded because a UI-classified lane blocked at review for want of one. |
 
+## Release sequence
+
+Read from `.github/workflows/release.yml`, which separates certification from publication and never
+rebuilds on publish. The order matters, and step 2 is the one Effigy gets wrong by default.
+
+1. **Set the version to `0.2.0`** in `package.json` and the root `Cargo.toml`, promote `[Unreleased]` into
+   `## [0.2.0] - <date>` keeping the `### Removed` section, commit and push. The head must be clean and
+   pushed: `release:npm-admission` refuses a dirty tree, and the Git-consumer proofs install from the
+   pushed commit.
+2. **Prepare with an explicit version.** `effigy release simulate` computes `0.1.1` from this history
+   because nothing carries a breaking marker. Never accept its plan here.
+3. **Tag `v0.2.0` on that commit and push the tag.** Publication is an act against a tag, never a branch
+   tip, and the verifier checks that the tag's version and commit match the certified set.
+4. **Certify.** Dispatch `release.yml` with `mode: candidate` on the tag. It packs once and writes the
+   candidate identity manifest binding the source commit and every tarball hash. Record the run ID.
+5. **Publish.** Dispatch `release.yml` with `mode: publish` and that `candidate-run-id` (plus `release-tag`
+   if dispatched from `main`). It consumes the certified set, verifies tag, commit, version, package set
+   and hashes before any npm mutation, and mints the OIDC token for the trusted publisher.
+6. **Verify by consuming**, not by reading the log: install the published version and confirm the schemas
+   are present in the artifact.
+7. **Record and notify.** Version, commit, tag, hashes and the publish result go here; the Acowtancy
+   consumer repins from this tag and cannot proceed until it exists.
+
 ## Work
 
 1. Confirm every scoped lane is accepted, and that nothing half-landed is in the release commit.
-2. Set `0.2.0` in `package.json` and the root `Cargo.toml`; run `effigy check:version-sync`.
-3. Add the `### Removed` changelog section for the retired media surface.
-4. Confirm the published schema set covers the final declaration, including the block type `g01.013`
-   adds last.
-5. Run `release:npm-admission`, then `release:npm-archive`, then `check:release-candidate` for the
-   candidate identity.
-6. Run `release.yml` in candidate mode on `main`, then in publish mode.
-7. Verify the published artifact by consuming it, including the schemas, rather than by reading the
-   workflow log.
-8. Record the immutable version, commit, tag and artifact hashes here, and close the release row.
+2. Run the release sequence above, steps 1 to 7, taking the operator's explicit authority for steps 3
+   to 5.
+3. Record the immutable version, commit, tag and artifact hashes here, and close the release row.
 
 ## Acceptance and review oracle
 
