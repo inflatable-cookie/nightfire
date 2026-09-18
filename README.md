@@ -50,6 +50,12 @@ The Rust crate exposes the matching value, block, strategy, registry,
 validation, hashing, block-ID, and media-locator contracts. Both languages use
 the shared versioned fixtures under `fixtures/wire/`.
 
+JSON Schema 2020-12 documents for the generic wire mechanics and every declared
+core block payload ship under `schemas/`. Their stable mechanics identifiers are
+`nightfire.value@1`, `nightfire.block@1`, `nightfire.registry@1`, and
+`nightfire.strategy@1`. References stay relative so consumers can copy and
+validate the tree offline.
+
 The wire shape is:
 
 ```ts

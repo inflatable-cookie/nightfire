@@ -10,6 +10,7 @@
   "files": [
     "ts/src",
     "fixtures/wire",
+    "schemas",
     "README.md",
     "LICENSE",
     "PROVENANCE.md"

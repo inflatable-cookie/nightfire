@@ -45,6 +45,7 @@ check = "cd {repo} && bun x svelte-check --tsconfig ts/tsconfig.json"
 "check:exports" = "cd {repo} && bun ts/scripts/check-exports.ts"
 "check:boundaries" = "cd {repo} && bun ts/scripts/check-boundaries.ts"
 "check:pack" = "cd {repo} && bun ts/scripts/check-pack.ts"
+"check:schemas" = "cd {repo} && bun ts/scripts/check-schemas.ts"
 "check:version-sync" = "cd {repo} && bun ts/scripts/check-version-sync.ts"
 "check:rust:format" = "cd {repo} && cargo fmt --all --check"
 "check:rust" = "cd {repo} && cargo check --workspace --all-targets --locked"
@@ -86,6 +87,7 @@ check = "cd {repo} && bun x svelte-check --tsconfig ts/tsconfig.json"
 health = [
   { task = "check:exports" },
   { task = "check:boundaries" },
+  { task = "check:schemas" },
   { task = "check:version-sync" },
 ]
 

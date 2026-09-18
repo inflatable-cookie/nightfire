@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "nightfire.block.item_list@1",
+  "title": "Nightfire item-list block payload",
+  "type": "object",
+  "required": ["items"],
+  "properties": {
+    "title": {
+      "anyOf": [{ "type": "string" }, { "type": "null" }]
+    },
+    "intro": {},
+    "variant": { "type": "string" },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["body"],
+        "properties": {
+          "title": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }]
+          },
+          "body": {
+            "type": "array",
+            "items": { "$ref": "../block.schema.json" }
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

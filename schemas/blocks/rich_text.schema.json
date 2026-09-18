@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "nightfire.block.rich_text@1",
+  "title": "Nightfire rich-text block payload",
+  "type": "object",
+  "required": ["document"],
+  "properties": {
+    "document": {
+      "allOf": [
+        { "$ref": "#/$defs/node" },
+        {
+          "type": "object",
+          "required": ["type"],
+          "properties": { "type": { "const": "doc" } }
+        }
+      ]
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "node": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": { "type": "string", "minLength": 1 },
+        "attrs": { "type": "object" },
+        "content": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/node" }
+        },
+        "marks": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/mark" }
+        },
+        "text": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "mark": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": { "type": "string", "minLength": 1 },
+        "attrs": { "type": "object" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "nightfire.block.table@1",
+  "title": "Nightfire table block payload",
+  "type": "object",
+  "required": ["rows"],
+  "properties": {
+    "caption": {
+      "anyOf": [{ "type": "string" }, { "type": "null" }]
+    },
+    "rows": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/row" }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "row": {
+      "type": "object",
+      "required": ["section", "cells"],
+      "properties": {
+        "section": { "type": "string" },
+        "cells": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/cell" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "cell": {
+      "type": "object",
+      "required": ["markdown"],
+      "properties": {
+        "markdown": { "type": "string" },
+        "is_header": { "type": "boolean" },
+        "colspan": { "type": "integer", "minimum": 1 },
+        "rowspan": { "type": "integer", "minimum": 1 },
+        "horizontal_align": {
+          "anyOf": [{ "type": "string" }, { "type": "null" }]
+        },
+        "vertical_align": {
+          "anyOf": [{ "type": "string" }, { "type": "null" }]
+        },
+        "borders": { "$ref": "#/$defs/borders" }
+      },
+      "additionalProperties": false
+    },
+    "borders": {
+      "type": "object",
+      "properties": {
+        "top": { "type": "boolean" },
+        "bottom": { "type": "boolean" },
+        "left": { "type": "boolean" },
+        "right": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    }
+  }
+}
