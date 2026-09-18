@@ -79,8 +79,9 @@ rebuilds on publish. The order matters, and step 2 is the one Effigy gets wrong 
    and hashes before any npm mutation, and mints the OIDC token for the trusted publisher.
 6. **Verify by consuming**, not by reading the log: install the published version and confirm the schemas
    are present in the artifact.
-7. **Record and notify.** Version, commit, tag, hashes and the publish result go here; the Acowtancy
-   consumer repins from this tag and cannot proceed until it exists.
+7. **Record and notify.** Version, commit, tag, hashes and the publish result go here; update
+   `README.md`'s consumer example to the published tag rather than `v0.1.0`; and tell the Acowtancy
+   consumer, which repins from this tag and cannot proceed until it exists.
 
 ## Work
 

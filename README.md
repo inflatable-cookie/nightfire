@@ -35,9 +35,8 @@ The stylesheet is the editor's default appearance layer, not a renderer theme.
 Its declared `--nightfire-*` names are the public override surface: consumers
 can re-declare a name in their own scope without a fork, build step, or
 Nightfire dependency. The six app-shaped names (`color-surface`,
-`color-surface-secondary`, `color-danger`, `color-field-bg`, and
-`button-chip-padding-block` and `button-chip-padding-inline`) are intentionally retained as stable
-editor-chrome API names.
+`color-surface-secondary`, `color-danger`, `color-field-bg`, `button-chip-padding-block` and
+`button-chip-padding-inline`) are intentionally retained as stable editor-chrome API names.
 
 To align Nightfire's editor defaults with Poodle's variables, map them on the
 wrapper that contains the editor:

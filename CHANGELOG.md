@@ -6,6 +6,8 @@ immutable.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-09-18
+
 ### Added
 
 - Declared the core block vocabulary in `ts/src/core-blocks.ts`, with a test that
@@ -62,6 +64,10 @@ immutable.
 ### Changed
 
 - The exported surface replaces `./media` with `./media-source`; see Removed above.
+- The editor default styling was audited: every token now has exactly one declared value with no
+  inline `var()` fallback left, `--nightfire-color-focus` is declared (it was referenced and
+  missing), and the `--nightfire-*` names are documented in `README.md` as the public override
+  surface, with a wrapper-scoped recipe for aligning them to Poodle's variables.
 - The `--nightfire-*` values in `ts/src/styles.css` are the editor surfaces' **default appearance layer**,
   and they are overridable defaults: the token **names** are the public API and the values are not. A
   consumer re-declares any of them in the scope that fits, including mapping them onto Poodle's semantic
