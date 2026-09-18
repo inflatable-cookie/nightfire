@@ -6,3 +6,4 @@ import "./markup/render";
 import "./layout/render";
 import "./rich-text/render";
 import "./download-card/render";
+import "./image/render";

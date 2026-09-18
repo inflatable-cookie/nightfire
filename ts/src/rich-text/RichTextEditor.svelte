@@ -4,6 +4,7 @@
     RICH_TEXT_FEATURES,
     type ProseMirrorDocumentJSON
   } from "@inflatable-cookie/poodle-svelte/rich-text";
+  import { createRichTextImageRequest } from "./images";
 
   type RichTextBlock = {
     type?: string;
@@ -40,6 +41,11 @@
 
   const document = $derived(asDocument(block?.data?.document));
 
+  // Read once at mount: registration happens at the consumer's boundary,
+  // before any editor renders. A null host function is Poodle's own signal
+  // to leave the image insert command out of the toolbar.
+  const requestImage = createRichTextImageRequest();
+
   function handleChange(next: ProseMirrorDocumentJSON) {
     onChange({
       type: block?.type ?? "rich_text",
@@ -53,6 +59,7 @@
   <PoodleRichTextEditor
     value={document}
     features={RICH_TEXT_FEATURES}
+    requestImage={requestImage}
     placeholder="Write rich text..."
     onChange={handleChange}
   />

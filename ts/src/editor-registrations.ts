@@ -4,4 +4,5 @@
 
 import "./markup/editor";
 import "./download-card/editor";
+import "./image/editor";
 import "./rich-text/editor";
