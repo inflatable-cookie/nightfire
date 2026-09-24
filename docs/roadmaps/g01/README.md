@@ -96,7 +96,7 @@ After this currentness repair closes, return to the existing product frontier. N
 
 Do not execute a further release or a consumer cutover without explicit authority.
 
-<!-- northstar:lifecycle:begin schema=northstar.lifecycle.projection.v2 digest=sha256:2fd9ce7f2f1f886ca505ceb3ccdde694763b560f1a4a15dc605a6aaa77cc165d -->
+<!-- northstar:lifecycle:begin schema=northstar.lifecycle.projection.v2 digest=sha256:04429e8da23028c60fbd3cffc7e1d06eb468486d3f5f2234815f2385e9bc943e -->
 | Generation | Disposition | Runway state |
 | --- | --- | --- |
 | g01 | open | planning_required |
@@ -116,4 +116,5 @@ Do not execute a further release or a consumer cutover without explicit authorit
 | g01.015 | complete | none | 8 | sha256:c15629b929f76c9da34ae44e578921c54e0b1ee723c83b362665f94f11187dd8 |
 | g01.016 | complete | none | 8 | sha256:e70dd93fda77ecbc0febb0557ff01d20f458be0fb6f9e070f81963256af9ad86 |
 | g01.018 | complete | none | 8 | sha256:9b814e9416cd9e5cf9d1e6f3adcc46e71d97357b26a912059147f31eb8ca851a |
+| g01.019 | complete | none | 8 | sha256:a197be0743e92251a1c91b2ccc2d330e06b903a3133da6928b633c4414a81c1d |
 <!-- northstar:lifecycle:end -->
