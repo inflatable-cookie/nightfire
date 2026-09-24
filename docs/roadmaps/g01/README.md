@@ -86,11 +86,13 @@ acceptance.
 ## Next Task
 
 `0.2.0` is released: published on npm, tagged, and verified by consuming it. One lane remains open.
-g01.018 repairs a measured legibility defect in the slash palette — with the shipped light token defaults
+That lane covers a measured legibility defect in the slash palette — with the shipped light token defaults
 its search field measures 1.00:1 contrast and its command labels 1.23:1, because the component hardcodes a
 dark chrome over the light defaults and lets its labels inherit the host's text colour. It also closes the
 method gap that let those literals past the token audit, which swept for `var()` references and could not
 see a value written directly.
+
+After this currentness repair closes, return to the existing product frontier. No product successor is named here.
 
 Do not execute a further release or a consumer cutover without explicit authority.
 
