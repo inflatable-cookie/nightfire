@@ -39,6 +39,7 @@ styling aims are g01.010 and g01.011; the rest is the runway below.
 16. [g01.016 — Item list editor](016-item-list-editor.md) — complete.
 17. [g01.017 — Next release](017-next-release.md) — complete; `0.2.0` is published on npm and tagged.
 18. [g01.018 — Editor chrome literals](018-editor-chrome-literals.md) — ready; a measured legibility defect in the slash palette, and the guard that stops the next literal.
+19. [g01.019 — Repair lifecycle currentness](019-repair-lifecycle-currentness.md) — ready; bounded repair of the one audited currentness finding, independent of product sequencing.
 
 g01.001–003 predate the Queue lifecycle projection, so the generated block below
 lists only the tasks the lifecycle system holds records for. Their terminal state
