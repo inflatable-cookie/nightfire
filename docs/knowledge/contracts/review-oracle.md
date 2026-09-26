@@ -44,5 +44,5 @@ interaction tests stay as the floor.
 
 Each brief states its oracle and proves it in-repo. Where a rule is assertable,
 a check asserts it: the boundary proof keeps renderers free of editor modules,
-the boundary and style-literal checks keep appearance rules honest, and a
+the boundary and colour-literal checks keep appearance rules honest, and a
 change's interaction oracle lives in its component tests.

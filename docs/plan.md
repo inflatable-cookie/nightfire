@@ -14,9 +14,6 @@ Updated: 2026-09-26
    TypeScript deliberately. Keep the unknown-property counterexamples and the
    set-equality check. See
    [vocabulary](knowledge/domain/vocabulary.md#published-schemas).
-2. **Style-literal guard says what it covers** — `check:style-literals` guards
-   colours only, and its name implies all style literals. Rename the check and
-   its message to say colours; tokenise nothing new. See Q-002.
 
 ## Next
 

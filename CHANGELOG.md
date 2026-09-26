@@ -11,6 +11,11 @@ immutable.
 - `--nightfire-color-selection`, the slash palette's selected-item colour, so the
   highlight is a named token rather than two literal alphas.
 
+### Changed
+
+- `check:style-literals` is now `check:colour-literals`. Contributors run it by
+  that name through `effigy health`; it still fails only on colour literals.
+
 ### Fixed
 
 - The slash command palette renders as light editor chrome instead of a dark

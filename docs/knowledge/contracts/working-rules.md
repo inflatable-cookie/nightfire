@@ -26,7 +26,7 @@ verify and unsafe to coordinate.
   the tree and fail the Git-consumer proof.
 - The export map is a checked contract: `check-exports.ts` compares it against an
   explicit expectation in both directions, so a new subpath is declared there.
-- `health` runs the export, boundary, schema, style-literal, and version-sync
+- `health` runs the export, boundary, schema, colour-literal, and version-sync
   proofs; `qa` adds the release-automation guard.
 
 ## Cross-repository rule

@@ -55,10 +55,10 @@ does not must provide its own editor styling.
 
 ## Proof
 
-`ts/scripts/check-style-literals.ts` (`check:style-literals`, in `health`) fails
+`ts/scripts/check-colour-literals.ts` (`check:colour-literals`, in `health`) fails
 on a colour literal in any `ts/src/**/*.svelte` style block; the exceptions are
 `transparent`, `currentColor` and `inherit`.
-`ts/tests/nightfire/style-literals.test.ts` asserts that no renderer references
+`ts/tests/nightfire/colour-literals.test.ts` asserts that no renderer references
 a token and that the token count here matches `styles.css`.
 
 The guard covers colours only, by decision (operator ruling, 2026-09-26). Radii,
