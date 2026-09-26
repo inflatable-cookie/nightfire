@@ -144,5 +144,5 @@ if (import.meta.main) {
       `component styles hold ${findings.length} colour literal(s); reference a --nightfire-* token from ts/src/styles.css instead`,
     );
   }
-  console.log("style literal proof passed: no colour literal in any ts/src/**/*.svelte style block");
+  console.log("colour literal proof passed: no colour literal in any ts/src/**/*.svelte style block");
 }

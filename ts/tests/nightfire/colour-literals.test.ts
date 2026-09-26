@@ -1,7 +1,7 @@
 import { describe, expect, it } from "../vitest";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { checkRepository, colourLiterals, styleBlocks } from "../../scripts/check-style-literals";
+import { checkRepository, colourLiterals, styleBlocks } from "../../scripts/check-colour-literals";
 
 // Component styles reference a token and never hold a colour. g01.011's audit
 // swept `var(--nightfire-*)` references and could not see the dark literals the
@@ -66,7 +66,7 @@ function contrast(foreground: string, background: string): number {
   return (light + 0.05) / (dark + 0.05);
 }
 
-describe("nightfire/style literals", () => {
+describe("nightfire/colour literals", () => {
   it("bites on a planted colour literal in a style block", () => {
     const planted = `<span></span>\n<style>\n  .probe {\n    color: #ff0000;\n    background: rgb(15 23 42);\n    border-color: rebeccapurple;\n  }\n</style>`;
 
