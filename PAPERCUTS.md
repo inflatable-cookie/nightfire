@@ -82,7 +82,7 @@
   UI route applies only to lanes that ship appearance.
 - Surface: Northstar UI review route; `effigy demo list`; lane classification.
 - Resolved locally on 2026-09-18 by declaring the repository's review oracle in
-  `docs/contracts/004-review-oracle.md`. The route-level gap remains: a repository still cannot
+  `docs/knowledge/contracts/review-oracle.md`. The route-level gap remains: a repository still cannot
   declare an oracle to the route, so the next repository with no surface pays this again.
 
 ## Northstar Queue's whole-history snapshot outgrows the CLI transport
@@ -105,25 +105,6 @@
   entire history in one message.
 - Surface: Northstar Queue plugin `queue.snapshot`; the CLI's daemon websocket
   transport. Diagnose in `paseo-northstar-queue`, not here.
-
-## A successful publish reports failure when the registry propagates slowly
-
-- Friction: `release.yml` publish mode polls `npm view <pkg>@<version>` twelve
-  times over sixty seconds after publishing. `@inflatable-cookie/nightfire@0.2.0`
-  had not propagated inside that window, so the step reported `unavailable` and
-  failed the run — after the publish had already succeeded.
-- Impact: a released version looks like a failed release. A re-run is impossible,
-  because npm refuses to publish over an existing version, so the red run is
-  permanent and the only record of success is manual. It also invites a worse
-  mistake: reaching for a new version number to get a green run.
-- Fixed in the same change: the step now allows a five-minute propagation budget
-  and, once the version resolves, downloads the published tarball and asserts its
-  sha256 against the candidate manifest. A version that resolves is not proof that
-  the certified artifact is what the registry serves, so the stronger check costs
-  one download and closes the gap that made the old step both too weak and too
-  impatient. Tested locally across four paths: retry-then-success, live registry,
-  hash mismatch and exhausted budget.
-- Surface: release workflow; npm registry propagation; release verification.
 
 ## The first real publish is where missing provenance metadata surfaces
 

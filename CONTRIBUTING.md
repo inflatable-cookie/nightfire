@@ -15,8 +15,8 @@ effigy qa
 
 Add wire fixtures for serialization changes and malicious fixtures for any
 markdown, HTML, or URL boundary change. Update `PROVENANCE.md` when extracted
-source or boundary adaptations change. Update architecture, contracts, and
-their indexes in the same change when an observable package rule moves.
+source or boundary adaptations change. Update the owning file under
+`docs/knowledge/` in the same change when an observable package rule moves.
 
 Do not create release tags or publish artifacts as part of an implementation
 pull request.

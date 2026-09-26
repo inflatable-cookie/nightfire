@@ -109,7 +109,7 @@ effigy qa
 ## Project documentation
 
 Start at [docs/README.md](docs/README.md). It routes to the package vision,
-architecture, contracts, local roadmap, and evidence. Dependency extraction
+architecture, contracts, and plan. Dependency extraction
 evidence lives in [PROVENANCE.md](PROVENANCE.md); contribution rules live in
 [CONTRIBUTING.md](CONTRIBUTING.md).
 

@@ -25,11 +25,6 @@ description = "Pack once and certify the npm archive set with its candidate iden
 [bootstrap]
 setup = ["bootstrap:deps"]
 
-[docs_policy.indexes.vision]
-file = "docs/vision/README.md"
-dir = "docs/vision"
-section = "Vision Artifacts"
-
 [tasks]
 "bootstrap:deps" = "cd {repo} && bun install --frozen-lockfile"
 "release:npm-admission" = "cd {repo} && bun ts/scripts/npm-admission.ts"
@@ -59,30 +54,22 @@ check = "cd {repo} && bun x svelte-check --tsconfig ts/tsconfig.json"
 "test:components" = "cd {repo} && NIGHTFIRE_COMPONENT_TESTS=1 bun ts/scripts/run-test-files.ts ts/tests/components ts/tests/patterns"
 "test:sanitization" = "cd {repo} && bun ts/scripts/check-sanitization.ts"
 "test:rust" = "cd {repo} && cargo test --workspace --locked"
-"qa:docs:paths" = "cd {repo} && effigy docs check paths README.md AGENTS.md CLAUDE.md CHANGELOG.md CONTRIBUTING.md SECURITY.md PAPERCUTS.md PROVENANCE.md .agents.local.env.example ts/scripts/README.md docs/README.md docs/vision/README.md docs/vision/001-nightfire-foundation-vision.md docs/architecture/README.md docs/architecture/system-architecture.md docs/architecture/repo-authority-map.md docs/contracts/README.md docs/contracts/contract-index.md docs/contracts/001-working-rules.md docs/contracts/002-package-boundary.md docs/roadmaps/README.md docs/roadmaps/generation-index.md docs/roadmaps/g01/README.md docs/roadmaps/g01/001-standalone-package-foundation.md docs/roadmaps/g01/002-dual-language-repository.md docs/roadmaps/g01/003-v010-release.md docs/triage/README.md docs/handoffs/README.md docs/logs/README.md docs/policy/internal-writing-style.md fixtures/wire/v1/README.md rust/nightfire/README.md"
-"qa:docs:links" = "cd {repo} && effigy docs check links README.md PROVENANCE.md CONTRIBUTING.md SECURITY.md PAPERCUTS.md ts/scripts/README.md docs/README.md docs/vision/README.md docs/vision/001-nightfire-foundation-vision.md docs/architecture/README.md docs/architecture/system-architecture.md docs/architecture/repo-authority-map.md docs/contracts/README.md docs/contracts/contract-index.md docs/contracts/001-working-rules.md docs/contracts/002-package-boundary.md docs/roadmaps/README.md docs/roadmaps/generation-index.md docs/roadmaps/g01/README.md docs/roadmaps/g01/001-standalone-package-foundation.md docs/roadmaps/g01/002-dual-language-repository.md docs/roadmaps/g01/003-v010-release.md docs/triage/README.md docs/handoffs/README.md docs/logs/README.md docs/policy/internal-writing-style.md fixtures/wire/v1/README.md rust/nightfire/README.md"
-"qa:docs:index:vision" = "cd {repo} && effigy docs check index --policy-index vision"
+"qa:docs:paths" = "cd {repo} && effigy docs check paths README.md AGENTS.md CLAUDE.md CHANGELOG.md CONTRIBUTING.md SECURITY.md PAPERCUTS.md PROVENANCE.md .agents.local.env.example ts/scripts/README.md docs/README.md docs/plan.md docs/triage/README.md docs/knowledge/README.md docs/knowledge/vision.md docs/knowledge/architecture.md docs/knowledge/questions.md docs/knowledge/contracts/README.md docs/knowledge/contracts/working-rules.md docs/knowledge/contracts/package-boundary.md docs/knowledge/contracts/styling.md docs/knowledge/contracts/review-oracle.md docs/knowledge/contracts/release.md docs/knowledge/contracts/writing-style.md docs/knowledge/domain/README.md docs/knowledge/domain/vocabulary.md fixtures/wire/v1/README.md rust/nightfire/README.md"
+"qa:docs:links" = "cd {repo} && effigy docs check links README.md CONTRIBUTING.md SECURITY.md PAPERCUTS.md PROVENANCE.md ts/scripts/README.md docs/README.md docs/plan.md docs/triage/README.md docs/knowledge/README.md docs/knowledge/vision.md docs/knowledge/architecture.md docs/knowledge/questions.md docs/knowledge/contracts/README.md docs/knowledge/contracts/working-rules.md docs/knowledge/contracts/package-boundary.md docs/knowledge/contracts/styling.md docs/knowledge/contracts/review-oracle.md docs/knowledge/contracts/release.md docs/knowledge/contracts/writing-style.md docs/knowledge/domain/README.md docs/knowledge/domain/vocabulary.md fixtures/wire/v1/README.md rust/nightfire/README.md"
 "qa:docs:agent-defaults" = "cd {repo} && effigy docs check forbidden AGENTS.md README.md docs/README.md --forbid '--repo .'"
-"qa:docs:contracts:local-paths" = "cd {repo} && effigy docs check forbidden docs/contracts/*.md --forbid '/Users/' --forbid '/home/'"
+"qa:docs:knowledge:local-paths" = "cd {repo} && effigy docs check forbidden docs/knowledge/*.md docs/knowledge/*/*.md docs/plan.md --forbid '/Users/' --forbid '/home/'"
 "qa:docs" = [
   { task = "qa:docs:paths" },
   { task = "qa:docs:links" },
-  { task = "qa:docs:index:vision" },
   { task = "qa:docs:agent-defaults" },
-  { task = "qa:docs:contracts:local-paths" },
+  { task = "qa:docs:knowledge:local-paths" },
 ]
 
-"qa:northstar:agent-contract" = "cd {repo} && effigy docs check contains AGENTS.md --require 'effigy tasks' --require 'effigy test --plan' --require 'effigy qa' --require 'docs/README.md'"
-"qa:northstar:front-door" = "cd {repo} && effigy docs check contains docs/README.md --require 'vision/README.md' --require 'architecture/README.md' --require 'contracts/README.md' --require 'roadmaps/README.md' --require 'triage/README.md' --require 'logs/README.md'"
-"qa:northstar:vision" = "cd {repo} && effigy docs check headings docs/vision/001-nightfire-foundation-vision.md --require-heading '## Long-Term Outcome' --require-heading '## Core Package Behaviors' --require-heading '## Strategic Constraints' --require-heading '## Longer-Term Focus'"
-"qa:northstar:roadmaps" = "cd {repo} && effigy docs check headings docs/roadmaps/README.md --require-heading '## Rules' --require-heading '## Active generation' --require-heading '## Current Queue' --require-heading '## Next Task'"
-"qa:northstar:g01" = "cd {repo} && effigy docs check headings docs/roadmaps/g01/README.md --require-heading '## Current Generation' --require-heading '## Roadmap Sequence' --require-heading '## Queue' --require-heading '## Dependencies And Parallelism' --require-heading '## Historical Language Boundary' --require-heading '## Next Task'"
+"qa:northstar:agent-contract" = "cd {repo} && effigy docs check contains AGENTS.md --require 'effigy tasks' --require 'effigy test --plan' --require 'effigy qa' --require 'docs/README.md' --require 'docs/knowledge/README.md' --require 'docs/plan.md'"
+"qa:northstar:front-door" = "cd {repo} && effigy docs check contains docs/README.md --require 'knowledge/README.md' --require 'plan.md'"
 "qa:northstar" = [
   { task = "qa:northstar:agent-contract" },
   { task = "qa:northstar:front-door" },
-  { task = "qa:northstar:vision" },
-  { task = "qa:northstar:roadmaps" },
-  { task = "qa:northstar:g01" },
 ]
 
 health = [
