@@ -1,0 +1,30 @@
+# Concepts that no longer exist. The retired-concepts check fails on any listed
+# term, path or config key found outside `allow`. See the Northstar skill's
+# references/knowledge.md.
+
+[[retired]]
+id = "media-block"
+retired = "2026-09-18"
+replacement = "The media block split into download_card (library files), image (one library image) and video (a Poodle embed)."
+owner = "docs/knowledge/domain/vocabulary.md"
+terms = ["MediaBlock", "MediaEditor", "MediaRenderer", "\"media\" block", "`media` block", "type: \"media\""]
+paths = ["ts/src/media/context.ts", "ts/src/media/editor.ts", "ts/src/media.ts", "ts/src/media-kind.ts", "schemas/blocks/media.schema.json"]
+config_keys = ["\"./media\""]
+allow = ["CHANGELOG.md"]
+
+[[retired]]
+id = "content-list-block"
+retired = "2026-09-18"
+replacement = "item_list, a container of child blocks."
+owner = "docs/knowledge/domain/vocabulary.md"
+terms = ["content_list", "ContentListBlock"]
+allow = ["CHANGELOG.md"]
+
+[[retired]]
+id = "northstar-process-records"
+retired = "2026-09-26"
+replacement = "Knowledge in docs/knowledge/, intent in docs/plan.md; tasks, briefs, status and outcomes live in Queue."
+owner = "docs/knowledge/README.md"
+terms = ["roadmap card", "generation index", "lifecycle record", "Roadmap Sequence", "Next Task", "northstar:lifecycle", "chatterbox handoff"]
+paths = [".northstar/lifecycle", "docs/roadmaps", "docs/handoffs", "docs/logs", "docs/vision", "docs/architecture", "docs/contracts", "docs/policy"]
+config_keys = ["northstar/queue:hook", "paseo.queue.control.v4"]

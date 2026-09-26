@@ -123,7 +123,7 @@ describe("nightfire/style literals", () => {
     }
   });
 
-  it("declares one value per token, all consumed, and both documents agree", () => {
+  it("declares one value per token, all consumed, and the styling contract agrees", () => {
     const declared = declaredTokens(stylesheet);
     expect(declared.length).toBe(25);
     expect(new Set(declared).size).toBe(declared.length);
@@ -136,14 +136,11 @@ describe("nightfire/style literals", () => {
       expect(sources, name).toContain(name);
     }
 
-    for (const document of [
-      "docs/architecture/core-package-vocabulary.md",
-      "docs/contracts/003-styling-and-restyling.md",
-    ]) {
-      const stated = readFileSync(document, "utf8").match(/(\d+) `--nightfire-\*` values/);
-      expect(stated, document).toBeTruthy();
-      expect(Number(stated![1]), document).toBe(declared.length);
-    }
+    const stated = readFileSync("docs/knowledge/contracts/styling.md", "utf8").match(
+      /(\d+) `--nightfire-\*` values/
+    );
+    expect(stated).toBeTruthy();
+    expect(Number(stated![1])).toBe(declared.length);
   });
 
   it("keeps the shipped text token legible on the shipped surface", () => {
