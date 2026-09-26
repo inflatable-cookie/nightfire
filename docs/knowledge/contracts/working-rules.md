@@ -12,7 +12,7 @@ verify and unsafe to coordinate.
 - Preserve unrelated work and avoid speculative infrastructure.
 - Update code, knowledge, tests, and indexes together when they form one
   observable change.
-- Record process friction in `PAPERCUTS.md`.
+- File process friction as a Queue papercut with `papercut.add`.
 
 ## Repository facts that cost time
 
@@ -34,7 +34,7 @@ verify and unsafe to coordinate.
 Nightfire owns package-local implementation. Market owns the release and
 consumer-adoption sequence. A Nightfire change does not mutate Underlay, Poodle,
 Froyo, Northstar Queue, or an application unless the operator explicitly expands
-scope. Record friction with those tools in `PAPERCUTS.md` instead.
+scope. File friction with those tools as a Queue papercut instead.
 
 ## Compatibility rule
 
