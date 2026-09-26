@@ -59,5 +59,9 @@ does not must provide its own editor styling.
 on a colour literal in any `ts/src/**/*.svelte` style block; the exceptions are
 `transparent`, `currentColor` and `inherit`.
 `ts/tests/nightfire/style-literals.test.ts` asserts that no renderer references
-a token and that the token count here matches `styles.css`. Radii, spacing and
-font literals are not guarded; see [plan](../../plan.md).
+a token and that the token count here matches `styles.css`.
+
+The guard covers colours only, by decision (operator ruling, 2026-09-26). Radii,
+spacing and font literals are not tokenised: each new token name would be public
+API, and a stray radius causes inconsistency, not illegibility. The guard's name
+and message must say it covers colours, so nobody assumes wider coverage.

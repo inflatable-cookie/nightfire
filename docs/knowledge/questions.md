@@ -12,6 +12,5 @@ See [plan](../plan.md) and [release](contracts/release.md).
 
 ## Q-002 — Should the style-literal guard cover radii, spacing and fonts, or only say it covers colours?
 
-Status: open
-Context: [styling](contracts/styling.md#proof). Either answer must leave the
-check's name and message stating exactly what it covers.
+Status: answered 2026-09-26
+Answer: colours only, named honestly; see [styling](contracts/styling.md#proof).
