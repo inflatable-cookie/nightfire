@@ -13,7 +13,6 @@ framework or a home for product schemas, blocks or UI.
 - Open questions: `docs/knowledge/questions.md`
 - What's next: `docs/plan.md`
 - Unresolved leads: `docs/triage/`
-- Tool and process friction: `PAPERCUTS.md`
 
 Tasks, briefs and status live in Queue, never in this repository. The Acowtancy
 Market roadmap owns cross-repository release and adoption order; don't copy its
@@ -22,6 +21,11 @@ cards here.
 Commands go through Effigy: `effigy tasks` for the task list, `effigy doctor`
 when health or routing is unclear, and `effigy test --plan` before choosing test
 scope.
+
+## Papercuts
+
+File small, recurring friction in Queue with `papercut.add` (see the
+`northstar-lean` skill). There is no `PAPERCUTS.md`.
 
 ## Guardrails
 
