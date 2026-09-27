@@ -18,7 +18,7 @@
         "typescript": "5.9.3",
       },
       "peerDependencies": {
-        "@inflatable-cookie/poodle-svelte": "0.4.4",
+        "@inflatable-cookie/poodle-svelte": ">=0.4.4 <0.5",
         "svelte": ">=5.56.8 <6",
       },
       "optionalPeers": [

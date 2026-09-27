@@ -6,6 +6,16 @@ immutable.
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-09-27
+
+### Changed
+
+- The optional `@inflatable-cookie/poodle-svelte` peer is now the range
+  `>=0.4.4 <0.5` instead of exactly `0.4.4`, so a Poodle patch release no
+  longer forces a new Nightfire release. Below `1.0` a Poodle minor is the
+  breaking boundary and still needs a Nightfire release. The dev dependency
+  stays at `0.4.4`.
+
 ## [0.4.0] - 2026-09-27
 
 ### Removed
