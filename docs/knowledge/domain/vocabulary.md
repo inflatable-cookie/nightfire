@@ -209,6 +209,11 @@ the representative omits, or a representative field the document lacks, fails `h
 the set-equality check to ease a change; update the document in the same change instead. Documents stay
 hand-authored.
 
+The residual gap: the representatives are written by hand to match what each editor stores. No test
+drives an editor and compares what it writes with its representative, so an editor that starts writing a
+new field stays green until someone updates the fixture. That is the download-card-title failure mode,
+and closing it is `lane:nightfire-schema-parity`.
+
 ## Named row sections
 
 Deferred, with a trigger. `table` rows may carry a `section` string and the renderer emits it as
