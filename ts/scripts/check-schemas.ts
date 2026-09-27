@@ -223,6 +223,84 @@ for (const entry of fixture.values) {
 }
 assertInvalid(fixture.rejectedV1, "value.schema.json", "shared legacy envelope");
 
+function isRecursiveDef(defName: string, defSchema: unknown): boolean {
+  let recursive = false;
+  visit(defSchema, (object) => {
+    if (object.$ref === `#/$defs/${defName}`) recursive = true;
+  });
+  return recursive;
+}
+
+function assertCovers(
+  schema: JsonSchema,
+  value: unknown,
+  schemaPath: string,
+  document: JsonObject,
+  instancePath: string,
+): void {
+  if (schema === true || schema === false) return;
+
+  if (typeof schema.$ref === "string") {
+    if (!schema.$ref.startsWith("#")) return;
+    if (schema.$ref.startsWith("#/$defs/")) {
+      const defName = schema.$ref.slice("#/$defs/".length);
+      const defSchema = asObject(document.$defs)?.[defName];
+      if (defSchema === undefined) fail(`${instancePath}: unresolved ${schema.$ref}`);
+      if (isRecursiveDef(defName, defSchema)) return;
+      assertCovers(defSchema as JsonSchema, value, schemaPath, document, instancePath);
+      return;
+    }
+    const resolved = resolveReference(schema.$ref, schemaPath);
+    const nextDocument = documents.get(resolved.path) ?? document;
+    assertCovers(resolved.schema, value, resolved.path, nextDocument, instancePath);
+    return;
+  }
+
+  const allOf = Array.isArray(schema.allOf) ? schema.allOf : [];
+  for (const child of allOf) {
+    assertCovers(child as JsonSchema, value, schemaPath, document, instancePath);
+  }
+
+  const properties = asObject(schema.properties);
+  const object = asObject(value);
+  if (properties) {
+    if (!object) fail(`${instancePath}: representative is not an object`);
+    for (const key of Object.keys(properties)) {
+      if (!(key in object)) {
+        fail(`${instancePath}: representative omits documented property ${key}`);
+      }
+      assertCovers(properties[key] as JsonSchema, object[key], schemaPath, document, `${instancePath}.${key}`);
+    }
+  }
+
+  if (schema.items !== undefined && Array.isArray(value) && value.length > 0) {
+    assertCovers(schema.items as JsonSchema, value[0], schemaPath, document, `${instancePath}[0]`);
+  }
+}
+
+const corePayloadEntry = fixture.values.find((entry) => entry.name === "core-payloads");
+if (!corePayloadEntry) fail("shared fixture is missing the core-payloads value");
+const corePayloadBlocks = corePayloadEntry.value.blocks;
+const corePayloadTypes = corePayloadBlocks.map((block) => block.type).sort();
+if (JSON.stringify(corePayloadTypes) !== JSON.stringify(declaredCoreBlocks)) {
+  fail(`core-payloads types differ from CORE_BLOCK_TYPE_NAMES:\npayloads=${corePayloadTypes.join(",")}\ndeclared=${declaredCoreBlocks.join(",")}`);
+}
+
+for (const block of corePayloadBlocks) {
+  const path = `blocks/${block.type}.schema.json`;
+  const document = schemaAt(path);
+  assertValid(block.data, path, `core-payloads ${block.type}`);
+  assertCovers(document, block.data, resolve(schemaRoot, path), document, `${block.type}`);
+  const withLeak = { ...(block.data as JsonObject), unexpected: true };
+  assertInvalid(withLeak, path, `${block.type} unknown-property counterexample`);
+}
+
+assertValid(
+  { rows: [{ cells: [{ markdown: "" }] }] },
+  "blocks/table.schema.json",
+  "table row without section",
+);
+
 const descriptors = new Map(fixture.registry.blocks.map((block) => [block.type, block]));
 const strategy = fixture.registry.strategy;
 function fixtureCaseAccepted(value: (typeof fixture.validationCases)[number]["value"]): boolean {
@@ -247,25 +325,6 @@ for (const testCase of fixture.validationCases) {
   }
 }
 
-const payloadExamples: Record<string, unknown> = {
-  markdown: { text: "Hello" },
-  rich_text: { document: { type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: "Hello", marks: [{ type: "bold" }] }] }] } },
-  download_card: { description: "Files", files: [{ media_id: "media-1", title: "Source sheet", description: "Source" }] },
-  table: { caption: "Totals", rows: [{ section: "body", cells: [{ markdown: "42", horizontal_align: "right", borders: { bottom: true } }] }] },
-  item_list: { title: "Steps", items: [{ title: "First", body: [{ type: "markdown", version: "initial", data: { text: "Start" } }] }] },
-  image: { media_id: "media-1", alt: "Example", sizing: "large" },
-  video: {
-    embed: { provider: "youtube", id: "dQw4w9WgXcQ", originalUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ" },
-    title: "Example film",
-    caption: "Seen from the ridge",
-  },
-};
-for (const type of CORE_BLOCK_TYPE_NAMES) {
-  assertValid(payloadExamples[type], `blocks/${type}.schema.json`, `${type} payload example`);
-  const withLeak = { ...(payloadExamples[type] as JsonObject), unexpected: true };
-  assertInvalid(withLeak, `blocks/${type}.schema.json`, `${type} unknown-property counterexample`);
-}
-
 const positiveCount = fixture.values.length + fixture.validationCases.filter((testCase) => testCase.accepted).length;
-const negativeCount = 1 + fixture.validationCases.filter((testCase) => !testCase.accepted).length;
+const negativeCount = 1 + fixture.validationCases.filter((testCase) => !testCase.accepted).length + declaredCoreBlocks.length;
 console.log(`schema proof passed: ${documents.size} documents, ${declaredCoreBlocks.length} core payloads, ${positiveCount} positive cases, ${negativeCount} negative cases`);

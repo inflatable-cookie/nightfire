@@ -14,6 +14,14 @@ ids, initial versions, supported-version coercion, unknown-version rejection,
 v1 envelope rejection, strategy and registry lookup, structural validation,
 and media-locator resolution.
 
+`core-payloads` is the per-type stored-shape case: one block per declared core
+type, including the optional fields the editor writes. `check:schemas` holds
+those types equal to `CORE_BLOCK_TYPE_NAMES`, validates each payload against its
+published document, and requires the representative to cover the document's
+property set. Rust round-trips the envelope; it does not interpret payload
+fields. Changing an editor's stored fields requires updating this case in the
+same change.
+
 `rust/nightfire/fixtures/wire/v1/nightfire-values.json` is a tracked symlink to
 this file. Cargo dereferences it into the `.crate`, so an unpacked package keeps
 the fixture needed by its integration test without creating a second authored

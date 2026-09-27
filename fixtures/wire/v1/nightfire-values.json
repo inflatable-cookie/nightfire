@@ -37,6 +37,144 @@
           }
         ]
       }
+    },
+    {
+      "name": "core-payloads",
+      "value": {
+        "schema": "example:content/body",
+        "blocks": [
+          {
+            "id": "nf_018f1d5e7b7a7cc2a6f0aabbccddee21",
+            "type": "markdown",
+            "version": "initial",
+            "data": { "text": "Hello" }
+          },
+          {
+            "id": "nf_018f1d5e7b7a7cc2a6f0aabbccddee22",
+            "type": "rich_text",
+            "version": "initial",
+            "data": {
+              "document": {
+                "type": "doc",
+                "content": [
+                  {
+                    "type": "heading",
+                    "attrs": { "level": 2 },
+                    "content": [{ "type": "text", "text": "Title" }]
+                  },
+                  {
+                    "type": "paragraph",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Hello",
+                        "marks": [{ "type": "bold" }]
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "nf_018f1d5e7b7a7cc2a6f0aabbccddee23",
+            "type": "download_card",
+            "version": "initial",
+            "data": {
+              "description": "Files",
+              "files": [
+                {
+                  "media_id": "media-1",
+                  "title": "Source sheet",
+                  "description": "Source"
+                }
+              ]
+            }
+          },
+          {
+            "id": "nf_018f1d5e7b7a7cc2a6f0aabbccddee24",
+            "type": "table",
+            "version": "initial",
+            "data": {
+              "caption": "Totals",
+              "rows": [
+                {
+                  "section": "body",
+                  "cells": [
+                    {
+                      "markdown": "42",
+                      "is_header": true,
+                      "colspan": 2,
+                      "rowspan": 2,
+                      "horizontal_align": "right",
+                      "vertical_align": "middle",
+                      "borders": {
+                        "top": true,
+                        "bottom": true,
+                        "left": true,
+                        "right": true
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "id": "nf_018f1d5e7b7a7cc2a6f0aabbccddee25",
+            "type": "item_list",
+            "version": "initial",
+            "data": {
+              "title": "Steps",
+              "intro": "Lead-in",
+              "variant": "ordered",
+              "items": [
+                {
+                  "title": "First",
+                  "body": [
+                    {
+                      "id": "nf_018f1d5e7b7a7cc2a6f0aabbccddee28",
+                      "type": "markdown",
+                      "version": "initial",
+                      "data": { "text": "Start" }
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "id": "nf_018f1d5e7b7a7cc2a6f0aabbccddee26",
+            "type": "image",
+            "version": "initial",
+            "data": {
+              "media_id": "media-1",
+              "alt": "Example",
+              "title": "Author title",
+              "caption": "Seen from the ridge",
+              "sizing": "large"
+            }
+          },
+          {
+            "id": "nf_018f1d5e7b7a7cc2a6f0aabbccddee27",
+            "type": "video",
+            "version": "initial",
+            "data": {
+              "embed": {
+                "provider": "youtube",
+                "id": "dQw4w9WgXcQ",
+                "originalUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                "originalEmbed": "<iframe src=\"https://www.youtube.com/embed/dQw4w9WgXcQ\"></iframe>",
+                "width": 560,
+                "height": 315,
+                "embedType": "video"
+              },
+              "title": "Example film",
+              "caption": "Seen from the ridge"
+            }
+          }
+        ]
+      }
     }
   ],
   "idGeneration": {
