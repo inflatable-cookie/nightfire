@@ -27,7 +27,10 @@ after consumer migration begins.
 - Keep renderer imports free of editor modules, registration effects, and
   runtime Poodle imports. Type-only Poodle imports pass.
 - Keep `@inflatable-cookie/poodle-svelte` an optional peer of editor entry
-  points only.
+  points only. Declare it as a patch range within one Poodle minor
+  (`>=0.4.4 <0.5` today), not an exact version: below `1.0` a Poodle minor is
+  breaking and moves the range in a Nightfire release, while a Poodle patch
+  needs none (Tom, 2026-09-27).
 - Keep editor and renderer registration as explicit consumer opt-ins.
 
 ## Data and trust

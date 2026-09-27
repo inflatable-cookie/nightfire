@@ -21,7 +21,7 @@ bun add github:inflatable-cookie/nightfire#<commit>
 Rust consumers use the same immutable repository tag:
 
 ```toml
-nightfire = { git = "ssh://git@github.com/inflatable-cookie/nightfire.git", tag = "v0.4.0" }
+nightfire = { git = "ssh://git@github.com/inflatable-cookie/nightfire.git", tag = "v0.4.1" }
 ```
 
 Svelte 5 is a peer dependency. `@inflatable-cookie/poodle-svelte` is an
