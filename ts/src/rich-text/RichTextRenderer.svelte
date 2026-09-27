@@ -1,9 +1,6 @@
 <script lang="ts">
-  import {
-    RichTextRenderer as PoodleRichTextRenderer,
-    RICH_TEXT_FEATURES,
-    type ProseMirrorDocumentJSON
-  } from "@inflatable-cookie/poodle-svelte/rich-text";
+  import { sanitizeHtml } from "../html.js";
+  import { renderRichTextDocumentHtml } from "./render-document";
 
   type RichTextBlock = {
     data?: {
@@ -18,19 +15,24 @@
   let { block }: Props = $props();
 
   // The document envelope is `{ document: ProseMirrorDocumentJSON }`. Anything
-  // else is refused here rather than handed to the engine, which fails closed by
-  // throwing. The feature set is Poodle's own closed set; nothing is local.
-  function asDocument(value: unknown): ProseMirrorDocumentJSON | null {
+  // else is refused here. The serializer walks Poodle's stored vocabulary and
+  // the result crosses the same sanitizer as markdown before `{@html}`.
+  function asDocument(value: unknown): unknown | null {
     if (!value || typeof value !== "object" || Array.isArray(value)) return null;
     if ((value as { type?: unknown }).type !== "doc") return null;
-    return value as ProseMirrorDocumentJSON;
+    return value;
   }
 
   const document = $derived(asDocument(block?.data?.document));
+  const safeHtml = $derived(
+    document ? sanitizeHtml(renderRichTextDocumentHtml(document)) : ""
+  );
 </script>
 
 {#if document}
   <div data-nightfire-block="rich_text">
-    <PoodleRichTextRenderer value={document} features={RICH_TEXT_FEATURES} />
+    {#if safeHtml}
+      {@html safeHtml}
+    {/if}
   </div>
 {/if}

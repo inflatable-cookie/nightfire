@@ -70,5 +70,12 @@ first tranche.
 Runtime dependencies are recorded in [README.md](README.md). Rust retains only
 the source crate's `serde`, `serde_json`, `blake3`, `uuid`, and `thiserror`
 dependencies. Svelte is a peer.
+`@inflatable-cookie/poodle-svelte` is an optional peer of editor entry points.
+`ts/src/video/render-embed.ts` ports Poodle 0.4.4 `renderEmbed` from
+`packages/core/src/embed-input.ts`: the function, the youtube/vimeo/audioboom
+allow-list, and the `originalEmbed` short-circuit. URL parsing stays in the
+Poodle editor.
+`ts/src/rich-text/render-document.ts` is locally authored: it serializes Poodle's
+stored ProseMirror JSON vocabulary to semantic HTML without TipTap or Poodle.
 Underlay, SvelteKit, Vite, bits-ui, lucide-svelte, zod, and smol-toml are not
 dependencies or transitive framework assumptions of the retained source.

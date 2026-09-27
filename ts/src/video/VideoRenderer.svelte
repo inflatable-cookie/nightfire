@@ -1,8 +1,8 @@
 <script lang="ts">
   // Generic video renderer.
   //
-  // A video is an embed addressed by provider and id. Provider parsing and
-  // rendering stay Poodle's: `renderEmbed` turns the stored embed back into
+  // A video is an embed addressed by provider and id. `renderEmbed` is
+  // Nightfire's port of Poodle's function: it turns the stored embed back into
   // markup, and that markup goes through the existing embed sanitizer before
   // `{@html}` — contract 002, without exception. The verbatim
   // `originalEmbed` a paste carries is the hostile path the sanitizer exists
@@ -12,8 +12,14 @@
   // The same styling rule as every other renderer applies: semantic markup, a
   // `data-nightfire-block` hook, data attributes for structure, no scoped
   // styles, no class of our own, no token — and no style attribute at all.
-  import { renderEmbed, type ParsedEmbed } from "@inflatable-cookie/poodle-svelte";
   import { sanitizeEmbedHtml } from "../html.js";
+  import { renderEmbed } from "./render-embed";
+
+  type StoredEmbed = {
+    provider: string;
+    id: string;
+    originalEmbed?: string;
+  };
 
   type VideoBlock = {
     data?: {
@@ -31,14 +37,20 @@
 
   // An embed is addressable when it carries a provider and an id, both
   // non-empty strings. Anything else renders nothing at all.
-  function asEmbed(value: unknown): ParsedEmbed | null {
+  function asEmbed(value: unknown): StoredEmbed | null {
     if (!value || typeof value !== "object" || Array.isArray(value)) return null;
-    const candidate = value as { provider?: unknown; id?: unknown };
+    const candidate = value as { provider?: unknown; id?: unknown; originalEmbed?: unknown };
     if (typeof candidate.provider !== "string" || candidate.provider.length === 0) {
       return null;
     }
     if (typeof candidate.id !== "string" || candidate.id.length === 0) return null;
-    return value as ParsedEmbed;
+    return {
+      provider: candidate.provider,
+      id: candidate.id,
+      ...(typeof candidate.originalEmbed === "string"
+        ? { originalEmbed: candidate.originalEmbed }
+        : {}),
+    };
   }
 
   // The block's title is the embed frame's accessible name: it travels as the

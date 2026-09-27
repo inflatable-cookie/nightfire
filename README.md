@@ -24,8 +24,17 @@ Rust consumers use the same immutable repository tag:
 nightfire = { git = "ssh://git@github.com/inflatable-cookie/nightfire.git", tag = "v0.3.1" }
 ```
 
-Svelte 5 is a peer dependency. Consumers using the **editor** must load the
-default editor styling; renderers carry no appearance and need none of it:
+Svelte 5 is a peer dependency. `@inflatable-cookie/poodle-svelte` is an
+optional peer for **editor** entry points only. A renderer-only consumer does
+not install Poodle:
+
+```ts
+import { NightfireRenderer } from "@inflatable-cookie/nightfire/renderer";
+import "@inflatable-cookie/nightfire/render-registrations";
+```
+
+Consumers using the **editor** must add Poodle and load the default editor
+styling; renderers carry no appearance and need none of it:
 
 ```ts
 import "@inflatable-cookie/nightfire/styles.css";
@@ -62,9 +71,9 @@ import { NightfireRenderer } from "@inflatable-cookie/nightfire/renderer";
 ```
 
 `core` and `validation` have no Svelte runtime edge. Registry modules use
-Svelte only for type declarations. Importing `renderer` does not load editors
-or registration side effects. Editor and renderer registration modules remain
-explicit opt-ins.
+Svelte only for type declarations. Importing `renderer` does not load editors,
+registration side effects, or Poodle. Editor and renderer registration modules
+remain explicit opt-ins. Editors need Poodle installed; renderers do not.
 
 The Rust crate exposes the matching value, block, strategy, registry,
 validation, hashing, block-ID, and media-locator contracts. Both languages use
@@ -115,8 +124,8 @@ evidence lives in [PROVENANCE.md](PROVENANCE.md); contribution rules live in
 
 ## Dependencies
 
-- `@inflatable-cookie/poodle-svelte`: generic field, control, and markdown
-  editor components used by the retained Svelte editor surface.
+- `@inflatable-cookie/poodle-svelte` (optional peer): generic field, control,
+  markdown, and rich-text **editor** components. Not a renderer dependency.
 - `svelte` (peer): component runtime supplied by the consumer.
 - `marked`: retained markdown parsing behavior.
 - `isomorphic-dompurify`: one sanitizer contract across DOM and SSR runtimes.

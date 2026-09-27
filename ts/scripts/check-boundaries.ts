@@ -66,14 +66,38 @@ for (const path of ["ts/src/editor-registry.ts", "ts/src/render-registry.ts"]) {
   }
 }
 
-function importedSpecifiers(path: string, source: string): string[] {
+type ImportRef = { specifier: string; typeOnly: boolean };
+
+function namedBindingsAreTypeOnly(clause: string): boolean {
+  const named = clause.match(/^\{([^}]+)\}$/);
+  if (!named) return false;
+  const parts = named[1]!.split(",").map((part) => part.trim()).filter(Boolean);
+  return parts.length > 0 && parts.every((part) => /^type\s/.test(part));
+}
+
+function importedRefs(path: string, source: string): ImportRef[] {
   const scripts = path.endsWith(".svelte")
     ? Array.from(source.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g), (match) => match[1]!)
     : [source];
-  return scripts.flatMap((script) => [
-    ...script.matchAll(/(?:import|export)\s+(?:type\s+)?(?:[^"'`;]*?\s+from\s+)?["']([^"']+)["']/g),
-    ...script.matchAll(/import\(\s*["']([^"']+)["']/g),
-  ].map((match) => match[1]!));
+  return scripts.flatMap((script) => {
+    const refs: ImportRef[] = [];
+    for (const match of script.matchAll(
+      /(?:import|export)(\s+type)?\s+([^"'`;]*?)\s+from\s+["']([^"']+)["']/g,
+    )) {
+      const clause = match[2]!.trim();
+      refs.push({
+        specifier: match[3]!,
+        typeOnly: Boolean(match[1]) || namedBindingsAreTypeOnly(clause),
+      });
+    }
+    for (const match of script.matchAll(/^[ \t]*(?:import|export)\s+["']([^"']+)["']/gm)) {
+      refs.push({ specifier: match[1]!, typeOnly: false });
+    }
+    for (const match of script.matchAll(/import\(\s*["']([^"']+)["']/g)) {
+      refs.push({ specifier: match[1]!, typeOnly: false });
+    }
+    return refs;
+  });
 }
 
 function resolveSourceImport(importer: string, specifier: string): string | null {
@@ -93,12 +117,39 @@ async function sourceGraph(entrypoint: string): Promise<string[]> {
     if (visited.has(path)) continue;
     visited.add(path);
     const source = await Bun.file(path).text();
-    for (const specifier of importedSpecifiers(path, source)) {
-      const dependency = resolveSourceImport(path, specifier);
+    for (const ref of importedRefs(path, source)) {
+      const dependency = resolveSourceImport(path, ref.specifier);
       if (dependency) pending.push(dependency);
     }
   }
   return [...visited].sort();
+}
+
+const POODLE = "@inflatable-cookie/poodle-svelte";
+
+function isPoodleSpecifier(specifier: string): boolean {
+  return specifier === POODLE || specifier.startsWith(`${POODLE}/`);
+}
+
+async function assertRendererGraphPoodleFree(entrypoint: string): Promise<void> {
+  const pending = [normalize(entrypoint)];
+  const visited = new Set<string>();
+  while (pending.length > 0) {
+    const path = pending.pop()!;
+    if (visited.has(path)) continue;
+    visited.add(path);
+    const source = await Bun.file(path).text();
+    for (const ref of importedRefs(path, source)) {
+      if (ref.typeOnly) continue;
+      if (isPoodleSpecifier(ref.specifier)) {
+        throw new Error(
+          `renderer graph runtime import of Poodle: ${path} → ${ref.specifier} (from ${entrypoint})`,
+        );
+      }
+      const dependency = resolveSourceImport(path, ref.specifier);
+      if (dependency) pending.push(dependency);
+    }
+  }
 }
 
 async function bundle(entrypoint: string, svelte = false) {
@@ -157,13 +208,34 @@ for (const path of [...rendererGraph, ...renderCatalogGraph]) {
   }
 }
 
+// Learner-facing renderer graphs must not load Poodle at runtime. Type-only
+// imports pass; a reachable `import` of `@inflatable-cookie/poodle-svelte` fails.
+const rendererEntrypoints = [
+  "ts/src/renderer.ts",
+  "ts/src/render-registrations.ts",
+  "ts/src/core-blocks.ts",
+  "ts/src/markup/render.ts",
+  "ts/src/layout/render.ts",
+  "ts/src/rich-text/render.ts",
+  "ts/src/download-card/render.ts",
+  "ts/src/image/render.ts",
+  "ts/src/video/render.ts",
+];
+for (const entrypoint of rendererEntrypoints) {
+  await assertRendererGraphPoodleFree(entrypoint);
+}
+
 const core = await bundle("ts/src/core.ts");
 const validation = await bundle("ts/src/validator-registry.ts");
 const renderer = await bundle("ts/src/NightfireRenderer.svelte", true);
-for (const marker of ["editor-registrations", "download-card/editor", "markup/editor", "rich-text/editor", "registerBlockEditor("]) {
+const renderCatalog = await bundle("ts/src/render-registrations.ts", true);
+for (const marker of ["editor-registrations", "download-card/editor", "markup/editor", "rich-text/editor", "registerBlockEditor(", POODLE]) {
   if (renderer.text.includes(marker)) {
     throw new Error(`renderer bundle contains editor/registration marker: ${marker}`);
   }
+}
+if (renderCatalog.text.includes(POODLE)) {
+  throw new Error(`render catalog bundle contains a Poodle import`);
 }
 for (const input of renderer.inputs) {
   if (/(?:^|\/)(?:editor-registrations|render-registrations)\.ts$|\/editor\/|\/(?:markup|download-card|rich-text)\/editor\.ts$/.test(input)) {
@@ -172,5 +244,5 @@ for (const input of renderer.inputs) {
 }
 
 console.log(
-  `boundary proof passed: forbidden graph absent; core ${core.size} bytes; validation ${validation.size} bytes; renderer ${renderer.size} bytes/${renderer.inputs.length} inputs and editor-free`,
+  `boundary proof passed: forbidden graph absent; core ${core.size} bytes; validation ${validation.size} bytes; renderer ${renderer.size} bytes/${renderer.inputs.length} inputs and editor-free; render catalog Poodle-free`,
 );

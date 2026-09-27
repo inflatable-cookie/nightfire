@@ -1,6 +1,6 @@
 {
   "name": "@inflatable-cookie/nightfire",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "type": "module",
   "license": "MIT",
   "repository": {
@@ -60,14 +60,20 @@
     "./render-registrations": "./ts/src/render-registrations.ts"
   },
   "dependencies": {
-    "@inflatable-cookie/poodle-svelte": "0.4.4",
     "isomorphic-dompurify": "3.22.0",
     "marked": "18.0.14"
   },
   "peerDependencies": {
+    "@inflatable-cookie/poodle-svelte": "0.4.4",
     "svelte": ">=5.56.8 <6"
   },
+  "peerDependenciesMeta": {
+    "@inflatable-cookie/poodle-svelte": {
+      "optional": true
+    }
+  },
   "devDependencies": {
+    "@inflatable-cookie/poodle-svelte": "0.4.4",
     "@testing-library/dom": "10.4.1",
     "@types/bun": "1.3.14",
     "jsdom": "30.0.1",

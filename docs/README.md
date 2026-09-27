@@ -3,8 +3,8 @@
 `@inflatable-cookie/nightfire@0.2.0` is published on npm and tagged `v0.2.0`;
 the Rust crate `nightfire` is tag-only at the same tag. The core vocabulary is
 complete: seven block types, each with an editor, a renderer, and a published
-payload schema. `main` carries an editor colour fix that no published version
-has yet.
+payload schema. Renderers load no Poodle at runtime; Poodle is an optional peer
+of editor entry points. `main` carries work that no published version has yet.
 
 What matters right now: payload schemas are checked against representative
 stored payloads and against what each editor actually stores, and the

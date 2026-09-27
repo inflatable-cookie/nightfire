@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from "../vitest";
+import { readFileSync } from "node:fs";
 import { fireEvent, render, waitFor } from "../render";
 
 // ProseMirror reads geometry when it scrolls the selection into view. jsdom has
@@ -60,12 +61,10 @@ describe("nightfire/rich-text block", () => {
     expect(EditorComponent).toBeTruthy();
   });
 
-  it("renders structured content through the registered renderer", async () => {
+  it("renders structured content through the registered renderer", () => {
     const view = render(RendererComponent as any, {
       block: { type: "rich_text", version: "initial", data: { document: structuredDocument } }
     });
-
-    await waitFor(() => expect(view.container.querySelector("h2")).toBeTruthy());
 
     const root = view.container.querySelector('[data-nightfire-block="rich_text"]');
     expect(root).toBeTruthy();
@@ -77,11 +76,57 @@ describe("nightfire/rich-text block", () => {
     expect(anchor.textContent).toBe("link");
   });
 
+  it("matches the committed rich-text fixture HTML", () => {
+    const fixture = JSON.parse(
+      readFileSync("fixtures/wire/v1/nightfire-values.json", "utf8")
+    );
+    const block = fixture.values
+      .find((entry: { name: string }) => entry.name === "core-payloads")
+      .value.blocks.find((entry: { type: string }) => entry.type === "rich_text");
+    const view = render(RendererComponent as any, { block });
+    const root = view.container.querySelector('[data-nightfire-block="rich_text"]');
+    expect(root).toBeTruthy();
+    expect(root!.innerHTML.replaceAll("<!---->", "")).toBe(
+      "<h2>Title</h2><p><strong>Hello</strong></p>"
+    );
+  });
+
   it("renders nothing without a document", () => {
     const view = render(RendererComponent as any, {
       block: { type: "rich_text", version: "initial", data: {} }
     });
     expect(view.container.querySelector('[data-nightfire-block="rich_text"]')).toBeNull();
+  });
+
+  it("sanitizes hostile text and URLs before HTML insertion", () => {
+    const view = render(RendererComponent as any, {
+      block: {
+        type: "rich_text",
+        version: "initial",
+        data: {
+          document: {
+            type: "doc",
+            content: [
+              {
+                type: "paragraph",
+                content: [
+                  { type: "text", text: "<script>evil()</script>" },
+                  {
+                    type: "text",
+                    text: "click",
+                    marks: [{ type: "link", attrs: { href: "javascript:alert(1)" } }]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    });
+    expect(view.container.querySelector("script")).toBeNull();
+    expect(view.container.innerHTML.toLowerCase()).not.toContain("javascript:");
+    expect(view.container.innerHTML).toContain("click");
+    expect(view.container.textContent).toContain("<script>evil()</script>");
   });
 
   it("round-trips an edit as ProseMirror document JSON", async () => {
