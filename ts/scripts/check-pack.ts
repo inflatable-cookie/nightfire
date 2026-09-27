@@ -31,6 +31,7 @@ try {
     "package/schemas/blocks/table.schema.json",
     "package/schemas/blocks/item_list.schema.json",
     "package/schemas/blocks/image.schema.json",
+    "package/schemas/blocks/video.schema.json",
   ]) {
     if (!entries.includes(required)) throw new Error(`packed artifact missing ${required}`);
   }

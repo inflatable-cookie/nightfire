@@ -6,6 +6,17 @@ immutable.
 
 ## [Unreleased]
 
+### Changed
+
+- Schema proof: each core payload document is checked against a representative
+  stored payload in the shared `core-payloads` wire fixture, including optional
+  editor-written fields, not against examples local to `check-schemas.ts`.
+
+### Fixed
+
+- The `table` payload document no longer requires `section` on a row. The editor
+  omits it on new rows and only round-trips a value it does not author.
+
 ## [0.3.0] - 2026-09-27
 
 ### Added

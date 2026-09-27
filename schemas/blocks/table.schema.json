@@ -17,7 +17,7 @@
   "$defs": {
     "row": {
       "type": "object",
-      "required": ["section", "cells"],
+      "required": ["cells"],
       "properties": {
         "section": { "type": "string" },
         "cells": {

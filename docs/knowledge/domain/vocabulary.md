@@ -69,13 +69,13 @@ locates a reference anywhere in a block value and is independent of the retired 
 
 The shape is pinned here so a worker implements a decision rather than inventing one. `item_list` is
 `{ title?, intro?, variant?, items: [{ title?, body: <blocks> }] }`; `table` is
-`{ caption?, rows: [{ section, cells }] }` with cell markdown, header, span, alignment, and border
+`{ caption?, rows: [{ section?, cells }] }` with cell markdown, header, span, alignment, and border
 facts; and `rich_text` is `{ document: ProseMirrorDocumentJSON }` — one field, no envelope.
 
 The table editor is a direct grid, not a structured field editor. Cell content stays markdown. Per-edge
 borders are authored; column widths are not. The package has no undo, so destructive table actions
-confirm in-page. Named row sections are not authored (see below), and the editor round-trips a
-`section` value it does not manage.
+confirm in-page. Named row sections are not authored (see below). New rows omit `section`; the editor
+round-trips a value it does not manage, and the published document permits either.
 
 The media blocks are:
 
@@ -185,30 +185,35 @@ because it names their strategy: the envelope types it as a string or an open pa
 enum. Strategy mechanics describe shape and must not list consumer strategy ids.
 
 **Proof:** the documents are verified rather than asserted. Every declared core block has a payload
-document, positive fixtures validate and negative fixtures are rejected, the Rust implementation
-validates the same shared wire fixtures, and the pack proof requires the files. Publishing shapes that
-nothing verifies is the specific failure the consumer said it will not consume.
+document, the shared `core-payloads` fixture case carries one representative stored payload per type,
+positive fixtures validate and negative fixtures are rejected, the Rust implementation round-trips the
+same shared wire fixtures, and the pack proof requires the files. Publishing shapes that nothing
+verifies is the specific failure the consumer said it will not consume.
 
 **The published set is coupled to the declaration, deliberately.** `ts/scripts/check-schemas.ts` asserts
 exact set equality between the payload documents under `schemas/blocks/` and `CORE_BLOCK_TYPE_NAMES`, and
 it runs in `health`. So:
 
-- declaring a new core block type requires its payload document **in the same change**, or `qa` fails;
-- changing a block's payload shape requires the matching document change in the same commit, because the
-published document is what the consumer byte-pins;
+- declaring a new core block type requires its payload document **and** its `core-payloads` fixture
+case **in the same change**, or `qa` fails;
+- changing a block's payload shape requires the matching document and representative payload in the same
+commit, because the published document is what the consumer byte-pins;
 - removing the document for a type without removing the type fails the same way.
 
-The residual gap: payload documents are exercised by hand-written examples in `check-schemas.ts` and by
-whatever the shared wire fixture contains, not derived from the implementation. A schema can therefore
-drift from a block's real field set while the check stays green; it happened once, when download-card
-file titles shipped before the document admitted them. Closing the gap is `lane:nightfire-schema-parity`.
-Do not weaken the set-equality check to ease a change; update the document in the same change instead.
+Each `core-payloads` entry is the data the editor stores when its optional fields are filled
+(download-card file titles, image sizing, table cell spans and borders, round-tripped `item_list`
+`intro`/`variant`, a table `section` the editor does not author). The check validates that payload,
+rejects an unknown-property counterexample, and requires the representative to carry every property the
+document declares, including nested objects that are not a recursive `$defs` node. A document property
+the representative omits, or a representative field the document lacks, fails `health`. Do not weaken
+the set-equality check to ease a change; update the document in the same change instead. Documents stay
+hand-authored.
 
 ## Named row sections
 
-Deferred, with a trigger. `table` rows carry a `section` string and the renderer emits it as
-`data-section` on the `<thead>` or `<tbody>` group, but nothing authors one: no instance exists in the
-tests, the fixtures, the Rust crate or the docs, and no consumer is known to target the attribute. Add
+Deferred, with a trigger. `table` rows may carry a `section` string and the renderer emits it as
+`data-section` on the `<thead>` or `<tbody>` group, but nothing authors one: new rows omit it, the
+editor only round-trips a value it does not manage, and no consumer is known to target the attribute. Add
 an authoring control when a consumer needs to target a row group, as its own change. It is not a per-row
 text box: sections define groups, and the renderer groups **consecutive** rows, so the design must
 answer how a row joins a group, what happens to a group when a row is reordered out of it, and whether a
