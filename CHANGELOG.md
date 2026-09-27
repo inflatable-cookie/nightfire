@@ -6,6 +6,11 @@ immutable.
 
 ## [Unreleased]
 
+### Added
+
+- Component tests that author each core block through its editor and prove the stored payload against
+  the published document and the `core-payloads` representative keys.
+
 ### Changed
 
 - Schema proof: each core payload document is checked against a representative

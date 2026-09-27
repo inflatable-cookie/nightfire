@@ -1,172 +1,28 @@
 import { dirname, relative, resolve } from "node:path";
 import fixture from "../../fixtures/wire/v1/nightfire-values.json";
 import { CORE_BLOCK_TYPE_NAMES } from "../src/core-blocks";
+import {
+  asObject,
+  fail,
+  loadPublishedSchemas,
+  resolveReference,
+  schemaAt,
+  type JsonObject,
+  type JsonSchema,
+  validateDocument,
+  visit,
+} from "./schema-documents";
 
-type JsonObject = Record<string, unknown>;
-type JsonSchema = boolean | JsonObject;
-
-const repoRoot = resolve(import.meta.dir, "../..");
-const schemaRoot = resolve(repoRoot, "schemas");
-const documents = new Map<string, JsonObject>();
-const rawDocuments = new Map<string, string>();
-const glob = new Bun.Glob("**/*.schema.json");
-
-for await (const entry of glob.scan({ cwd: schemaRoot, onlyFiles: true })) {
-  const path = resolve(schemaRoot, entry);
-  const raw = await Bun.file(path).text();
-  rawDocuments.set(path, raw);
-  documents.set(path, JSON.parse(raw) as JsonObject);
-}
-
-function fail(message: string): never {
-  throw new Error(message);
-}
-
-function asObject(value: unknown): JsonObject | null {
-  return value !== null && typeof value === "object" && !Array.isArray(value)
-    ? (value as JsonObject)
-    : null;
-}
-
-function schemaAt(path: string): JsonObject {
-  return documents.get(resolve(schemaRoot, path)) ?? fail(`missing schema document: ${path}`);
-}
-
-function visit(value: unknown, callback: (object: JsonObject) => void): void {
-  if (Array.isArray(value)) {
-    for (const entry of value) visit(entry, callback);
-    return;
-  }
-  const object = asObject(value);
-  if (!object) return;
-  callback(object);
-  for (const entry of Object.values(object)) visit(entry, callback);
-}
-
-function resolvePointer(document: unknown, fragment: string): unknown {
-  if (fragment === "" || fragment === "#") return document;
-  if (!fragment.startsWith("#/")) fail(`unsupported schema fragment: ${fragment}`);
-  let current = document;
-  for (const part of fragment.slice(2).split("/")) {
-    const key = part.replaceAll("~1", "/").replaceAll("~0", "~");
-    const object = asObject(current);
-    if (!object || !(key in object)) fail(`unresolved schema fragment: ${fragment}`);
-    current = object[key];
-  }
-  return current;
-}
-
-function resolveReference(ref: string, fromPath: string): { schema: JsonSchema; path: string } {
-  const [filePart, fragmentPart] = ref.split("#", 2);
-  const path = filePart.length > 0 ? resolve(dirname(fromPath), filePart) : fromPath;
-  if (!path.startsWith(`${schemaRoot}/`) && path !== schemaRoot) {
-    fail(`schema reference escapes the published tree: ${ref}`);
-  }
-  const document = documents.get(path) ?? fail(`unresolved schema reference: ${ref}`);
-  const schema = resolvePointer(document, fragmentPart === undefined ? "" : `#${fragmentPart}`);
-  if (typeof schema !== "boolean" && !asObject(schema)) {
-    fail(`schema reference does not resolve to a schema: ${ref}`);
-  }
-  return { schema: schema as JsonSchema, path };
-}
-
-function matchesType(value: unknown, type: string): boolean {
-  switch (type) {
-    case "array": return Array.isArray(value);
-    case "boolean": return typeof value === "boolean";
-    case "integer": return typeof value === "number" && Number.isInteger(value);
-    case "null": return value === null;
-    case "number": return typeof value === "number" && Number.isFinite(value);
-    case "object": return asObject(value) !== null;
-    case "string": return typeof value === "string";
-    default: fail(`unsupported schema type: ${type}`);
-  }
-}
-
-function validate(value: unknown, schema: JsonSchema, schemaPath: string, instancePath = "$" ): string[] {
-  if (schema === true) return [];
-  if (schema === false) return [`${instancePath}: rejected by false schema`];
-
-  if (typeof schema.$ref === "string") {
-    const resolved = resolveReference(schema.$ref, schemaPath);
-    return validate(value, resolved.schema, resolved.path, instancePath);
-  }
-
-  const errors: string[] = [];
-  const allOf = Array.isArray(schema.allOf) ? schema.allOf : [];
-  for (const child of allOf) {
-    errors.push(...validate(value, child as JsonSchema, schemaPath, instancePath));
-  }
-
-  const anyOf = Array.isArray(schema.anyOf) ? schema.anyOf : [];
-  if (anyOf.length > 0 && !anyOf.some((child) => validate(value, child as JsonSchema, schemaPath, instancePath).length === 0)) {
-    errors.push(`${instancePath}: does not match any allowed shape`);
-  }
-
-  if (Array.isArray(schema.enum) && !schema.enum.some((entry) => JSON.stringify(entry) === JSON.stringify(value))) {
-    errors.push(`${instancePath}: value is not in enum`);
-  }
-  if ("const" in schema && JSON.stringify(schema.const) !== JSON.stringify(value)) {
-    errors.push(`${instancePath}: value does not match const`);
-  }
-
-  if (typeof schema.type === "string" && !matchesType(value, schema.type)) {
-    errors.push(`${instancePath}: expected ${schema.type}`);
-    return errors;
-  }
-
-  if (typeof value === "string" && typeof schema.minLength === "number" && value.length < schema.minLength) {
-    errors.push(`${instancePath}: shorter than minLength ${schema.minLength}`);
-  }
-  if (typeof value === "number" && typeof schema.minimum === "number" && value < schema.minimum) {
-    errors.push(`${instancePath}: smaller than minimum ${schema.minimum}`);
-  }
-
-  if (Array.isArray(value)) {
-    if (typeof schema.minItems === "number" && value.length < schema.minItems) {
-      errors.push(`${instancePath}: shorter than minItems ${schema.minItems}`);
-    }
-    if (schema.uniqueItems === true) {
-      const keys = value.map((entry) => JSON.stringify(entry));
-      if (new Set(keys).size !== keys.length) errors.push(`${instancePath}: items are not unique`);
-    }
-    if (schema.items !== undefined) {
-      value.forEach((entry, index) => {
-        errors.push(...validate(entry, schema.items as JsonSchema, schemaPath, `${instancePath}[${index}]`));
-      });
-    }
-  }
-
-  const object = asObject(value);
-  if (object) {
-    const required = Array.isArray(schema.required) ? schema.required : [];
-    for (const key of required) {
-      if (typeof key === "string" && !(key in object)) errors.push(`${instancePath}: missing ${key}`);
-    }
-    const properties = asObject(schema.properties) ?? {};
-    for (const [key, entry] of Object.entries(object)) {
-      if (key in properties) {
-        errors.push(...validate(entry, properties[key] as JsonSchema, schemaPath, `${instancePath}.${key}`));
-      } else if (schema.additionalProperties === false) {
-        errors.push(`${instancePath}: unknown property ${key}`);
-      } else if (asObject(schema.additionalProperties)) {
-        errors.push(...validate(entry, schema.additionalProperties as JsonSchema, schemaPath, `${instancePath}.${key}`));
-      }
-    }
-  }
-
-  return errors;
-}
+const catalog = await loadPublishedSchemas();
+const { repoRoot, schemaRoot, documents, rawDocuments } = catalog;
 
 function assertValid(value: unknown, path: string, label: string): void {
-  const absolutePath = resolve(schemaRoot, path);
-  const errors = validate(value, schemaAt(path), absolutePath);
+  const errors = validateDocument(catalog, value, path);
   if (errors.length > 0) fail(`${label} failed ${path}:\n${errors.join("\n")}`);
 }
 
 function assertInvalid(value: unknown, path: string, label: string): void {
-  const absolutePath = resolve(schemaRoot, path);
-  if (validate(value, schemaAt(path), absolutePath).length === 0) {
+  if (validateDocument(catalog, value, path).length === 0) {
     fail(`${label} unexpectedly passed ${path}`);
   }
 }
@@ -179,7 +35,7 @@ const mechanicsIds = new Map([
 ]);
 
 for (const [path, expectedId] of mechanicsIds) {
-  const document = schemaAt(path);
+  const document = schemaAt(catalog, path);
   if (document.$schema !== "https://json-schema.org/draft/2020-12/schema") {
     fail(`${path} is not declared as JSON Schema 2020-12`);
   }
@@ -197,7 +53,7 @@ for (const [path, raw] of rawDocuments) {
     if (/^[a-z][a-z0-9+.-]*:/i.test(object.$ref) || object.$ref.startsWith("/")) {
       fail(`${relative(repoRoot, path)} contains non-relative $ref ${object.$ref}`);
     }
-    resolveReference(object.$ref, path);
+    resolveReference(catalog, object.$ref, path);
   });
 }
 
@@ -250,7 +106,7 @@ function assertCovers(
       assertCovers(defSchema as JsonSchema, value, schemaPath, document, instancePath);
       return;
     }
-    const resolved = resolveReference(schema.$ref, schemaPath);
+    const resolved = resolveReference(catalog, schema.$ref, schemaPath);
     const nextDocument = documents.get(resolved.path) ?? document;
     assertCovers(resolved.schema, value, resolved.path, nextDocument, instancePath);
     return;
@@ -288,7 +144,7 @@ if (JSON.stringify(corePayloadTypes) !== JSON.stringify(declaredCoreBlocks)) {
 
 for (const block of corePayloadBlocks) {
   const path = `blocks/${block.type}.schema.json`;
-  const document = schemaAt(path);
+  const document = schemaAt(catalog, path);
   assertValid(block.data, path, `core-payloads ${block.type}`);
   assertCovers(document, block.data, resolve(schemaRoot, path), document, `${block.type}`);
   const withLeak = { ...(block.data as JsonObject), unexpected: true };
@@ -304,7 +160,7 @@ assertValid(
 const descriptors = new Map(fixture.registry.blocks.map((block) => [block.type, block]));
 const strategy = fixture.registry.strategy;
 function fixtureCaseAccepted(value: (typeof fixture.validationCases)[number]["value"]): boolean {
-  if (validate(value, schemaAt("value.schema.json"), resolve(schemaRoot, "value.schema.json")).length > 0) return false;
+  if (validateDocument(catalog, value, "value.schema.json").length > 0) return false;
   if (value.blocks.length < strategy.cardinality.minBlocks) return false;
   if (strategy.cardinality.maxBlocks !== null && value.blocks.length > strategy.cardinality.maxBlocks) return false;
   return value.blocks.every((block) => {
@@ -312,7 +168,7 @@ function fixtureCaseAccepted(value: (typeof fixture.validationCases)[number]["va
     if (!descriptor || !descriptor.supported.includes(block.version)) return false;
     if (!strategy.allowedTypes.includes(block.type) && !strategy.allowedCategories.includes(descriptor.category)) return false;
     if (CORE_BLOCK_TYPE_NAMES.includes(block.type as never)) {
-      return validate(block.data, schemaAt(`blocks/${block.type}.schema.json`), resolve(schemaRoot, `blocks/${block.type}.schema.json`)).length === 0;
+      return validateDocument(catalog, block.data, `blocks/${block.type}.schema.json`).length === 0;
     }
     return true;
   });

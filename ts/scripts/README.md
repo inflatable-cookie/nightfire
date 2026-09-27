@@ -8,6 +8,8 @@ Repository scripts are proof helpers invoked through Effigy.
 | `check-exports.ts` | Proves declared package exports resolve |
 | `check-pack.ts` | Proves the packed package contains the intended files |
 | `check-rust-package.ts` | Tests the freshly unpacked Cargo crate and its fixture |
+| `check-schemas.ts` | Proves published JSON Schema documents against the shared wire fixtures |
+| `schema-documents.ts` | Shared JSON Schema loader and validator used by `check-schemas` and editor payload tests |
 | `check-sanitization.ts` | Exercises malicious markup across supported runtime shapes |
 | `check-version-sync.ts` | Proves npm/Cargo version and shared-fixture alignment |
 | `check-git-consumer.ts` | Exercises disposable npm and Cargo Git consumers |
