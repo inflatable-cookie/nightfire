@@ -194,8 +194,8 @@ verifies is the specific failure the consumer said it will not consume.
 exact set equality between the payload documents under `schemas/blocks/` and `CORE_BLOCK_TYPE_NAMES`, and
 it runs in `health`. So:
 
-- declaring a new core block type requires its payload document **and** its `core-payloads` fixture
-case **in the same change**, or `qa` fails;
+- declaring a new core block type requires its payload document, its `core-payloads` fixture case,
+**and** an editor authoring test **in the same change**, or `qa` fails;
 - changing a block's payload shape requires the matching document and representative payload in the same
 commit, because the published document is what the consumer byte-pins;
 - removing the document for a type without removing the type fails the same way.
@@ -209,10 +209,20 @@ the representative omits, or a representative field the document lacks, fails `h
 the set-equality check to ease a change; update the document in the same change instead. Documents stay
 hand-authored.
 
-The residual gap: the representatives are written by hand to match what each editor stores. No test
-drives an editor and compares what it writes with its representative, so an editor that starts writing a
-new field stays green until someone updates the fixture. That is the download-card-title failure mode,
-and closing it is `lane:nightfire-schema-parity`.
+**Editor output:** a component test authors each core block through its editor, filling the optional
+fields the UI exposes, then validates the stored payload with the same JSON Schema machinery
+`check:schemas` uses and checks that every stored key is present on that type's `core-payloads`
+representative, nested included. An editor that starts writing a field the document or representative
+lacks fails `qa`.
+
+`rich_text` does not compare ProseMirror node keys against the representative. The tree's keys depend
+on which nodes the author used, so the test validates the stored document against the published
+recursive node schema (`additionalProperties: false`) and checks only the payload's own keys
+(`document`) against the representative.
+
+Fields the editor does not author (`table` row `section`, `item_list` `intro` and `variant`) stay on
+the representative and the document. Round-trip tests and the document-coverage check prove them; the
+authoring path does not.
 
 ## Named row sections
 

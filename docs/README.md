@@ -7,9 +7,9 @@ payload schema. `main` carries an editor colour fix that no published version
 has yet.
 
 What matters right now: payload schemas are checked against representative
-stored payloads in the shared wire fixture, and the colour-literal guard covers
-colours only. Consumers repin from tags, so nothing on `main` reaches them until
-a release.
+stored payloads and against what each editor actually stores, and the
+colour-literal guard covers colours only. Consumers repin from tags, so nothing
+on `main` reaches them until a release.
 
 ## By topic
 

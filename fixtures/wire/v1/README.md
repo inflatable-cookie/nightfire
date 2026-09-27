@@ -18,9 +18,10 @@ and media-locator resolution.
 type, including the optional fields the editor writes. `check:schemas` holds
 those types equal to `CORE_BLOCK_TYPE_NAMES`, validates each payload against its
 published document, and requires the representative to cover the document's
-property set. Rust round-trips the envelope; it does not interpret payload
-fields. Changing an editor's stored fields requires updating this case in the
-same change.
+property set. Editor component tests author each block through its editor and
+require the stored keys to be present on that representative. Rust round-trips
+the envelope; it does not interpret payload fields. Changing an editor's stored
+fields requires updating this case in the same change.
 
 `rust/nightfire/fixtures/wire/v1/nightfire-values.json` is a tracked symlink to
 this file. Cargo dereferences it into the `.crate`, so an unpacked package keeps
