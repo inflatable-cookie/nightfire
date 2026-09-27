@@ -6,6 +6,8 @@ immutable.
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-09-27
+
 ### Added
 
 - Component tests that author each core block through its editor and prove the stored payload against
