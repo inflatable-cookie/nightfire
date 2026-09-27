@@ -5,10 +5,9 @@ briefs. An answered question keeps only its pointer to where the answer lives.
 
 ## Q-001 — What does the next release carry, and when?
 
-Status: open
-Known: the unpublished slash-palette colour fix rides it (operator ruling,
-2026-09-18); no patch release for it alone. Version and timing are undecided.
-See `lane:nightfire-next-release` and [release](contracts/release.md).
+Status: answered 2026-09-27
+Answer: `0.3.0` (Tom), carrying the Poodle 0.4.4 refresh, the Svelte peer raise
+and the palette fix; see `CHANGELOG.md` `[0.3.0]`.
 
 ## Q-002 — Should the colour-literal guard cover radii, spacing and fonts, or only colours?
 

@@ -6,6 +6,8 @@ immutable.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-09-27
+
 ### Added
 
 - `--nightfire-color-selection`, the slash palette's selected-item colour, so the
@@ -13,6 +15,13 @@ immutable.
 
 ### Changed
 
+- **Breaking:** the `svelte` peer range is now `>=5.56.8 <6`, up from
+  `>=5.38.6 <6`, to match Poodle's own Svelte peer. Poodle 0.4.2 already
+  required 5.56.8, so a consumer below it had an unmet peer.
+- `@inflatable-cookie/poodle-svelte` moves from 0.4.2 to 0.4.4, so a consumer
+  already on Poodle 0.4.4 resolves one Poodle copy instead of two.
+- `marked` moves from 17.0.6 to 18.0.14, meeting Poodle's `marked ^18.0.9`
+  peer. Markdown still passes through the same sanitizer before `{@html}`.
 - `check:style-literals` is now `check:colour-literals`. Contributors run it by
   that name through `effigy health`; it still fails only on colour literals.
 
