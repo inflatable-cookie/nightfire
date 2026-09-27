@@ -2,9 +2,9 @@ import { describe, expect, it } from "../vitest";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-// The rich-text block wraps Poodle; it does not re-declare the vocabulary. This
-// test is the adversarial half of that claim: it fails if a local node, mark,
-// feature set, schema, or toolbar appears under the implementation directory.
+// The editor wraps Poodle; the renderer serializes the stored JSON vocabulary
+// without the editor engine. This test fails if a local TipTap/ProseMirror
+// schema, toolbar, or runtime Poodle import appears on the renderer.
 
 const directory = "ts/src/rich-text";
 const files = readdirSync(directory).filter((name) => /\.(ts|svelte)$/.test(name));
@@ -14,11 +14,10 @@ const sources = Object.fromEntries(
 const allSources = Object.values(sources).join("\n");
 
 describe("nightfire/rich-text vocabulary", () => {
-  it("wraps Poodle's published components and pins Poodle's exported feature set", () => {
-    for (const file of ["RichTextEditor.svelte", "RichTextRenderer.svelte"]) {
-      expect(sources[file], file).toContain("@inflatable-cookie/poodle-svelte/rich-text");
-      expect(sources[file], file).toContain("RICH_TEXT_FEATURES");
-    }
+  it("wraps Poodle in the editor and pins Poodle's exported feature set", () => {
+    expect(sources["RichTextEditor.svelte"]).toContain("@inflatable-cookie/poodle-svelte/rich-text");
+    expect(sources["RichTextEditor.svelte"]).toContain("RICH_TEXT_FEATURES");
+    expect(sources["RichTextRenderer.svelte"]).not.toContain("@inflatable-cookie/poodle-svelte");
     expect(sources["render.ts"]).toContain('registerBlockRenderer(null, "rich_text"');
     expect(sources["editor.ts"]).toContain('registerBlockEditor(null, "rich_text"');
   });

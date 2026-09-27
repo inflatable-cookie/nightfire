@@ -26,7 +26,7 @@ categories in the registry are profile-owned.
 | Type | Category | Role |
 | --- | --- | --- |
 | `markdown` | Text | plain markdown text |
-| `rich_text` | Text | structured rich text, edited through the Poodle rich-text editor (TipTap/ProseMirror) |
+| `rich_text` | Text | structured rich text, edited through the Poodle rich-text editor (TipTap/ProseMirror); the renderer serializes the stored JSON without that engine |
 | `table` | Layout | tabular structure, edited as a direct grid |
 | `item_list` | Layout | ordered list of titled child-block items |
 | `image` | Media | one image held as a media-library reference, with alt text and opt-in sizing |
@@ -55,8 +55,10 @@ ruling, 2026-09-18). Each replacement says what it is:
 
 - **`image`** is content in flow, and it holds a **library reference** so the file's URL, intrinsic
   size and title come from the source that owns them. It carries alt text and opt-in sizing.
-- **`video`** is an embed. It carries Poodle's own `ParsedEmbed`, so provider parsing, previewing and
-  rendering stay Poodle's, and it needs no library.
+- **`video`** is an embed. It carries Poodle's own `ParsedEmbed`. Authoring
+  (paste parsing and provider preview) stays Poodle's `EmbedInput`. Rendering is
+  Nightfire's port of Poodle's `renderEmbed` and needs no library and no Poodle
+  at runtime.
 - **`download_card`** presents files the consumer manages, so it holds references and a resolver
   supplies the filename, size and URL. Each file carries an optional author-written title and an
   optional description, and the card itself carries an optional description. It is `image`'s sibling,
@@ -105,7 +107,8 @@ The admitted vocabulary is not ours to invent: the Poodle rich-text engine assem
 feature-gated** set, and a feature that is not selected contributes no nodes, marks, commands, input
 rules or shortcuts. The feature vocabulary itself (`RichTextFeature`, `RichTextHeadingMode`) is
 declared in Poodle core and validated there, so the `rich_text` block mirrors that set rather than
-extending it.
+extending it. The renderer serializes that stored JSON to semantic HTML and sanitizes it; it does
+not load Poodle or TipTap.
 
 | Group | Admitted |
 | --- | --- |

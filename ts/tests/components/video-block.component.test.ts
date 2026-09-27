@@ -57,6 +57,21 @@ describe("nightfire/video block", () => {
     ).toBe(false);
   });
 
+  it("matches the committed video fixture HTML", () => {
+    const fixture = JSON.parse(readFileSync("fixtures/wire/v1/nightfire-values.json", "utf8"));
+    const block = fixture.values
+      .find((entry: { name: string }) => entry.name === "core-payloads")
+      .value.blocks.find((entry: { type: string }) => entry.type === "video");
+    const view = render(RendererComponent as any, { block });
+    const root = view.container.querySelector('[data-nightfire-block="video"]') as HTMLElement;
+    expect(root).toBeTruthy();
+    expect(root.getAttribute("data-embed-state")).toBe("ready");
+    const frame = root.querySelector("iframe") as HTMLIFrameElement;
+    expect(frame.getAttribute("src")).toBe("https://www.youtube.com/embed/dQw4w9WgXcQ");
+    expect(frame.getAttribute("title")).toBe("Example film");
+    expect(root.querySelector("[data-video-caption]")!.textContent).toBe("Seen from the ridge");
+  });
+
   it("renders the embed with the title as its accessible name and no styling", () => {
     const view = render(RendererComponent as any, { block: titledBlock });
     const root = view.container.querySelector('[data-nightfire-block="video"]');
@@ -145,23 +160,23 @@ describe("nightfire/video block", () => {
     expect(hostileTitle === null || !hostileTitle.includes("<")).toBe(true);
   });
 
-  it("keeps the embed model in Poodle: no provider list, parser or shape under ts/src", () => {
+  it("keeps URL parsing in the editor and the provider allow-list in renderEmbed", () => {
     const dir = join(import.meta.dir, "../../src/video");
-    const sources = readdirSync(dir)
-      .filter((entry) => entry.endsWith(".ts") || entry.endsWith(".svelte"))
-      .map((entry) => readFileSync(join(dir, entry), "utf8"));
-    expect(sources.length).toBeGreaterThan(0);
-    for (const source of sources) {
-      // No provider is ever named here; the admitted set is Poodle's.
-      expect(source).not.toMatch(/youtube|vimeo|audioboom/i);
-      // No parsing machinery here either; `EmbedInput` owns it.
-      expect(source).not.toMatch(/new RegExp|RegExp\(|\.match\(|\.exec\(|detectParsedEmbed/);
+    const sources = Object.fromEntries(
+      readdirSync(dir)
+        .filter((entry) => entry.endsWith(".ts") || entry.endsWith(".svelte"))
+        .map((entry) => [entry, readFileSync(join(dir, entry), "utf8")])
+    );
+    expect(Object.keys(sources).length).toBeGreaterThan(0);
+    for (const [name, source] of Object.entries(sources)) {
+      // URL parsing stays in Poodle's EmbedInput; Nightfire does not host a parser.
+      expect(source, name).not.toMatch(/new RegExp|RegExp\(|detectParsedEmbed/);
     }
-    const combined = sources.join("\n");
-    // The only embed names here are Poodle's imports and the stored shape's fields.
-    expect(combined).toContain("@inflatable-cookie/poodle-svelte");
-    expect(combined).toContain("renderEmbed");
-    expect(combined).toContain("EmbedInput");
+    expect(sources["VideoEditor.svelte"]).toContain("@inflatable-cookie/poodle-svelte");
+    expect(sources["VideoEditor.svelte"]).toContain("EmbedInput");
+    expect(sources["VideoRenderer.svelte"]).not.toContain("@inflatable-cookie/poodle-svelte");
+    expect(sources["render-embed.ts"]).toContain("renderEmbed");
+    expect(sources["render-embed.ts"]).toMatch(/youtube|vimeo|audioboom/);
   });
 
   it("pastes a supported URL, shows the provider, and stores the parsed embed", async () => {

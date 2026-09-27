@@ -6,6 +6,31 @@ immutable.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-09-27
+
+### Removed
+
+- **Breaking:** `@inflatable-cookie/poodle-svelte` is no longer a hard
+  dependency. It is an optional peer of editor entry points. A renderer-only
+  consumer must not rely on Nightfire installing Poodle.
+
+### Added
+
+- A Poodle-free rich-text renderer that serializes the stored ProseMirror JSON
+  vocabulary to semantic HTML and sanitizes it before `{@html}`.
+- A Poodle-free video embed renderer that ports Poodle's `renderEmbed`
+  allow-list (youtube, vimeo, audioboom, plus pasted `originalEmbed`).
+- `check:boundaries` fails if a runtime import reachable from `./renderer`,
+  `./render-registrations`, `./core-blocks`, or a block renderer reaches Poodle.
+  Type-only imports pass.
+- `check:renderer-consumer` installs Nightfire without Poodle and renders every
+  core block through the renderer entry points.
+
+### Changed
+
+- Rich-text and video renderers no longer import Poodle at runtime. Editors
+  still do.
+
 ## [0.3.1] - 2026-09-27
 
 ### Added

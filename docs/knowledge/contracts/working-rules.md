@@ -27,7 +27,8 @@ verify and unsafe to coordinate.
 - The export map is a checked contract: `check-exports.ts` compares it against an
   explicit expectation in both directions, so a new subpath is declared there.
 - `health` runs the export, boundary, schema, colour-literal, and version-sync
-  proofs; `qa` adds the release-automation guard.
+  proofs; `qa` adds sanitization, pack, the Poodle-free renderer consumer,
+  Git-consumer proofs, docs, and the release-automation guard.
 
 ## Cross-repository rule
 

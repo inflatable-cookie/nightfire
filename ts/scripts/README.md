@@ -5,6 +5,7 @@ Repository scripts are proof helpers invoked through Effigy.
 | Script | Purpose |
 | --- | --- |
 | `check-boundaries.ts` | Proves dependency, source-graph, and bundle boundaries |
+| `check-renderer-consumer.ts` | Installs Nightfire without Poodle and renders every core block |
 | `check-exports.ts` | Proves declared package exports resolve |
 | `check-pack.ts` | Proves the packed package contains the intended files |
 | `check-rust-package.ts` | Tests the freshly unpacked Cargo crate and its fixture |

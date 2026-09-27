@@ -24,7 +24,10 @@ after consumer migration begins.
   editing, strategies, media, and styles.
 - Keep `core` and `validation` free of Svelte runtime imports.
 - Allow registry modules to import Svelte types only.
-- Keep renderer imports free of editor modules and registration effects.
+- Keep renderer imports free of editor modules, registration effects, and
+  runtime Poodle imports. Type-only Poodle imports pass.
+- Keep `@inflatable-cookie/poodle-svelte` an optional peer of editor entry
+  points only.
 - Keep editor and renderer registration as explicit consumer opt-ins.
 
 ## Data and trust
@@ -41,7 +44,8 @@ after consumer migration begins.
 Every runtime dependency needs direct retained-source evidence, recorded in
 `PROVENANCE.md` and the package documentation. Forbidden Underlay, framework,
 product, and duplicate utility dependencies stay absent from both manifests,
-locks, and source graphs.
+locks, and source graphs. `@inflatable-cookie/poodle-svelte` is an optional
+peer for editors; renderer graphs must not reach it at runtime.
 
 ## Proof
 
