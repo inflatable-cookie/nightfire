@@ -23,7 +23,7 @@ allow = ["CHANGELOG.md"]
 [[retired]]
 id = "northstar-process-records"
 retired = "2026-09-26"
-replacement = "Knowledge in docs/knowledge/, intent in docs/plan.md; tasks, briefs, status and outcomes live in Queue."
+replacement = "Knowledge in docs/knowledge/; plan, tasks, briefs, status and outcomes live in Queue."
 owner = "docs/knowledge/README.md"
 terms = ["roadmap card", "generation index", "lifecycle record", "Roadmap Sequence", "Next Task", "northstar:lifecycle", "chatterbox handoff"]
 paths = [".northstar/lifecycle", "docs/roadmaps", "docs/handoffs", "docs/logs", "docs/vision", "docs/architecture", "docs/contracts", "docs/policy"]
@@ -36,3 +36,11 @@ replacement = "Papercuts are filed in Queue with papercut.add; the planner promo
 owner = "AGENTS.md"
 terms = ["PAPERCUTS.md"]
 paths = ["PAPERCUTS.md"]
+
+[[retired]]
+id = "repository-planning-files"
+retired = "2026-09-27"
+replacement = "The plan is Queue lanes, lane documents and plan order; leads are Queue records (lead.add)."
+owner = "docs/knowledge/README.md"
+paths = ["docs/plan.md", "docs/triage/"]
+allow = ["CHANGELOG.md", "AGENTS.md"]

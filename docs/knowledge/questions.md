@@ -8,7 +8,7 @@ briefs. An answered question keeps only its pointer to where the answer lives.
 Status: open
 Known: the unpublished slash-palette colour fix rides it (operator ruling,
 2026-09-18); no patch release for it alone. Version and timing are undecided.
-See [plan](../plan.md) and [release](contracts/release.md).
+See `lane:nightfire-next-release` and [release](contracts/release.md).
 
 ## Q-002 — Should the colour-literal guard cover radii, spacing and fonts, or only colours?
 

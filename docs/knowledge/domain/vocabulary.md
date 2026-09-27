@@ -201,7 +201,7 @@ published document is what the consumer byte-pins;
 The residual gap: payload documents are exercised by hand-written examples in `check-schemas.ts` and by
 whatever the shared wire fixture contains, not derived from the implementation. A schema can therefore
 drift from a block's real field set while the check stays green; it happened once, when download-card
-file titles shipped before the document admitted them. Closing the gap is in the [plan](../../plan.md).
+file titles shipped before the document admitted them. Closing the gap is `lane:nightfire-schema-parity`.
 Do not weaken the set-equality check to ease a change; update the document in the same change instead.
 
 ## Named row sections
