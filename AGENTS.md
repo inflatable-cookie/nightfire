@@ -11,10 +11,11 @@ framework or a home for product schemas, blocks or UI.
 - Knowledge (one owner per fact): `docs/knowledge/README.md`
 - Retired concepts, which must not come back: `docs/knowledge/retired.toml`
 - Open questions: `docs/knowledge/questions.md`
-The plan (lanes, their documents and their order), leads, papercuts, brief
-drafts, tasks and status live in Queue, never in this repository. Read what's
-next with `plan.get` (see the `northstar` skill). The Acowtancy Market roadmap
-owns cross-repository release and adoption order; don't copy its cards here.
+
+The plan (lanes, their documents and their order), leads, briefs, papercuts,
+tasks and status live in Queue, never in this repository. Read what's next with
+`plan.get` (see the `northstar` skill). The Acowtancy Market roadmap owns
+cross-repository release and adoption order; don't copy its cards here.
 
 Commands go through Effigy: `effigy tasks` for the task list, `effigy doctor`
 when health or routing is unclear, and `effigy test --plan` before choosing test
