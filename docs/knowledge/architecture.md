@@ -23,7 +23,7 @@ package under `rust/`. Both manifests use the same release version and tag.
 | --- | --- | --- |
 | Generic Rust protocol, strategies, registries, validation, hashing, IDs, locators | Nightfire | Owns crate `nightfire` and its release proof |
 | Generic TypeScript value, validation, registries, rendering, editing | Nightfire | Owns the npm package and its release proof |
-| Generic UI primitives | Poodle | Consumed where justified |
+| Generic UI primitives | Poodle | Editors only; never in a renderer graph (Tom, 2026-09-27) |
 | Product schemas, blocks, registrations, persistence | Froyo and applications | Exposes extension points; absorbs no product policy |
 | Underlay media traversal and HTTP adapters | Underlay | Consumes Nightfire; stays outside this repository |
 | Cross-repository release and adoption order | Acowtancy Market roadmap | Nightfire does not copy Market cards |
@@ -75,6 +75,9 @@ responses. Those decisions stay with consumers.
 - TypeScript `core` and `validation` have no framework runtime edge.
 - Registry imports from Svelte are type-only.
 - Renderer graphs contain no editor modules or registration effects.
+- Renderer graphs contain no runtime Poodle import (type-only imports are
+  allowed). Poodle is for editors only (Tom, 2026-09-27): learner-facing apps
+  such as Acowtancy's Cream consume renderers and must stay Poodle-free.
 - Markdown and embedded HTML cross one sanitizer contract before `{@html}`.
 - Fixtures are synthetic and contain no production data.
 
