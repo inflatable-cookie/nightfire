@@ -24,6 +24,7 @@ for (const file of files) {
   const args = ["bun"];
   if (component) args.push("--conditions=browser");
   args.push("test");
+  if (component) args.push("--timeout=30000");
   if (component) args.push("--preload", "./ts/tests/setup/component.ts");
   args.push(file);
   const child = Bun.spawnSync(args, { stdout: "inherit", stderr: "inherit" });

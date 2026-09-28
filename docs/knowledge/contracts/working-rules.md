@@ -29,6 +29,8 @@ verify and unsafe to coordinate.
 - `health` runs the export, boundary, schema, colour-literal, and version-sync
   proofs; `qa` adds sanitization, pack, the Poodle-free renderer consumer,
   Git-consumer proofs, docs, and the release-automation guard.
+- The component suite sets Bun's per-test timeout to 30 s because parallel Queue
+  workers can saturate the machine; the unit suite keeps Bun's default.
 
 ## Cross-repository rule
 
