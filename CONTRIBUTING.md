@@ -10,8 +10,10 @@ discovery, and validation:
 effigy bootstrap:deps
 effigy tasks
 effigy test --plan
-effigy qa
 ```
+
+Run the targeted checks for what you changed before a pull request; `AGENTS.md`
+"Validate" lists them. Full `effigy qa` runs on `main` at release points.
 
 Add wire fixtures for serialization changes and malicious fixtures for any
 markdown, HTML, or URL boundary change. Update `PROVENANCE.md` when extracted
