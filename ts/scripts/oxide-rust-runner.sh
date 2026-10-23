@@ -8,7 +8,7 @@ fi
 
 selector=$1
 case "$selector" in
-  check:rust|check:rust:clippy|test:rust) escape="$selector:cargo" ;;
+  check:rust:format|check:rust|check:rust:clippy|test:rust) escape="$selector:cargo" ;;
   *) printf 'unsupported Rust selector: %s\n' "$selector" >&2; exit 2 ;;
 esac
 shift
