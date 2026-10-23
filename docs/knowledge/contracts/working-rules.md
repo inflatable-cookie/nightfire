@@ -24,9 +24,10 @@ verify and unsafe to coordinate.
   pushed head. A dirty or unpushed head fails them by design.
 - `release-artifacts/` stays gitignored: untracked certificate output would dirty
   the tree and fail the Git-consumer proof.
-- Rust check, clippy and test selectors use `oxide` locally and Cargo with
-  `GITHUB_ACTIONS=true`; `:cargo` escapes exist for Oxide failures. Packaging
-  and Git-consumer proofs stay on Cargo.
+- Rust format, check, clippy and test selectors use `oxide` locally and Cargo
+  with `GITHUB_ACTIONS=true`; `:cargo` escapes exist for Oxide failures.
+  Packaging and Git-consumer proofs stay on Cargo pending Oxide one-use
+  workspace support.
 - The export map is a checked contract: `check-exports.ts` compares it against an
   explicit expectation in both directions, so a new subpath is declared there.
 - `health` runs the export, boundary, schema, colour-literal, and version-sync
