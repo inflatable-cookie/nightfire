@@ -1,5 +1,5 @@
 node_modules/
-target/
+/target
 dist/
 .effigy/
 *.tgz
@@ -10,3 +10,4 @@ dist/
 # set as an artifact. Ignored because a dirty tree fails the git-consumer
 # proof, and the certificate is meant to run before the gate in a release.
 release-artifacts/
+/.oxide-outputs/
