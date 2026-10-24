@@ -6,6 +6,18 @@ immutable.
 
 ## [Unreleased]
 
+### Added
+
+- A public `./rich-text` entry point that renders stored ProseMirror documents
+  to sanitized HTML and accepts typed, schema-scoped inline-node renderers, so a
+  consumer can display its own node (for example `math_inline` with a `latex`
+  attribute) inside a sentence. Registrations are exact-scoped to one schema,
+  cannot override an admitted built-in node, and compose the node's marks.
+  Unregistered or failed custom leaves render a visible escaped fallback; the
+  raw serializer stays internal, so no unsanitized path is presented as safe for
+  HTML insertion. The editor vocabulary, wire format and emptiness semantics are
+  unchanged.
+
 ## [0.4.1] - 2026-09-27
 
 ### Changed

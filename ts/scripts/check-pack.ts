@@ -20,6 +20,7 @@ try {
     "package/PROVENANCE.md",
     "package/ts/src/core.ts",
     "package/ts/src/NightfireRenderer.svelte",
+    "package/ts/src/rich-text.ts",
     "package/fixtures/wire/v1/nightfire-values.json",
     "package/schemas/value.schema.json",
     "package/schemas/block.schema.json",

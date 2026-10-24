@@ -110,6 +110,11 @@ declared in Poodle core and validated there, so the `rich_text` block mirrors th
 extending it. The renderer serializes that stored JSON to semantic HTML and sanitizes it; it does
 not load Poodle or TipTap.
 
+That closed set is the **editor's** vocabulary. A consumer may additionally display an inline node
+Poodle never authors, through a render-time registration scoped to one schema. That is not an
+extension of this vocabulary, of the wire format, or of the editor (see
+[consumer inline nodes](#consumer-inline-nodes)).
+
 | Group | Admitted |
 | --- | --- |
 | Always | document, paragraph, text, hard break, undo/redo |
@@ -127,6 +132,60 @@ The image node's model is Poodle's and takes `src`, `alt` and `title`; the block
 reference. Nightfire bridges the two: it supplies Poodle's host function from the registry, so
 inserting an image in rich text picks a reference and resolves it to a URL. No source registered means
 no insert command, which is Poodle's own behaviour.
+
+### Consumer inline nodes
+
+The motivating case is a consumer that already stores a `math_inline` leaf with `{ latex }` in
+`rich_text` documents. Poodle authors no such node, so Nightfire cannot admit it to the editor
+vocabulary and will not take a maths dependency. The consumer registers a renderer instead:
+
+```ts
+import {
+  registerRichTextInlineNodeRenderer,
+  renderRichTextHtml
+} from "@inflatable-cookie/nightfire/rich-text";
+
+registerRichTextInlineNodeRenderer("acme.maths", "math_inline", ({
+  node,
+  escapeText,
+  escapeAttribute
+}) => {
+  const latex = String(node.attrs.latex ?? "");
+  return `<span class="acme-math" data-latex="${escapeAttribute(latex)}">${escapeText(latex)}</span>`;
+});
+
+const html = renderRichTextHtml(storedDocument, { schema: "acme.maths" });
+```
+
+The rules are fixed here so a consumer implements a decision rather than inventing one:
+
+- **Scope is the schema and nothing else.** Matching is exact and there is no wildcard, so a
+  registration for one schema never answers for another. A document rendered with no schema gets the
+  built-ins only.
+- **Built-ins cannot be overridden.** Registering an admitted node type throws; the committed
+  rich-text fixtures render identically with or without the registry.
+- **Last registration wins.** Registering the same schema and node type again replaces the earlier
+  renderer. `unregisterRichTextInlineNodeRenderer` removes it and restores the fallback, so a test or
+  a hot-reload reloads a registration rather than stacking one.
+- **Composition is defined.** A registered renderer receives the node's attributes, its rendered
+  children as `childrenHtml` (empty for a leaf), and `escapeText`/`escapeAttribute` helpers. The
+  node's marks compose around the returned HTML as they do around text, so `bold` yields
+  `<strong>`, and an inadmissible link mark is dropped.
+- **The fallback is visible and escaped.** An unregistered custom leaf renders
+  `<span data-nightfire-inline-node="math_inline" data-nightfire-inline-fallback="unregistered">math_inline</span>`.
+  A renderer that throws or returns a non-string renders the same hook with
+  `data-nightfire-inline-fallback="failed"`. A custom leaf never silently disappears. An unknown
+  **container** keeps its children instead of being replaced by the label.
+- **Sanitization is not optional.** Registered output is composed into the document and the whole
+  document crosses the existing sanitizer before `{@html}`. The public entry point returns sanitized
+  HTML only; the raw serializer is not exported, and no callback is presented as ready for insertion.
+  Useful HTML markup survives; arbitrary MathML or SVG is not promised.
+
+Rendering support is not editing or save support. Poodle does not author a consumer node, so the
+rich-text editor does not round-trip one, and `isRichTextDocumentEmpty` still treats an unknown leaf
+as no content. A consumer that needs to author its own inline node owns that editor. Typesetting and
+appearance are the consumer's too: Nightfire emits no maths markup and no style, and the consumer
+styles its own classes and the fallback hook ([styling](../contracts/styling.md)).
 
 ## The media-source registry
 

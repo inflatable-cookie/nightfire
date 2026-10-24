@@ -18,6 +18,7 @@ const expected = [
   "./render-registrations",
   "./render-registry",
   "./renderer",
+  "./rich-text",
   "./strategies",
   "./styles.css",
   "./types",
@@ -40,6 +41,7 @@ await import("@inflatable-cookie/nightfire/core");
 await import("@inflatable-cookie/nightfire/validation");
 await import("@inflatable-cookie/nightfire/editor-registry");
 await import("@inflatable-cookie/nightfire/render-registry");
+await import("@inflatable-cookie/nightfire/rich-text");
 await import("@inflatable-cookie/nightfire/media-source");
 
 console.log(`export proof passed: ${actual.length} explicit subpaths resolve`);

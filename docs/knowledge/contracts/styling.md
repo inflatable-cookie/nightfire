@@ -18,6 +18,12 @@ Renderers carry no appearance. Editor chrome ships overridable defaults.
    extracted markup and style behaviour and as *"not an import, dependency, or
    integration hook"*. Consumers must not rely on them, and this package does not
    style them.
+5. **A consumer inline node's output is consumer appearance.** The registered
+   renderer returns its own markup and classes, and Nightfire adds no class, no
+   style and no typesetting. That includes the escaped fallback hook
+   (`[data-nightfire-inline-node]`, `[data-nightfire-inline-fallback]`), which
+   the consumer may style in its own stylesheet. Nightfire ships no maths
+   markup, MathML or SVG ([vocabulary](../domain/vocabulary.md#consumer-inline-nodes)).
 
 ## The editor stylesheet
 

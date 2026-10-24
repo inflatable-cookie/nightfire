@@ -22,6 +22,13 @@ after consumer migration begins.
   wire fixtures.
 - Export explicit entry points for core, validation, registries, rendering,
   editing, strategies, media, and styles.
+- Export `./rich-text` for the stored rich-text path: the sanitized document
+  renderer and the schema-scoped inline-node renderer registry. It is a
+  renderer entry point, so it loads no editor, no registration effect, and no
+  Poodle. Consumer inline-node registrations are render-time only: schema
+  scoped, composed into the document, and sanitized with it. They change no
+  wire shape, no block schema and no editor vocabulary
+  ([vocabulary](../domain/vocabulary.md#consumer-inline-nodes)).
 - Keep `core` and `validation` free of Svelte runtime imports.
 - Allow registry modules to import Svelte types only.
 - Keep renderer imports free of editor modules, registration effects, and

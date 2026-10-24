@@ -44,6 +44,7 @@
           <BlockRenderer
             {block}
             {value}
+            schema={value?.schema ?? null}
           />
         {/if}
       {/key}
