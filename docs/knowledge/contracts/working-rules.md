@@ -50,9 +50,13 @@ requires a migration window. No silent legacy parsing, no speculative shims.
 
 ## Release rule
 
-Implementation approval does not authorize merge, tag, package publication, or
-consumer updates. Each external mutation needs explicit operator authority. The
-release procedure is in [release](release.md).
+Queue may merge approved work once its review and validation gates pass. No
+separate operator merge approval is needed (Tom, 2026-10-24). Task-specific
+holds and prerequisites still apply.
+
+Tagging, package publication, consumer notifications and consumer updates need
+explicit operator authority. Implementation approval alone does not authorize
+them. The release procedure is in [release](release.md).
 
 ## Definition of done
 

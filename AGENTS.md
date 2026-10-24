@@ -31,7 +31,10 @@ ideas or observations with `lead.add` (see the `northstar` skill). There is no
 
 - Work in this repository only unless the operator expands scope. No consumer,
   Underlay, Poodle or Queue changes.
-- Do not tag, publish, merge, or notify consumers without explicit operator
+- Queue may merge approved work after its review and validation gates pass;
+  no separate operator merge approval is needed. See
+  `docs/knowledge/contracts/working-rules.md`.
+- Do not tag, publish, or notify consumers without explicit operator
   approval. See `docs/knowledge/contracts/release.md`.
 - Keep `core` and `validation` free of framework runtime imports; keep Svelte
   imports in registry modules type-only; keep renderer imports free of editor
