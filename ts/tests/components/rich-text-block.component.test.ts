@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, expect, it, vi } from "../vitest";
+import { afterEach, describe, expect, it, vi } from "../vitest";
 import { readFileSync } from "node:fs";
 import { fireEvent, render, waitFor } from "../render";
 
@@ -23,10 +23,15 @@ for (const proto of [Node.prototype, (globalThis as any).Range?.prototype].filte
   }
 }
 
+import NightfireRenderer from "../../src/NightfireRenderer.svelte";
 import "../../src/render-registrations";
 import "../../src/editor-registrations";
 import { getBlockRenderer } from "../../src/render-registry";
 import { getBlockEditor } from "../../src/editor-registry";
+import {
+  registerRichTextInlineNodeRenderer,
+  unregisterRichTextInlineNodeRenderer
+} from "../../src/rich-text";
 
 const structuredDocument = {
   type: "doc" as const,
@@ -162,5 +167,103 @@ describe("nightfire/rich-text block", () => {
     expect(typeof next.data.document).toBe("object");
     expect(next.data.document.type).toBe("doc");
     expect(JSON.stringify(next.data.document)).toContain("Start edited");
+  });
+});
+
+const INLINE_SCHEMA = "test.math-schema";
+
+function registerMathInline(): void {
+  registerRichTextInlineNodeRenderer(
+    INLINE_SCHEMA,
+    "math_inline",
+    ({ node, escapeText, escapeAttribute }) => {
+      const latex = String((node.attrs as { latex?: unknown }).latex ?? "");
+      return (
+        `<span class="math-inline" data-latex="${escapeAttribute(latex)}">` +
+        `${escapeText(latex)}</span>`
+      );
+    }
+  );
+}
+
+afterEach(() => {
+  unregisterRichTextInlineNodeRenderer(INLINE_SCHEMA, "math_inline");
+});
+
+const sentenceDocument = {
+  type: "doc",
+  content: [
+    {
+      type: "paragraph",
+      content: [
+        { type: "text", text: "The value " },
+        { type: "math_inline", attrs: { latex: "x^2" } },
+        { type: "text", text: " is small." }
+      ]
+    }
+  ]
+};
+
+describe("nightfire/rich-text with schema-scoped inline nodes", () => {
+  it("renders a registered consumer node inside the sentence", () => {
+    registerMathInline();
+    const view = render(RendererComponent as any, {
+      block: { type: "rich_text", version: "initial", data: { document: sentenceDocument } },
+      schema: INLINE_SCHEMA
+    });
+
+    const formula = view.container.querySelector(".math-inline");
+    expect(formula).toBeTruthy();
+    expect(formula!.getAttribute("data-latex")).toBe("x^2");
+    expect(view.container.textContent).toBe("The value x^2 is small.");
+  });
+
+  it("does not apply one schema's registration to another schema", () => {
+    registerMathInline();
+    const view = render(RendererComponent as any, {
+      block: { type: "rich_text", version: "initial", data: { document: sentenceDocument } },
+      schema: "test.other-schema"
+    });
+
+    expect(view.container.querySelector(".math-inline")).toBeNull();
+    expect(
+      view.container.querySelector('[data-nightfire-inline-node="math_inline"]')
+    ).toBeTruthy();
+    expect(view.container.textContent).toContain("The value math_inline is small.");
+  });
+
+  it("keeps the schema when rich text is nested in an item_list", () => {
+    registerMathInline();
+    const view = render(NightfireRenderer as any, {
+      value: {
+        schema: INLINE_SCHEMA,
+        blocks: [
+          {
+            type: "item_list",
+            version: "initial",
+            data: {
+              items: [
+                {
+                  title: "Step",
+                  body: [
+                    {
+                      type: "rich_text",
+                      version: "initial",
+                      data: { document: sentenceDocument }
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      }
+    });
+
+    const root = view.container.querySelector('[data-nightfire-block="rich_text"]');
+    expect(root).toBeTruthy();
+    expect(root!.querySelector(".math-inline")).toBeTruthy();
+    expect(view.container.textContent).toContain("Step");
+    expect(view.container.textContent).toContain("is small.");
   });
 });

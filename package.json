@@ -40,6 +40,7 @@
     "./types": "./ts/src/types.ts",
     "./editor": "./ts/src/editor.ts",
     "./renderer": "./ts/src/renderer.ts",
+    "./rich-text": "./ts/src/rich-text.ts",
     "./block-editor": "./ts/src/block-editor.ts",
     "./block-registration": "./ts/src/block-registration.ts",
     "./markdown": "./ts/src/markdown.ts",

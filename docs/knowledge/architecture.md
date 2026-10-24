@@ -53,6 +53,11 @@ Registries hold validators, renderers, and editors behind explicit registration
 with type-only Svelte references. Renderer imports load no editor code or
 registration side effects.
 
+Rich-text rendering also accepts consumer-owned inline-node renderers. They are
+the one render-time extension point in this tranche: scoped to a consumer
+schema, refused for admitted node types, composed into the document and
+sanitized with it, and never an editor, wire or block-schema change.
+
 ## Shared data flow
 
 A consumer supplies a `NightfireValue` and its own product registrations. Both

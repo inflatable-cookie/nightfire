@@ -68,6 +68,7 @@ Use the narrowest export for the job:
 import type { NightfireValue } from "@inflatable-cookie/nightfire/types";
 import { prepareNightfireForSave } from "@inflatable-cookie/nightfire/validation";
 import { NightfireRenderer } from "@inflatable-cookie/nightfire/renderer";
+import { renderRichTextHtml } from "@inflatable-cookie/nightfire/rich-text";
 ```
 
 `core` and `validation` have no Svelte runtime edge. Registry modules use
@@ -106,6 +107,54 @@ UUIDv7-style block IDs. Unknown versions fail closed. Legacy v1 sibling
 Markdown is parsed by `marked` and sanitized by `isomorphic-dompurify` before
 entering Svelte `{@html}`. The malicious fixture suite exercises SSR, browser,
 and a Tauri-shaped WebView environment.
+
+## Rich text and consumer inline nodes
+
+`rich_text` documents render through one public entry point that composes any
+schema-scoped consumer inline-node renderers and sanitizes the result:
+
+```ts
+import {
+  registerRichTextInlineNodeRenderer,
+  renderRichTextHtml
+} from "@inflatable-cookie/nightfire/rich-text";
+
+registerRichTextInlineNodeRenderer("acme.maths", "math_inline", ({
+  node,
+  escapeText,
+  escapeAttribute
+}) => {
+  const latex = String(node.attrs.latex ?? "");
+  return `<span class="acme-math" data-latex="${escapeAttribute(latex)}">${escapeText(latex)}</span>`;
+});
+
+const html = renderRichTextHtml(storedDocument, { schema: "acme.maths" });
+```
+
+`NightfireRenderer` and the registered `rich_text` block renderer pass the
+value's schema on, including through nested `item_list` items, so a
+registration applies wherever the document sits.
+
+- Registration is scoped to one schema. There is no wildcard, and no
+  registration answers for another schema.
+- An admitted built-in node type cannot be overridden; registering one throws.
+- The last registration for a schema and type wins.
+  `unregisterRichTextInlineNodeRenderer` removes it and restores the fallback.
+- Marks compose around the returned HTML. The renderer also receives the node's
+  attributes, its rendered `childrenHtml` (empty for a leaf), and
+  `escapeText`/`escapeAttribute` helpers.
+- An unregistered leaf, or a renderer that throws or returns a non-string,
+  renders a visible escaped fallback —
+  `<span data-nightfire-inline-node="math_inline" data-nightfire-inline-fallback="unregistered">math_inline</span>`.
+  An unknown container keeps its children instead.
+- The result is sanitized and ready for `{@html}`; the raw serializer is not
+  public. Representative HTML maths markup survives, but arbitrary MathML or
+  SVG is not promised.
+
+This is rendering only. The rich-text editor still follows Poodle's closed
+vocabulary, does not round-trip a consumer node, and emptiness still treats an
+unknown leaf as no content. Typesetting and styles for registered output are
+the consumer's; Nightfire ships no maths markup and no appearance.
 
 ## Development
 

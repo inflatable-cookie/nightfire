@@ -108,8 +108,59 @@ try {
     container.remove();
   }
 
+  // A consumer must reach the rich-text surface from the packed package alone,
+  // register its own schema-scoped inline node, and render it. This runs in the
+  // consumer's own module scope so the package export map and dependency graph,
+  // not a repository-relative path, are what resolve.
+  const probe = join(consumer, "rich-text-probe.ts");
+  const probeDocument = {
+    type: "doc",
+    content: [
+      {
+        type: "paragraph",
+        content: [
+          { type: "text", text: "The value " },
+          { type: "math_inline", attrs: { latex: "x^2" } },
+          { type: "text", text: " is small." },
+        ],
+      },
+    ],
+  };
+  await Bun.write(
+    probe,
+    `import {
+  registerRichTextInlineNodeRenderer,
+  renderRichTextHtml,
+} from "@inflatable-cookie/nightfire/rich-text";
+
+const probeDocument = ${JSON.stringify(probeDocument)};
+
+registerRichTextInlineNodeRenderer("consumer.maths", "math_inline", ({ node, escapeText }) => {
+  const latex = String(node.attrs.latex ?? "");
+  return '<span class="math-inline" data-latex="' + escapeText(latex) + '">' + escapeText(latex) + "</span>";
+});
+
+const html = renderRichTextHtml(probeDocument, { schema: "consumer.maths" });
+const other = renderRichTextHtml(probeDocument, { schema: "consumer.other" });
+process.stdout.write(JSON.stringify({ html, other }));
+`,
+  );
+  const probeRun = Bun.spawnSync(["bun", probe], { cwd: consumer });
+  if (probeRun.exitCode !== 0) {
+    throw new Error(`rich-text consumer probe failed\n${probeRun.stdout.toString()}\n${probeRun.stderr.toString()}`);
+  }
+  const rendered = JSON.parse(probeRun.stdout.toString()) as { html: string; other: string };
+  const expected =
+    '<p>The value <span class="math-inline" data-latex="x^2">x^2</span> is small.</p>';
+  if (rendered.html !== expected) {
+    throw new Error(`rich-text consumer rendering mismatch\nexpected ${expected}\nactual   ${rendered.html}`);
+  }
+  if (!rendered.other.includes('data-nightfire-inline-fallback="unregistered"')) {
+    throw new Error("a registration leaked into another schema or the fallback is missing");
+  }
+
   console.log(
-    `renderer consumer proof passed: Nightfire installed without Poodle; ${CORE_BLOCK_TYPE_NAMES.length} core blocks rendered`,
+    `renderer consumer proof passed: Nightfire installed without Poodle; ${CORE_BLOCK_TYPE_NAMES.length} core blocks rendered; schema-scoped maths rendered through the public rich-text path`,
   );
 } finally {
   await rm(destination, { recursive: true, force: true });

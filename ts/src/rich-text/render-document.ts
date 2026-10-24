@@ -2,9 +2,20 @@
 //
 // The admitted node and mark set is Poodle's closed feature vocabulary
 // (docs/knowledge/domain/vocabulary.md). This module serializes that stored
-// JSON without TipTap, ProseMirror, or Poodle. Unknown nodes and marks are
-// skipped rather than thrown: a learner-facing renderer must not crash on a
-// hostile document, and the sanitizer is the second gate.
+// JSON without TipTap, ProseMirror, or Poodle. Unknown marks are skipped and
+// unknown containers keep their children rather than thrown: a learner-facing
+// renderer must not crash on a hostile document, and the sanitizer is the
+// second gate.
+//
+// A consumer may register a renderer for one of its own inline node types,
+// scoped to one schema (see `inline-node-registry.ts`). Registered output is
+// composed here and sanitized with the whole document by the public
+// `renderRichTextHtml`; it never reaches `{@html}` from this module.
+
+import {
+  getRichTextInlineNodeRenderer,
+  type RichTextInlineNode
+} from "./inline-node-registry";
 
 const ADMITTED_HEADING_LEVELS = new Set([1, 2, 3, 4, 5, 6]);
 const ADMITTED_URL_PROTOCOLS = new Set(["http:", "https:", "mailto:"]);
@@ -20,6 +31,15 @@ type NodeJSON = {
   content?: unknown[];
   marks?: MarkJSON[];
   text?: unknown;
+};
+
+export interface RenderRichTextDocumentOptions {
+  /** Consumer schema whose inline-node registrations apply. */
+  schema?: string | null;
+}
+
+type RenderContext = {
+  schema: string | null;
 };
 
 function urlProtocolOf(value: string): string {
@@ -65,9 +85,68 @@ function attrsOf(node: NodeJSON): Record<string, unknown> {
     : {};
 }
 
-function childrenOf(node: NodeJSON): string {
+function childrenOf(node: NodeJSON, context: RenderContext): string {
   if (!Array.isArray(node.content)) return "";
-  return node.content.map(renderNode).join("");
+  return node.content.map((child) => renderNode(child, context)).join("");
+}
+
+function applyMarks(marks: unknown, html: string): string {
+  if (html === "" || !Array.isArray(marks)) return html;
+  let wrapped = html;
+  for (const mark of marks) wrapped = wrapMark(mark as MarkJSON, wrapped);
+  return wrapped;
+}
+
+// A custom leaf that cannot be rendered must still say something: an empty
+// string makes a formula silently disappear from a sentence. The fallback is
+// the escaped node type inside a stable hook, with the cause recorded, so a
+// consumer can read it and their stylesheet can target it.
+function inlineLeafFallback(
+  node: NodeJSON,
+  reason: "unregistered" | "failed"
+): string {
+  const type = typeof node.type === "string" ? node.type : "";
+  return (
+    `<span data-nightfire-inline-node="${escapeAttr(type)}"` +
+    ` data-nightfire-inline-fallback="${reason}">${escapeHtml(type)}</span>`
+  );
+}
+
+function renderUnadmittedNode(node: NodeJSON, context: RenderContext): string {
+  const type = typeof node.type === "string" ? node.type : "";
+  const children = childrenOf(node, context);
+  const renderer = getRichTextInlineNodeRenderer(context.schema, type);
+
+  // An unknown container is not an inline leaf: keep its children rather than
+  // replacing useful content with a fallback label.
+  if (!renderer) {
+    if (children !== "") return children;
+    return applyMarks(node.marks, inlineLeafFallback(node, "unregistered"));
+  }
+
+  const inlineNode: RichTextInlineNode = {
+    type,
+    attrs: attrsOf(node),
+    content: Array.isArray(node.content) ? node.content : []
+  };
+
+  let html: string;
+  try {
+    const output = renderer({
+      schema: context.schema as string,
+      node: inlineNode,
+      childrenHtml: children,
+      escapeText: escapeHtml,
+      escapeAttribute: escapeAttr
+    });
+    if (typeof output !== "string") {
+      return applyMarks(node.marks, inlineLeafFallback(node, "failed"));
+    }
+    html = output;
+  } catch {
+    return applyMarks(node.marks, inlineLeafFallback(node, "failed"));
+  }
+  return applyMarks(node.marks, html);
 }
 
 function wrapMark(mark: MarkJSON, inner: string): string {
@@ -99,10 +178,7 @@ function wrapMark(mark: MarkJSON, inner: string): string {
 
 function renderText(node: NodeJSON): string {
   if (typeof node.text !== "string") return "";
-  let html = escapeHtml(node.text);
-  if (!Array.isArray(node.marks)) return html;
-  for (const mark of node.marks) html = wrapMark(mark, html);
-  return html;
+  return applyMarks(node.marks, escapeHtml(node.text));
 }
 
 function headingTag(level: unknown): string | null {
@@ -110,11 +186,11 @@ function headingTag(level: unknown): string | null {
   return `h${level}`;
 }
 
-function renderTable(node: NodeJSON): string {
-  return `<table><tbody>${childrenOf(node)}</tbody></table>`;
+function renderTable(node: NodeJSON, context: RenderContext): string {
+  return `<table><tbody>${childrenOf(node, context)}</tbody></table>`;
 }
 
-function cellTag(kind: "th" | "td", node: NodeJSON): string {
+function cellTag(kind: "th" | "td", node: NodeJSON, context: RenderContext): string {
   const attrs = attrsOf(node);
   const parts: string[] = [];
   if (typeof attrs.colspan === "number" && attrs.colspan > 1) {
@@ -126,27 +202,27 @@ function cellTag(kind: "th" | "td", node: NodeJSON): string {
   if (typeof attrs.align === "string" && attrs.align.length > 0) {
     parts.push(attr("align", attrs.align));
   }
-  return `<${kind}${parts.join("")}>${childrenOf(node)}</${kind}>`;
+  return `<${kind}${parts.join("")}>${childrenOf(node, context)}</${kind}>`;
 }
 
-function renderNode(value: unknown): string {
+function renderNode(value: unknown, context: RenderContext): string {
   if (!value || typeof value !== "object" || Array.isArray(value)) return "";
   const node = value as NodeJSON;
   if (typeof node.type !== "string") return "";
 
   switch (node.type) {
     case "doc":
-      return childrenOf(node);
+      return childrenOf(node, context);
     case "text":
       return renderText(node);
     case "paragraph":
-      return `<p>${childrenOf(node)}</p>`;
+      return `<p>${childrenOf(node, context)}</p>`;
     case "heading": {
       const tag = headingTag(attrsOf(node).level);
-      return tag ? `<${tag}>${childrenOf(node)}</${tag}>` : childrenOf(node);
+      return tag ? `<${tag}>${childrenOf(node, context)}</${tag}>` : childrenOf(node, context);
     }
     case "bulletList":
-      return `<ul>${childrenOf(node)}</ul>`;
+      return `<ul>${childrenOf(node, context)}</ul>`;
     case "orderedList": {
       const attrs = attrsOf(node);
       const start =
@@ -154,19 +230,19 @@ function renderNode(value: unknown): string {
           ? ` start="${attrs.start}"`
           : "";
       const type = attr("type", attrs.type);
-      return `<ol${start}${type}>${childrenOf(node)}</ol>`;
+      return `<ol${start}${type}>${childrenOf(node, context)}</ol>`;
     }
     case "listItem":
-      return `<li>${childrenOf(node)}</li>`;
+      return `<li>${childrenOf(node, context)}</li>`;
     case "blockquote":
-      return `<blockquote>${childrenOf(node)}</blockquote>`;
+      return `<blockquote>${childrenOf(node, context)}</blockquote>`;
     case "codeBlock": {
       const language = attrsOf(node).language;
       const cls =
         typeof language === "string" && language.length > 0
           ? ` class="language-${escapeAttr(language)}"`
           : "";
-      return `<pre><code${cls}>${childrenOf(node)}</code></pre>`;
+      return `<pre><code${cls}>${childrenOf(node, context)}</code></pre>`;
     }
     case "horizontalRule":
       return "<hr>";
@@ -181,24 +257,35 @@ function renderNode(value: unknown): string {
       return `<img src="${escapeAttr(src)}" alt="${escapeAttr(alt)}"${title}>`;
     }
     case "table":
-      return renderTable(node);
+      return renderTable(node, context);
     case "tableRow":
-      return `<tr>${childrenOf(node)}</tr>`;
+      return `<tr>${childrenOf(node, context)}</tr>`;
     case "tableHeader":
-      return cellTag("th", node);
+      return cellTag("th", node, context);
     case "tableCell":
-      return cellTag("td", node);
+      return cellTag("td", node, context);
     default:
-      return childrenOf(node);
+      return renderUnadmittedNode(node, context);
   }
 }
 
 /**
- * Serialize a stored ProseMirror document JSON to semantic HTML. Anything that
- * is not a `doc` yields an empty string.
+ * Serialize a stored ProseMirror document JSON to semantic HTML, composing any
+ * consumer inline-node renderer registered for `options.schema`.
+ *
+ * The result is NOT sanitized. It is internal to the package: use
+ * `renderRichTextHtml` (`./render-html`) for HTML that may reach `{@html}`.
+ * Anything that is not a `doc` yields an empty string.
  */
-export function renderRichTextDocumentHtml(value: unknown): string {
+export function renderRichTextDocumentHtml(
+  value: unknown,
+  options: RenderRichTextDocumentOptions = {}
+): string {
   if (!value || typeof value !== "object" || Array.isArray(value)) return "";
   if ((value as NodeJSON).type !== "doc") return "";
-  return renderNode(value);
+  const schema =
+    typeof options.schema === "string" && options.schema.length > 0
+      ? options.schema
+      : null;
+  return renderNode(value, { schema });
 }

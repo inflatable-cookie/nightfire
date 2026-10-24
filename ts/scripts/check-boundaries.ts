@@ -213,6 +213,7 @@ for (const path of [...rendererGraph, ...renderCatalogGraph]) {
 const rendererEntrypoints = [
   "ts/src/renderer.ts",
   "ts/src/render-registrations.ts",
+  "ts/src/rich-text.ts",
   "ts/src/core-blocks.ts",
   "ts/src/markup/render.ts",
   "ts/src/layout/render.ts",
