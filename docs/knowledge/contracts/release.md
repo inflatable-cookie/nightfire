@@ -37,9 +37,11 @@ and never rebuilds on publish.
 1. Set the version in `package.json` and the root `Cargo.toml`
    (`check:version-sync` enforces agreement), promote `[Unreleased]` into the
    dated heading, commit, and push. `release:npm-admission` refuses a dirty tree.
-2. Run full `effigy qa` at that commit, through Queue's `project.qa.run` on
-   `main` (a clean Queue-owned checkout), and confirm with `project.qa.get` that
-   it ran at the commit you will tag.
+2. Run Queue's `project.qa.run` on `main` at that commit. Its recorded stages
+   run `effigy bootstrap:deps` before full `effigy qa` in the clean checkout,
+   so Bun uses the pinned local compilers rather than its global cache.
+   Confirm with `project.qa.get` that both stages passed at the commit you will
+   tag.
 3. With operator authority, tag `v<version>` on that commit and push the tag.
 4. Certify: dispatch `release.yml` with `mode: candidate` on the tag. It packs
    once and writes the candidate identity manifest binding the source commit and
