@@ -24,13 +24,23 @@ verify and unsafe to coordinate.
   pushed head. A dirty or unpushed head fails them by design.
 - `release-artifacts/` stays gitignored: untracked certificate output would dirty
   the tree and fail the Git-consumer proof.
-- Ordinary local Rust routes use `oxide`; tools that run Cargo themselves or
-  need their own target directory use `oxide exec -- <tool>`. Tom's ruling of
-  2026-10-25, relayed by the Oxide Supervisor, replaces the one-use-support
-  deferral and removes per-selector `:cargo` fallbacks. The explicit escapes
-  are `EFFIGY_OXIDE_ESCAPE=cargo` or Cargo by hand. CI and intentional Cargo
-  product tests and fixtures keep their Cargo recipes. An Oxide refusal is
-  reported, never hidden behind an automatic local Cargo fallback.
+- Every local Rust command goes through `ts/scripts/oxide-rust-runner.sh`:
+  `run <cargo args>` for a Cargo command, `tool <manifest> -- <command>` for a
+  tool that runs Cargo itself, bound to one workspace. Locally that is `oxide`
+  or `oxide exec`; `GITHUB_ACTIONS=true` runs Cargo, and
+  `EFFIGY_OXIDE_ESCAPE=cargo` is the explicit escape for one invocation. Tom's
+  ruling of 2026-10-25, relayed by the Oxide Supervisor, replaces the
+  one-use-support deferral and removes per-selector `:cargo` selectors. There is
+  no automatic fallback: a missing or refusing Oxide reports its own error and
+  that escape. Cargo stays in `.github/` workflows, in intentional Cargo
+  product proofs, and in Cargo by hand; `check:git-consumer:cargo` names the
+  consumer's language, not an escape.
+- Oxide owns the target of every routed command. A proof that builds a
+  disposable workspace (the unpacked crate, the Rust Git consumer) prepares it
+  as a throwaway Git work tree that ignores `target`, because Oxide refuses a
+  workspace whose output it could not ignore. That output lands in Oxide's
+  managed storage and outlives the temporary directory: `oxide clean` reclaims
+  it, not the proof.
 - The export map is a checked contract: `check-exports.ts` compares it against an
   explicit expectation in both directions, so a new subpath is declared there.
 - `health` runs the export, boundary, schema, colour-literal, and version-sync
