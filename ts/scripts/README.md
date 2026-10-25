@@ -14,7 +14,34 @@ Repository scripts are proof helpers invoked through Effigy.
 | `check-sanitization.ts` | Exercises malicious markup across supported runtime shapes |
 | `check-version-sync.ts` | Proves npm/Cargo version and shared-fixture alignment |
 | `check-git-consumer.ts` | Exercises disposable npm and Cargo Git consumers |
+| `oxide-rust-runner.sh` | The one Rust route: oxide locally, Cargo in CI or on the explicit escape |
+| `rust-route.ts` | Shared route helper for proof scripts that run Cargo |
 | `run-test-files.ts` | Runs selected Bun test files with consistent setup |
 
 Use the matching `effigy` task instead of invoking a script directly unless
 debugging the script itself.
+
+## Rust route
+
+Every local Cargo command goes through `ts/scripts/oxide-rust-runner.sh`:
+
+```sh
+sh ts/scripts/oxide-rust-runner.sh run check --workspace --all-targets --locked
+sh ts/scripts/oxide-rust-runner.sh tool rust/nightfire/Cargo.toml -- cargo package --locked
+```
+
+`run` routes one Cargo command to `oxide`. `tool` routes a tool that runs Cargo
+itself to `oxide exec --manifest-path <manifest> --`, so the command is bound to
+one Cargo workspace. `GITHUB_ACTIONS=true` runs Cargo, and
+`EFFIGY_OXIDE_ESCAPE=cargo` is the explicit escape for one local invocation.
+There is no automatic fallback and no per-selector `:cargo` variant: a missing
+or refusing Oxide reports its own error and that escape. `check:git-consumer:cargo`
+names the consumer's language, not an escape route.
+
+Oxide places build output in its managed storage, so it refuses a workspace that
+is not a Git work tree ignoring `target`. The proofs that build a disposable
+workspace (the unpacked crate in `check-rust-package.ts`, the Rust Git consumer
+in `check-git-consumer.ts`) prepare it as a throwaway Git work tree for that
+reason. Oxide owns those targets, so their output lands in the managed pool and
+outlives the temporary directory: reclaiming it is Oxide's job (`oxide clean`),
+not the proof's.

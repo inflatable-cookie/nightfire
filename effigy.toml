@@ -44,21 +44,17 @@ check = "cd {repo} && bun x svelte-check --tsconfig ts/tsconfig.json"
 "check:pack" = "cd {repo} && bun ts/scripts/check-pack.ts"
 "check:schemas" = "cd {repo} && bun ts/scripts/check-schemas.ts"
 "check:version-sync" = "cd {repo} && bun ts/scripts/check-version-sync.ts"
-"check:rust:format" = "cd {repo} && sh ts/scripts/oxide-rust-runner.sh check:rust:format fmt --all --check"
-"check:rust:format:cargo" = "cd {repo} && cargo fmt --all --check"
-"check:rust" = "cd {repo} && sh ts/scripts/oxide-rust-runner.sh check:rust check --workspace --all-targets --locked"
-"check:rust:cargo" = "cd {repo} && cargo check --workspace --all-targets --locked"
-"check:rust:clippy" = "cd {repo} && sh ts/scripts/oxide-rust-runner.sh check:rust:clippy clippy --workspace --all-targets --locked -- -D warnings"
-"check:rust:clippy:cargo" = "cd {repo} && cargo clippy --workspace --all-targets --locked -- -D warnings"
+"check:rust:format" = "cd {repo} && sh ts/scripts/oxide-rust-runner.sh run fmt --all --check"
+"check:rust" = "cd {repo} && sh ts/scripts/oxide-rust-runner.sh run check --workspace --all-targets --locked"
+"check:rust:clippy" = "cd {repo} && sh ts/scripts/oxide-rust-runner.sh run clippy --workspace --all-targets --locked -- -D warnings"
 "check:rust:package" = "cd {repo} && bun ts/scripts/check-rust-package.ts"
 "check:git-consumer:npm" = "cd {repo} && bun ts/scripts/check-git-consumer.ts npm"
 "check:git-consumer:cargo" = "cd {repo} && bun ts/scripts/check-git-consumer.ts cargo"
 "check:format" = "cd {repo} && git diff --check"
-"test:unit" = "cd {repo} && bun ts/scripts/run-test-files.ts ts/tests/nightfire ts/tests/wire"
+"test:unit" = "cd {repo} && bun ts/scripts/run-test-files.ts ts/tests/nightfire ts/tests/wire ts/tests/tooling"
 "test:components" = "cd {repo} && NIGHTFIRE_COMPONENT_TESTS=1 bun ts/scripts/run-test-files.ts ts/tests/components ts/tests/patterns"
 "test:sanitization" = "cd {repo} && bun ts/scripts/check-sanitization.ts"
-"test:rust" = "cd {repo} && sh ts/scripts/oxide-rust-runner.sh test:rust test --workspace --locked"
-"test:rust:cargo" = "cd {repo} && cargo test --workspace --locked"
+"test:rust" = "cd {repo} && sh ts/scripts/oxide-rust-runner.sh run test --workspace --locked"
 "qa:docs:paths" = "cd {repo} && effigy docs check paths README.md AGENTS.md CLAUDE.md CHANGELOG.md CONTRIBUTING.md SECURITY.md PROVENANCE.md .agents.local.env.example ts/scripts/README.md docs/README.md docs/knowledge/README.md docs/knowledge/vision.md docs/knowledge/architecture.md docs/knowledge/questions.md docs/knowledge/contracts/README.md docs/knowledge/contracts/working-rules.md docs/knowledge/contracts/package-boundary.md docs/knowledge/contracts/styling.md docs/knowledge/contracts/review-oracle.md docs/knowledge/contracts/release.md docs/knowledge/contracts/writing-style.md docs/knowledge/domain/README.md docs/knowledge/domain/vocabulary.md fixtures/wire/v1/README.md rust/nightfire/README.md"
 "qa:docs:links" = "cd {repo} && effigy docs check links README.md CONTRIBUTING.md SECURITY.md PROVENANCE.md ts/scripts/README.md docs/README.md docs/knowledge/README.md docs/knowledge/vision.md docs/knowledge/architecture.md docs/knowledge/questions.md docs/knowledge/contracts/README.md docs/knowledge/contracts/working-rules.md docs/knowledge/contracts/package-boundary.md docs/knowledge/contracts/styling.md docs/knowledge/contracts/review-oracle.md docs/knowledge/contracts/release.md docs/knowledge/contracts/writing-style.md docs/knowledge/domain/README.md docs/knowledge/domain/vocabulary.md fixtures/wire/v1/README.md rust/nightfire/README.md"
 "qa:docs:agent-defaults" = "cd {repo} && effigy docs check forbidden AGENTS.md README.md docs/README.md --forbid '--repo .'"
@@ -112,14 +108,10 @@ qa = [
 ]
 
 [test.suites]
-unit = "bun ts/scripts/run-test-files.ts ts/tests/nightfire ts/tests/wire"
+unit = "bun ts/scripts/run-test-files.ts ts/tests/nightfire ts/tests/wire ts/tests/tooling"
 components = "NIGHTFIRE_COMPONENT_TESTS=1 bun ts/scripts/run-test-files.ts ts/tests/components ts/tests/patterns"
 sanitization = "bun ts/scripts/check-sanitization.ts"
-rust = "sh ts/scripts/oxide-rust-runner.sh test:rust test --workspace --locked"
-
-[test.suites."rust:cargo"]
-run = "cargo test --workspace --locked"
-default = false
+rust = "sh ts/scripts/oxide-rust-runner.sh run test --workspace --locked"
 
 [scan.attention_markers]
 warning = ["TODO", "REVIEW", "placeholder"]

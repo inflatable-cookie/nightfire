@@ -1,6 +1,7 @@
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
+import { prepareDisposableWorkspace, runRustTool } from "./rust-route";
 
 const kind = process.argv[2];
 if (kind !== "npm" && kind !== "cargo") {
@@ -52,9 +53,11 @@ try {
     await mkdir(join(destination, "src"));
     await Bun.write(join(destination, "Cargo.toml"), `[package]\nname = "nightfire-git-consumer"\nversion = "0.0.0"\nedition = "2021"\n\n[dependencies]\nnightfire = { git = "${repository}", rev = "${revision}" }\nserde_json = "1"\n`);
     await Bun.write(join(destination, "src/main.rs"), 'use nightfire::{BlockData, NightfireValue};\nfn main() { let value = NightfireValue::single("proof", BlockData::new("markdown", serde_json::json!({"text":"ok"}))); assert!(value.blocks[0].id.starts_with("nf_")); }\n');
-    run(["cargo", "run", "--quiet"], destination, {
-      CARGO_TARGET_DIR: join(destination, "target"),
-    });
+    // The disposable consumer is its own Cargo workspace. Route its build and
+    // prepare it for Oxide's storage rules, which refuse a workspace whose
+    // `target` Git does not ignore.
+    await prepareDisposableWorkspace(destination);
+    runRustTool(join(destination, "Cargo.toml"), ["cargo", "run", "--quiet"], destination);
   }
   console.log(`${kind} Git-consumer proof passed at ${revision}`);
 } finally {
