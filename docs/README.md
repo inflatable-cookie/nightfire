@@ -1,15 +1,19 @@
 # Nightfire — current state
 
-`@inflatable-cookie/nightfire@0.2.0` is published on npm and tagged `v0.2.0`;
+`@inflatable-cookie/nightfire@0.4.1` is published on npm and tagged `v0.4.1`;
 the Rust crate `nightfire` is tag-only at the same tag. The core vocabulary is
 complete: seven block types, each with an editor, a renderer, and a published
 payload schema. Renderers load no Poodle at runtime; Poodle is an optional peer
 of editor entry points. `main` carries work that no published version has yet.
 
-What matters right now: payload schemas are checked against representative
-stored payloads and against what each editor actually stores, and the
-colour-literal guard covers colours only. Consumers repin from tags, so nothing
-on `main` reaches them until a release.
+The unreleased `./rich-text` entry point adds sanitized, schema-scoped inline
+node rendering with visible fallbacks. Consumers own custom nodes and maths
+dependencies. See [the vocabulary](knowledge/domain/vocabulary.md).
+
+Payload schemas are checked against representative stored payloads and against
+what each editor actually stores, and the colour-literal guard covers colours
+only. Consumers repin from tags, so nothing on `main` reaches them until a
+release.
 
 ## By topic
 
