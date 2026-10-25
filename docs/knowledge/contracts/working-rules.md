@@ -24,10 +24,13 @@ verify and unsafe to coordinate.
   pushed head. A dirty or unpushed head fails them by design.
 - `release-artifacts/` stays gitignored: untracked certificate output would dirty
   the tree and fail the Git-consumer proof.
-- Rust format, check, clippy and test selectors use `oxide` locally and Cargo
-  with `GITHUB_ACTIONS=true`; `:cargo` escapes exist for Oxide failures.
-  Packaging and Git-consumer proofs stay on Cargo pending Oxide one-use
-  workspace support.
+- Ordinary local Rust routes use `oxide`; tools that run Cargo themselves or
+  need their own target directory use `oxide exec -- <tool>`. Tom's ruling of
+  2026-10-25, relayed by the Oxide Supervisor, replaces the one-use-support
+  deferral and removes per-selector `:cargo` fallbacks. The explicit escapes
+  are `EFFIGY_OXIDE_ESCAPE=cargo` or Cargo by hand. CI and intentional Cargo
+  product tests and fixtures keep their Cargo recipes. An Oxide refusal is
+  reported, never hidden behind an automatic local Cargo fallback.
 - The export map is a checked contract: `check-exports.ts` compares it against an
   explicit expectation in both directions, so a new subpath is declared there.
 - `health` runs the export, boundary, schema, colour-literal, and version-sync
