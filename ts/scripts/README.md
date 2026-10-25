@@ -21,6 +21,17 @@ Repository scripts are proof helpers invoked through Effigy.
 Use the matching `effigy` task instead of invoking a script directly unless
 debugging the script itself.
 
+## Shared Svelte loader
+
+`ts/tests/setup/svelte-plugin.ts` compiles `.svelte` and `.svelte.ts` for the
+component tests, `check-boundaries.ts` and `check-renderer-consumer.ts`. It
+imports TypeScript and `svelte/compiler`, so those proof helpers need
+`effigy bootstrap:deps` first. Bun resolves a bare specifier from its global
+install cache when `node_modules` is missing, and the cached TypeScript 7 root
+export is version metadata only, so the loader refuses a toolchain that resolves
+outside this checkout, or a TypeScript without the compiler API, by name instead
+of failing inside a component.
+
 ## Rust route
 
 Every local Cargo command goes through `ts/scripts/oxide-rust-runner.sh`:

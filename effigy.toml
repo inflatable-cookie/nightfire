@@ -112,11 +112,3 @@ unit = "bun ts/scripts/run-test-files.ts ts/tests/nightfire ts/tests/wire ts/tes
 components = "NIGHTFIRE_COMPONENT_TESTS=1 bun ts/scripts/run-test-files.ts ts/tests/components ts/tests/patterns"
 sanitization = "bun ts/scripts/check-sanitization.ts"
 rust = "sh ts/scripts/oxide-rust-runner.sh run test --workspace --locked"
-
-[scan.attention_markers]
-warning = ["TODO", "REVIEW", "placeholder"]
-high = ["FIXME", "HACK", "workaround", "tech debt"]
-critical = ["BUG:", "SECURITY:", "remove before release"]
-doctor = true
-fail_on_findings = false
-respect_gitignore = true
