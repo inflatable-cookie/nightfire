@@ -6,6 +6,10 @@ and never rebuilds on publish.
 
 ## Rules
 
+- **The next version is `0.5.0`** (Tom, 2026-10-25). It introduces the public
+  schema-scoped inline rich-text API and visible fallbacks for custom leaves.
+  Release preparation is authorized; tagging, publication and consumer
+  notifications still need explicit approval.
 - **Set the version explicitly.** Effigy plans the bump from commit and changelog
   markers, and nothing here carries a breaking marker, so `effigy release
   simulate` proposes a patch for a breaking release. Under `0.x` the minor is the
