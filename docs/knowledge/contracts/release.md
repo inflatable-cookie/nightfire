@@ -6,10 +6,11 @@ and never rebuilds on publish.
 
 ## Rules
 
-- **The next version is `0.5.0`** (Tom, 2026-10-25). It introduces the public
+- **`0.5.0` is a minor release** (Tom, 2026-10-25). It introduces the public
   schema-scoped inline rich-text API and visible fallbacks for custom leaves.
-  The tree carries it and preparation is authorized; tagging, publication and
-  consumer notifications still need explicit approval.
+  Tom approved tagging and publication at
+  `c7ee77da95905e7dfd99441576c59078f4b6bd55` with "Approve" on 2026-10-25.
+  That approval does not include consumer notifications or adoption.
 - **Set the version explicitly.** Effigy plans the bump from commit and changelog
   markers, and nothing here carries a breaking marker, so `effigy release
   simulate` proposes a patch for a breaking release. Under `0.x` the minor is the

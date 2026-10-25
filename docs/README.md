@@ -1,13 +1,10 @@
 # Nightfire — current state
 
-`@inflatable-cookie/nightfire@0.4.1` is published on npm and tagged `v0.4.1`;
+`@inflatable-cookie/nightfire@0.5.0` is published on npm and tagged `v0.5.0`;
 the Rust crate `nightfire` is tag-only at the same tag. The core vocabulary is
 complete: seven block types, each with an editor, a renderer, and a published
 payload schema. Renderers load no Poodle at runtime; Poodle is an optional peer
 of editor entry points.
-
-The tree is prepared as `0.5.0`, for release review only: no `v0.5.0` tag exists
-and npm has no `0.5.0`. Consumers stay on `v0.4.1` until publication is verified.
 
 `0.5.0` adds the public `./rich-text` entry point: sanitized, schema-scoped
 inline node rendering with visible fallbacks, with the registration rules
