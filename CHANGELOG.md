@@ -6,6 +6,8 @@ immutable.
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-25
+
 ### Added
 
 - A public `./rich-text` entry point that renders stored ProseMirror documents
@@ -17,6 +19,13 @@ immutable.
   raw serializer stays internal, so no unsanitized path is presented as safe for
   HTML insertion. The editor vocabulary, wire format and emptiness semantics are
   unchanged.
+
+### Changed
+
+- Local Rust development commands run through Oxide, a host-wide build pool that
+  owns build output. This is contributor tooling only: no published API, wire
+  format, dependency or MSRV change. CI and intentional Cargo proofs still run
+  Cargo, and the crate builds by hand.
 
 ## [0.4.1] - 2026-09-27
 
