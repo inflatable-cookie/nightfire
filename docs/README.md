@@ -4,11 +4,15 @@
 the Rust crate `nightfire` is tag-only at the same tag. The core vocabulary is
 complete: seven block types, each with an editor, a renderer, and a published
 payload schema. Renderers load no Poodle at runtime; Poodle is an optional peer
-of editor entry points. `main` carries work that no published version has yet.
+of editor entry points.
 
-The unreleased `./rich-text` entry point adds sanitized, schema-scoped inline
-node rendering with visible fallbacks. Consumers own custom nodes and maths
-dependencies. See [the vocabulary](knowledge/domain/vocabulary.md).
+The tree is prepared as `0.5.0`, for release review only: no `v0.5.0` tag exists
+and npm has no `0.5.0`. Consumers stay on `v0.4.1` until publication is verified.
+
+`0.5.0` adds the public `./rich-text` entry point: sanitized, schema-scoped
+inline node rendering with visible fallbacks, with the registration rules
+recorded in [the vocabulary](knowledge/domain/vocabulary.md) and the [README](../README.md).
+Consumers own custom nodes and maths dependencies.
 
 Payload schemas are checked against representative stored payloads and against
 what each editor actually stores, and the colour-literal guard covers colours
