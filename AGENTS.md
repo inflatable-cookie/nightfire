@@ -14,7 +14,7 @@ framework or a home for product schemas, blocks or UI.
 
 The plan (lanes, their documents and their order), leads, briefs, papercuts,
 tasks and status live in Queue, never in this repository. Read what's next with
-`plan.get` (see the `northstar` skill). The Acowtancy Market roadmap owns
+`plan.get` (see the Nucleus skill). The Acowtancy Market roadmap owns
 cross-repository release and adoption order; don't copy its cards here.
 
 Commands go through Effigy: `effigy tasks` for the task list, `effigy doctor`
@@ -24,7 +24,7 @@ scope.
 ## Papercuts and leads
 
 File small, recurring friction in Queue with `papercut.add`, and unplanned
-ideas or observations with `lead.add` (see the `northstar` skill). There is no
+ideas or observations with `lead.add` (see the Nucleus skill). There is no
 `PAPERCUTS.md` or `docs/triage/`.
 
 ## Guardrails
