@@ -9,7 +9,6 @@ framework or a home for product schemas, blocks or UI.
 
 - Current state: `docs/README.md`
 - Knowledge (one owner per fact): `docs/knowledge/README.md`
-- Retired concepts, which must not come back: `docs/knowledge/retired.toml`
 - Open questions: `docs/knowledge/questions.md`
 
 The plan (lanes, their documents and their order), leads, briefs, papercuts,
