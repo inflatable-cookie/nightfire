@@ -7,7 +7,7 @@ framework or a home for product schemas, blocks or UI.
 
 ## Where things live
 
-- Current state: `docs/README.md`
+- Docs entry point: `docs/README.md`
 - Knowledge (one owner per fact): `docs/knowledge/README.md`
 - Open questions: `docs/knowledge/questions.md`
 

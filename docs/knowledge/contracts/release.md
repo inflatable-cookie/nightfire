@@ -26,7 +26,8 @@ and never rebuilds on publish.
 - **Publish from a clean, accepted `main`** at a pushed tag. Publication is an
   act against a tag, never a branch tip.
 - **Verify by consuming.** Install the published version and read the artifact.
-  "On `main`" and "published" are different claims.
+  "On `main`" and "published" are different claims: consumers repin from
+  tags, so nothing on `main` reaches them until a release.
 - The Rust crate is tag-only. There is no crate-registry publication.
 - npm provenance needs `package.json` `repository`; without it the publish fails
   with `E422`.
