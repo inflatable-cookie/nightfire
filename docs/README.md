@@ -28,4 +28,4 @@ release.
 
 ## What's next
 
-The project's plan is in Queue: its lanes, their documents and their order.
+The project's plan is in Nucleus: its lanes, their documents and their order.

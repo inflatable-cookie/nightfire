@@ -12,12 +12,12 @@ verify and unsafe to coordinate.
 - Preserve unrelated work and avoid speculative infrastructure.
 - Update code, knowledge, tests, and indexes together when they form one
   observable change.
-- File process friction as a Queue papercut with `papercut.add`.
+- File process friction as a Nucleus papercut with `papercut.add`.
 
 ## Repository facts that cost time
 
 - `origin` must be the SCP form `git@github.com:inflatable-cookie/nightfire.git`.
-  Queue resolves only `https://github.com/...` or `git@github.com:...`; an
+  Nucleus resolves only `https://github.com/...` or `git@github.com:...`; an
   `ssh://` origin fails every PR-identity check. The `ssh://` form in `README.md`
   is for a consumer's `Cargo.toml`, a different string.
 - The Git-consumer proofs install from the pushed commit, so they need a clean,
@@ -46,15 +46,15 @@ verify and unsafe to coordinate.
 - `health` runs the export, boundary, schema, colour-literal, and version-sync
   proofs; `qa` adds sanitization, pack, the Poodle-free renderer consumer,
   Git-consumer proofs, docs, and the release-automation guard.
-- The component suite sets Bun's per-test timeout to 30 s because parallel Queue
+- The component suite sets Bun's per-test timeout to 30 s because parallel Nucleus
   workers can saturate the machine; the unit suite keeps Bun's default.
 
 ## Cross-repository rule
 
 Nightfire owns package-local implementation. Market owns the release and
 consumer-adoption sequence. A Nightfire change does not mutate Underlay, Poodle,
-Froyo, Northstar Queue, or an application unless the operator explicitly expands
-scope. File friction with those tools as a Queue papercut instead.
+Froyo, Nucleus, or an application unless the operator explicitly expands
+scope. File friction with those tools as a Nucleus papercut instead.
 
 ## Compatibility rule
 
@@ -63,7 +63,7 @@ requires a migration window. No silent legacy parsing, no speculative shims.
 
 ## Release rule
 
-Queue may merge approved work once its review and validation gates pass. No
+Nucleus may merge approved work once its review and validation gates pass. No
 separate operator merge approval is needed (Tom, 2026-10-24). Task-specific
 holds and prerequisites still apply.
 

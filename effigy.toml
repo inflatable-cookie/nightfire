@@ -67,7 +67,7 @@ check = "cd {repo} && bun x svelte-check --tsconfig ts/tsconfig.json"
 ]
 
 "qa:northstar:agent-contract" = "cd {repo} && effigy docs check contains AGENTS.md --require 'effigy tasks' --require 'effigy test --plan' --require 'effigy qa' --require 'docs/README.md' --require 'docs/knowledge/README.md' --require 'plan.get'"
-"qa:northstar:front-door" = "cd {repo} && effigy docs check contains docs/README.md --require 'knowledge/README.md' --require 'plan is in Queue'"
+"qa:northstar:front-door" = "cd {repo} && effigy docs check contains docs/README.md --require 'knowledge/README.md' --require 'plan is in Nucleus'"
 "qa:northstar" = [
   { task = "qa:northstar:agent-contract" },
   { task = "qa:northstar:front-door" },

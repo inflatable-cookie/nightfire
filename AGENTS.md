@@ -12,7 +12,7 @@ framework or a home for product schemas, blocks or UI.
 - Open questions: `docs/knowledge/questions.md`
 
 The plan (lanes, their documents and their order), leads, briefs, papercuts,
-tasks and status live in Queue, never in this repository. Read what's next with
+tasks and status live in Nucleus, never in this repository. Read what's next with
 `plan.get` (see the Nucleus skill). The Acowtancy Market roadmap owns
 cross-repository release and adoption order; don't copy its cards here.
 
@@ -22,15 +22,15 @@ scope.
 
 ## Papercuts and leads
 
-File small, recurring friction in Queue with `papercut.add`, and unplanned
+File small, recurring friction in Nucleus with `papercut.add`, and unplanned
 ideas or observations with `lead.add` (see the Nucleus skill). There is no
 `PAPERCUTS.md` or `docs/triage/`.
 
 ## Guardrails
 
 - Work in this repository only unless the operator expands scope. No consumer,
-  Underlay, Poodle or Queue changes.
-- Queue may merge approved work after its review and validation gates pass;
+  Underlay, Poodle or Nucleus changes.
+- Nucleus may merge approved work after its review and validation gates pass;
   no separate operator merge approval is needed. See
   `docs/knowledge/contracts/working-rules.md`.
 - Do not tag, publish, or notify consumers without explicit operator
