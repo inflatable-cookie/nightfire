@@ -10,25 +10,30 @@ export interface NightfireValue {
   blocks: NightfireBlock[];
 }
 
-export type NightfireDraftValue = NightfireValue;
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value !== null && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
 
+/**
+ * Coerce one stored block.
+ *
+ * Only an object is a block. A string, number, boolean or array is not an empty
+ * block: fabricating one fills an editor with content nobody wrote. `null` means
+ * "no block here", and the caller decides what to do with that.
+ */
 export function coerceNightfireBlock(
   value: unknown,
   fallbackType: string | null = null
 ): NightfireBlock | null {
-  // Absent block must stay absent. Otherwise `coerceNightfireBlock(undefined, "markdown")`
-  // fabricates a block, and `normaliseNightfireValue` fills an empty editor.
-  if (value === undefined || value === null) {
+  const record = asRecord(value);
+  if (!record) {
     return null;
   }
 
-  const record =
-    value !== null && typeof value === "object" && !Array.isArray(value)
-      ? (value as Record<string, unknown>)
-      : null;
-
   const type =
-    typeof record?.type === "string"
+    typeof record.type === "string" && record.type.trim().length > 0
       ? record.type
       : fallbackType;
 
@@ -37,20 +42,16 @@ export function coerceNightfireBlock(
   }
 
   return {
+    // A blank id is no id. `block-ids.ts` treats whitespace as missing too.
     id:
-      typeof record?.id === "string" && record.id.length > 0
+      typeof record.id === "string" && record.id.trim().length > 0
         ? record.id
         : undefined,
     type,
     version:
-      typeof record?.version === "string"
+      typeof record.version === "string"
         ? record.version
         : "initial",
-    data:
-      record?.data !== null &&
-      typeof record?.data === "object" &&
-      !Array.isArray(record.data)
-        ? (record.data as Record<string, unknown>)
-        : {}
+    data: asRecord(record.data) ?? {}
   };
 }

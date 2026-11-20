@@ -1,13 +1,20 @@
-import { describe, expect, it } from "../vitest";
+import { afterEach, describe, expect, it } from "../vitest";
 import {
+	clearBlockValidators,
 	prepareNightfireForSave,
 	registerBlockValidator,
+	unregisterBlockValidator,
 	validateNightfireValue,
 	writePreparedNightfireToFormData,
 } from "../../src/validator-registry";
-import { registerBlockVersions } from "../../src/block-versions";
+import { clearBlockVersions, registerBlockVersions } from "../../src/block-versions";
 
 describe("nightfire/validator-registry", () => {
+	afterEach(() => {
+		clearBlockValidators();
+		clearBlockVersions();
+	});
+
 	it("validates blocks using schema-specific and wildcard validators", () => {
 		registerBlockValidator(null, "markdown", (block: any) => ({ ...block, wildcard: true }));
 		registerBlockValidator("schema-1", "markdown", (block: any) => ({ ...block, scoped: true }));
@@ -31,54 +38,89 @@ describe("nightfire/validator-registry", () => {
 			schema: "schema-x",
 			blocks: [{ id: undefined, type: "markdown", version: "initial", data: {} }],
 		});
+	});
 
+	it("retires a validator", () => {
+		registerBlockValidator("schema-r", "markdown", () => null);
 		expect(
-			validateNightfireValue({
-				schema: "schema-x",
-				blocks: [{ type: "markdown", data: {} }, { type: "unknown", data: {} }],
-			} as any)
+			validateNightfireValue({ schema: "schema-r", blocks: [{ type: "markdown", data: {} }] } as any)
+		).toEqual({ schema: "schema-r", blocks: [] });
+
+		expect(unregisterBlockValidator("schema-r", "markdown")).toBe(true);
+		expect(
+			validateNightfireValue({ schema: "schema-r", blocks: [{ type: "markdown", data: {} }] } as any)
 		).toEqual({
-			schema: "schema-x",
-			blocks: [
-				{ id: undefined, type: "markdown", version: "initial", data: {} },
-				{ id: undefined, type: "unknown", version: "initial", data: {} },
-			],
+			schema: "schema-r",
+			blocks: [{ id: undefined, type: "markdown", version: "initial", data: {} }],
 		});
 	});
 
-	it("preserves invalid values and prepare helper delegates to validation", () => {
-		expect(validateNightfireValue(null as any)).toBeNull();
-		const value = { schema: "s", blocks: [{ type: "x" }] } as any;
-		const prepared = prepareNightfireForSave(value);
-		expect(prepared?.schema).toBe("s");
-		expect(prepared?.blocks[0]).toMatchObject({
-			type: "x",
-			version: "initial",
-			data: {},
-		});
-		expect(prepared?.blocks[0]?.id).toMatch(/^nf_/);
+	it("fails a non-object value closed without crashing", () => {
+		for (const value of [null, undefined, "text", 42, ["a"]]) {
+			expect(validateNightfireValue(value as any), String(value)).toEqual({ schema: "", blocks: [] });
+		}
+	});
 
-		const noBlockValue = { schema: "s", blocks: [] } as any;
-		expect(validateNightfireValue(noBlockValue)).toEqual({ schema: "s", blocks: [] });
-
+	it("rejects a hybrid envelope and a missing or empty schema", () => {
 		expect(
 			validateNightfireValue({
 				schema: "schema-x",
-				blocks: [null, { data: {} }],
+				block: { type: "markdown", data: {} },
+				blocks: [{ type: "markdown", data: {} }],
+			} as any)
+		).toEqual({ schema: "", blocks: [] });
+
+		expect(
+			validateNightfireValue({ blocks: [{ type: "markdown", data: {} }] } as any)
+		).toEqual({ schema: "", blocks: [] });
+
+		expect(
+			validateNightfireValue({ schema: "   ", blocks: [{ type: "markdown", data: {} }] } as any)
+		).toEqual({ schema: "", blocks: [] });
+	});
+
+	it("drops blocks a validator answers with a non-block", () => {
+		registerBlockValidator("schema-m", "markdown", () => "not a block");
+		registerBlockValidator("schema-n", "markdown", () => ({ data: { text: "no type" } }));
+
+		expect(
+			validateNightfireValue({ schema: "schema-m", blocks: [{ type: "markdown", data: {} }] } as any)
+		).toEqual({ schema: "schema-m", blocks: [] });
+		expect(
+			validateNightfireValue({ schema: "schema-n", blocks: [{ type: "markdown", data: {} }] } as any)
+		).toEqual({ schema: "schema-n", blocks: [] });
+	});
+
+	it("drops blocks that are not objects and keeps a valid one", () => {
+		expect(
+			validateNightfireValue({
+				schema: "schema-x",
+				blocks: [null, "block", [], { data: {} }, { type: "markdown", data: {} }],
 			} as any)
 		).toEqual({
 			schema: "schema-x",
-			blocks: [],
-		});
-
-		expect(
-			validateNightfireValue({
-				blocks: [{ type: "markdown", data: {} }],
-			} as any)
-		).toEqual({
-			schema: "",
 			blocks: [{ id: undefined, type: "markdown", version: "initial", data: {} }],
 		});
+	});
+
+	it("prepares a save with stable block ids and refuses an empty one", () => {
+		const prepared = prepareNightfireForSave({
+			schema: "s",
+			blocks: [{ type: "x", data: {} }],
+		} as any);
+
+		expect(prepared?.schema).toBe("s");
+		expect(prepared?.blocks[0]).toMatchObject({ type: "x", version: "initial", data: {} });
+		expect(prepared?.blocks[0]?.id).toMatch(/^nf_/);
+
+		expect(prepareNightfireForSave({ schema: "s", blocks: [] } as any)).toBeNull();
+		expect(prepareNightfireForSave({ schema: "", blocks: [{ type: "x" }] } as any)).toBeNull();
+		expect(
+			prepareNightfireForSave({
+				schema: "schema-x",
+				block: { type: "markdown", data: {} },
+			} as any)
+		).toBeNull();
 	});
 
 	it("writes prepared Nightfire JSON to FormData with stable block ids", () => {
@@ -120,15 +162,6 @@ describe("nightfire/validator-registry", () => {
 		const formData = new FormData();
 		writePreparedNightfireToFormData(formData, "content", { schema: "schema-x", blocks: [] });
 		expect(formData.get("content")).toBe("");
-	});
-
-	it("rejects leftover v1 block envelopes on save", () => {
-		expect(
-			prepareNightfireForSave({
-				schema: "schema-x",
-				block: { type: "markdown", data: {} },
-			} as any)
-		).toBeNull();
 	});
 
 	it("coerces a supported older version and rejects unknown versions", () => {

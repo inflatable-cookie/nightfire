@@ -1,4 +1,4 @@
-import type { NightfireDraftValue, NightfireValue } from "./types";
+import type { NightfireValue } from "./types";
 export {
   ensureNightfireBlockId,
   ensureNightfireBlockIds,
@@ -13,10 +13,12 @@ export {
 
 export {
   registerBlockValidator,
+  unregisterBlockValidator,
+  clearBlockValidators,
   validateNightfireValue,
   prepareNightfireForSave,
   writePreparedNightfireToFormData
 } from "./validator-registry";
 
-export type { NightfireDraftValue, NightfireValue };
+export type { NightfireValue };
 export type { NightfireMediaLocator } from "./media-locator";

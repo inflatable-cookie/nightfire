@@ -1,17 +1,17 @@
 import { describe, expect, it } from "../../vitest";
 import {
-	normaliseNightfireBlock,
-	type NightfireBlockDefinition,
-	type NightfireTypeOption,
-} from "../../../src/utils";
+	type BlockTypeOption,
+	type SchemaDefinition,
+} from "../../../src/editor-registry";
+import { normaliseNightfireBlock } from "../../../src/utils";
 
 describe("normaliseNightfireBlock", () => {
-	const typeOptions: NightfireTypeOption[] = [
+	const typeOptions: BlockTypeOption[] = [
 		{ type: "markdown", label: "Markdown" },
 		{ type: "custom", label: "Custom" },
 	];
 
-	const definition: NightfireBlockDefinition = {
+	const definition: SchemaDefinition = {
 		schema: "test:schema",
 		mode: "single",
 		defaultType: "markdown",
@@ -56,16 +56,31 @@ describe("normaliseNightfireBlock", () => {
 			expect(result.type).toBe("markdown");
 		});
 
+		it("resets data and version when re-typing a disallowed block", () => {
+			const block = {
+				id: "keep_me",
+				type: "unknown",
+				version: "v9",
+				data: { text: "written for another type" },
+			};
+			expect(normaliseNightfireBlock(block, typeOptions, definition)).toEqual({
+				id: "keep_me",
+				type: "markdown",
+				version: "initial",
+				data: {},
+			});
+		});
+
 		it("falls back to definition defaultType if no type options", () => {
 			const block = { type: "unknown" };
-			const emptyOptions: NightfireTypeOption[] = [];
+			const emptyOptions: BlockTypeOption[] = [];
 			const result = normaliseNightfireBlock(block, emptyOptions, definition);
 			expect(result.type).toBe("markdown");
 		});
 
 		it("falls back to markdown when no options and no definition defaultType", () => {
 			const block = { type: "unknown" };
-			const emptyOptions: NightfireTypeOption[] = [];
+			const emptyOptions: BlockTypeOption[] = [];
 			const noDefaultDefinition = {
 				schema: "test:schema",
 				mode: "single",

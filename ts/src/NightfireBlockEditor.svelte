@@ -3,11 +3,8 @@
   import { getBlockEditor } from "./editor-registry";
   import "./render-registrations";
   import "./editor-registrations";
-  import {
-    normaliseNightfireBlock,
-    type NightfireBlockDefinition,
-    type NightfireTypeOption
-  } from "./utils";
+  import type { BlockTypeOption, SchemaDefinition } from "./editor-registry";
+  import { normaliseNightfireBlock } from "./utils";
 
   /**
    * Single-block Nightfire editor.
@@ -33,8 +30,8 @@
      * does not perform any registry lookups itself; these must be
      * provided by the caller (typically the field-level Nightfire editor).
      */
-    definition: NightfireBlockDefinition;
-    typeOptions: NightfireTypeOption[];
+    definition: SchemaDefinition;
+    typeOptions: BlockTypeOption[];
     onContextChange?: ((context: MarkdownEditorContext) => void) | null;
   }
 

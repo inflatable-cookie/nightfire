@@ -4,7 +4,7 @@
   import { createDefaultBlock } from "../editor/block-list";
   import type { GroupedOptions } from "../editor/grouped-options";
   import { default as NightfireMultiBlockItem } from "../editor/NightfireMultiBlockItem.svelte";
-  import type { NightfireBlockDefinition, NightfireTypeOption } from "../utils";
+  import type { BlockTypeOption, SchemaDefinition } from "../editor-registry";
 
   type RecordValue = Record<string, unknown>;
   type ChildBlock = RecordValue & { type?: string; version?: string; data?: RecordValue };
@@ -26,13 +26,13 @@
   let confirmation = $state<number | null>(null);
 
   const editorSchema = $derived(typeof value?.schema === "string" ? value.schema : "");
-  const editorTypeOptions = $derived<NightfireTypeOption[]>(
+  const editorTypeOptions = $derived<BlockTypeOption[]>(
     getBlockTypeOptionsForSchema(editorSchema).map((option) => ({
       type: option.type,
       label: option.label,
     })),
   );
-  const effectiveDef = $derived<NightfireBlockDefinition>({
+  const effectiveDef = $derived<SchemaDefinition>({
     schema: editorSchema,
     mode: "multi",
     defaultType: editorTypeOptions[0]?.type ?? "markdown",

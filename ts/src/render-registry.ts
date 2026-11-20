@@ -1,37 +1,38 @@
-import type { Component, SvelteComponent } from "svelte";
+import type { Component } from "svelte";
+import { SchemaScopedRegistry } from "./registry-map";
 
-export type BlockRendererComponent =
-  | Component<any>
-  | (new (...args: any[]) => SvelteComponent);
+export type BlockRendererComponent = Component<any>;
 
-type RegistryKey = string;
-
-function makeKey(schema: string | null, type: string): RegistryKey {
-  return `${schema ?? "*"}|${type}`;
-}
-
-const registry = new Map<RegistryKey, BlockRendererComponent>();
+const registry = new SchemaScopedRegistry<BlockRendererComponent>();
 
 export function registerBlockRenderer(
   schema: string | null,
   type: string,
   component: BlockRendererComponent
 ): void {
-  registry.set(makeKey(schema, type), component);
+  registry.set(schema, type, component);
+}
+
+export function unregisterBlockRenderer(
+  schema: string | null,
+  type: string
+): boolean {
+  return registry.delete(schema, type);
+}
+
+export function clearBlockRenderers(): void {
+  registry.clear();
 }
 
 export function getBlockRenderer(
   schema: string | null | undefined,
   type: string | undefined
 ): BlockRendererComponent | null {
-  if (!type) return null;
+  if (!type) {
+    return null;
+  }
 
-  const schemaKey = schema ?? null;
-  return (
-    registry.get(makeKey(schemaKey, type)) ??
-    registry.get(makeKey(null, type)) ??
-    null
-  );
+  return registry.get(schema ?? null, type);
 }
 
 // Registrations are defined in `*-registrations.ts` to keep this file

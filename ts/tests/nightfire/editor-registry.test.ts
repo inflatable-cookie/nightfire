@@ -1,5 +1,7 @@
-import { describe, expect, it, vi } from "../vitest";
+import { beforeEach, describe, expect, it, vi } from "../vitest";
 import {
+	clearBlockEditors,
+	clearSchemas,
 	getBlockEditor,
 	getBlockTypeLabel,
 	getBlockTypeOptionsForSchema,
@@ -8,22 +10,33 @@ import {
 	registerBlockEditor,
 	registerBlockEmptyChecker,
 	registerSchema,
+	unregisterBlockEditor,
+	unregisterBlockEmptyChecker,
+	unregisterSchema,
 } from "../../src/editor-registry";
 
+const EditorA = Symbol("EditorA");
+const EditorB = Symbol("EditorB");
+const WildcardEditor = Symbol("WildcardEditor");
+
 describe("nightfire/editor-registry", () => {
+	beforeEach(() => {
+		clearSchemas();
+		clearBlockEditors();
+	});
+
 	it("registers and resolves schema definitions", () => {
 		registerSchema({ schema: "s1", mode: "single", defaultType: "markdown" });
 		expect(getSchemaDefinition("s1")).toEqual({ schema: "s1", mode: "single", defaultType: "markdown" });
 		expect(getSchemaDefinition("missing")).toBeNull();
+
+		expect(unregisterSchema("s1")).toBe(true);
+		expect(getSchemaDefinition("s1")).toBeNull();
 	});
 
 	it("registers block editors and type options without duplicates", () => {
-		const EditorA = Symbol("EditorA");
-		const EditorB = Symbol("EditorB");
-
 		registerBlockEditor("s2", "markdown", "Markdown", EditorA as any);
 		registerBlockEditor("s2", "callout", "Callout", EditorB as any);
-		registerBlockEditor("s2", "markdown", "Markdown v2", EditorA as any); // duplicate type option should not duplicate
 
 		expect(getBlockEditor("s2", "markdown")).toBe(EditorA as any);
 		expect(getBlockEditor("s2", "callout")).toBe(EditorB as any);
@@ -33,11 +46,46 @@ describe("nightfire/editor-registry", () => {
 			{ type: "markdown", label: "Markdown" },
 			{ type: "callout", label: "Callout" },
 		]);
-			expect(getBlockTypeLabel("s2", "markdown")).toBe("Markdown");
-			expect(getBlockTypeLabel("s2", "missing")).toBeNull();
-			expect(getBlockTypeLabel("missing", "markdown")).toBeNull();
-			expect(getBlockTypeOptionsForSchema("missing")).toEqual([]);
-		});
+		expect(getBlockTypeLabel("s2", "markdown")).toBe("Markdown");
+		expect(getBlockTypeLabel("s2", "missing")).toBeNull();
+		expect(getBlockTypeLabel("missing", "markdown")).toBeNull();
+		expect(getBlockTypeOptionsForSchema("missing")).toEqual([]);
+	});
+
+	it("updates the label when (schema, type) is registered again", () => {
+		registerBlockEditor("s3", "markdown", "Markdown", EditorA as any);
+		registerBlockEditor("s3", "markdown", "Markdown v2", EditorB as any);
+
+		expect(getBlockEditor("s3", "markdown")).toBe(EditorB as any);
+		expect(getBlockTypeOptionsForSchema("s3")).toEqual([{ type: "markdown", label: "Markdown v2" }]);
+		expect(getBlockTypeLabel("s3", "markdown")).toBe("Markdown v2");
+	});
+
+	it("lets a schema-specific label beat the wildcard label", () => {
+		registerBlockEditor(null, "markdown", "Markdown", WildcardEditor as any);
+		registerBlockEditor(null, "image", "Image", WildcardEditor as any);
+		registerBlockEditor("s4", "markdown", "Acme markdown", EditorA as any);
+		registerBlockEditor("s4", "table", "Table", EditorB as any);
+
+		expect(getBlockTypeLabel("s4", "markdown")).toBe("Acme markdown");
+		expect(getBlockTypeLabel("other", "markdown")).toBe("Markdown");
+		expect(getBlockTypeOptionsForSchema("s4")).toEqual([
+			{ type: "markdown", label: "Acme markdown" },
+			{ type: "table", label: "Table" },
+			{ type: "image", label: "Image" },
+		]);
+		expect(getBlockEditor("s4", "markdown")).toBe(EditorA as any);
+		expect(getBlockEditor("other", "markdown")).toBe(WildcardEditor as any);
+	});
+
+	it("retires one editor without disturbing the wildcard", () => {
+		registerBlockEditor(null, "markdown", "Markdown", WildcardEditor as any);
+		registerBlockEditor("s5", "markdown", "Acme markdown", EditorA as any);
+
+		expect(unregisterBlockEditor("s5", "markdown")).toBe(true);
+		expect(getBlockEditor("s5", "markdown")).toBe(WildcardEditor as any);
+		expect(getBlockTypeLabel("s5", "markdown")).toBe("Markdown");
+	});
 
 	it("checks block emptiness via registered checker with safe defaults", () => {
 		expect(isBlockContentEmpty(null)).toBe(true);
@@ -52,6 +100,9 @@ describe("nightfire/editor-registry", () => {
 		expect(isBlockContentEmpty({ type: "markdown", data: { text: "" } })).toBe(true);
 		expect(isBlockContentEmpty({ type: "markdown", data: { text: "  " } })).toBe(true);
 		expect(isBlockContentEmpty({ type: "markdown", data: { text: "hello" } })).toBe(false);
+
+		expect(unregisterBlockEmptyChecker("markdown")).toBe(true);
+		expect(isBlockContentEmpty({ type: "markdown", data: { text: "" } })).toBe(false);
 	});
 
 	it("loads editor registrations for markup and download-card", async () => {

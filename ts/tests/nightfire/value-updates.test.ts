@@ -49,7 +49,7 @@ describe("nightfire value-updates", () => {
 	it("changes a single block type without product-specific transforms", () => {
 		const result = changeSingleBlockType("example:content/article", null, "custom", (type) => type);
 		expect(result.warning).toBeNull();
-		expect(result.block).toEqual({ type: "custom" });
+		expect(result.block).toEqual({ type: "custom", version: "initial", data: {} });
 	});
 
 	it("changes generic block type and normalises non-object input", () => {

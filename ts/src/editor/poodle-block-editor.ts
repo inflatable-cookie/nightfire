@@ -1,6 +1,6 @@
 import type { BlockTypeDefinition, BlockTypeGroup } from "@inflatable-cookie/poodle-svelte";
 
-import type { NightfireTypeOption } from "../utils";
+import type { BlockTypeOption } from "../editor-registry";
 import type { GroupedOptions, NightfireBlockOptionInput } from "./grouped-options";
 
 /**
@@ -58,7 +58,7 @@ export function toEditorBlocks(
 }
 
 export function toBlockTypes(
-  options: Array<NightfireTypeOption | NightfireBlockOptionInput>,
+  options: Array<BlockTypeOption | NightfireBlockOptionInput>,
 ): BlockTypeDefinition[] {
   return options.map((option) => ({
     type: option.type,
