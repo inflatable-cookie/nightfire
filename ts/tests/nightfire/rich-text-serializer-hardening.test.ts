@@ -49,7 +49,7 @@ describe("rich-text serializer: numeric attributes", () => {
     expect(html).not.toContain("rowspan");
   });
 
-  it("writes only a safe integer list start", () => {
+  it("writes only a positive safe integer list start", () => {
     const list = (start: unknown) =>
       renderRichTextDocumentHtml(
         doc({ type: "orderedList", attrs: { start }, content: [] })
@@ -57,9 +57,10 @@ describe("rich-text serializer: numeric attributes", () => {
     expect(list(Number.NaN)).toBe("<ol></ol>");
     expect(list(Number.POSITIVE_INFINITY)).toBe("<ol></ol>");
     expect(list(2.5)).toBe("<ol></ol>");
-    expect(list(3)).toBe('<ol start="3"></ol>');
-    expect(list(0)).toBe('<ol start="0"></ol>');
+    expect(list(0)).toBe("<ol></ol>");
+    expect(list(-3)).toBe("<ol></ol>");
     expect(list(1)).toBe("<ol></ol>");
+    expect(list(3)).toBe('<ol start="3"></ol>');
   });
 });
 

@@ -257,10 +257,10 @@ function renderNode(value: unknown, context: RenderContext): string {
       return `<ul>${childrenOf(node, context)}</ul>`;
     case "orderedList": {
       const attrs = attrsOf(node);
-      // HTML admits any integer start, zero and negatives included; only a
-      // non-integer (NaN, Infinity, a fraction) is refused.
+      // Only positive safe integers above the default of 1 serialize; zero,
+      // negatives, and non-integers (NaN, Infinity, fractions) are dropped.
       const start =
-        typeof attrs.start === "number" && Number.isSafeInteger(attrs.start) && attrs.start !== 1
+        typeof attrs.start === "number" && Number.isSafeInteger(attrs.start) && attrs.start > 1
           ? ` start="${attrs.start}"`
           : "";
       const type = attr("type", attrs.type);

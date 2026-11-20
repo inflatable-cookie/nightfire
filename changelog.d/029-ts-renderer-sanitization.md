@@ -6,7 +6,7 @@
 - A `video` embed id is percent-encoded, so a crafted id cannot break out of the `src`.
 - A `video` block title containing `$&` is written literally, and a pasted frame's own `title` is kept.
 - A `video` whose markup is only whitespace after sanitizing renders `data-embed-state="inert"`, not `"ready"`.
-- A rich-text `colspan`, `rowspan` or `orderedList` `start` that is not a valid integer is dropped, so `NaN` or `Infinity` never reaches HTML. Spans above the HTML limits (1000 columns, 65534 rows) are dropped too.
+- A rich-text `colspan`, `rowspan` or `orderedList` `start` that is not a positive integer is dropped, so `NaN`, `Infinity`, zero or negative values never reach HTML. Spans above the HTML limits (1000 columns, 65534 rows) are dropped too.
 - An unknown rich-text container with empty `content` keeps its (empty) children instead of showing a fallback label. A node with an empty `type` emits nothing.
 - A rich-text `data:image/svg+xml` image is dropped; only png, jpeg, gif, webp and avif data URLs are admitted.
 - A rich-text link with `target="_blank"` gets `rel="noopener noreferrer"`.
