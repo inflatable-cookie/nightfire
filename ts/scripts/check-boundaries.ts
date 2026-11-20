@@ -59,13 +59,6 @@ for (const path of ["Cargo.toml", "rust/nightfire/Cargo.toml", ...rustFiles]) {
   }
 }
 
-for (const path of ["ts/src/editor-registry.ts", "ts/src/render-registry.ts"]) {
-  const firstLine = (await Bun.file(path).text()).split("\n", 1)[0];
-  if (!firstLine.startsWith("import type ") || !firstLine.includes('from "svelte"')) {
-    throw new Error(`registry Svelte import must stay type-only: ${path}`);
-  }
-}
-
 type ImportRef = { specifier: string; typeOnly: boolean };
 
 function namedBindingsAreTypeOnly(clause: string): boolean {
@@ -98,6 +91,33 @@ function importedRefs(path: string, source: string): ImportRef[] {
     }
     return refs;
   });
+}
+
+// A Svelte runtime edge is any non-type reference to `svelte` or a `svelte/*`
+// subpath, wherever it sits in the file: a top-level `import`, a side-effect
+// import or a dynamic `import()`. `import type` and `import { type X }` name
+// types only and are erased, so they pass.
+function svelteRefs(path: string, source: string): ImportRef[] {
+  return importedRefs(path, source).filter(
+    (ref) => ref.specifier === "svelte" || ref.specifier.startsWith("svelte/"),
+  );
+}
+
+function hasSvelteRuntimeEdge(path: string, source: string): boolean {
+  return svelteRefs(path, source).some((ref) => !ref.typeOnly);
+}
+
+// The registries describe Svelte component types; they must import Svelte for
+// the types alone, on whatever line, and never at runtime.
+for (const path of ["ts/src/editor-registry.ts", "ts/src/render-registry.ts"]) {
+  const source = await Bun.file(path).text();
+  const refs = svelteRefs(path, source);
+  if (refs.length === 0) {
+    throw new Error(`registry must import Svelte types: ${path}`);
+  }
+  if (refs.some((ref) => !ref.typeOnly)) {
+    throw new Error(`registry Svelte import must stay type-only: ${path}`);
+  }
 }
 
 function resolveSourceImport(importer: string, specifier: string): string | null {
@@ -170,10 +190,30 @@ async function bundle(entrypoint: string, svelte = false) {
   };
 }
 
+// A block editor module is a per-block `editor.ts` (markup, download-card,
+// rich-text, image, video, layout, …), the editor registrations catalog, or
+// anything under an `editor/` directory. `ts/src/editor.ts` is the public
+// editor entry point, not a block editor, and is excluded by name.
+const EDITOR_MODULE = /(?:^|\/)(?:editor-registrations|render-registrations)\.ts$|\/editor\/|\/[^/\s]+\/editor\.ts\b/;
+const PUBLIC_EDITOR_ENTRY = normalize("ts/src/editor.ts");
+
+function isEditorModule(path: string): boolean {
+  return normalize(path) !== PUBLIC_EDITOR_ENTRY && EDITOR_MODULE.test(path);
+}
+
+// Every block editor module shipped in `ts/src`, derived from the tree so a new
+// block's editor is guarded without editing this proof.
+const blockEditorModules = allSourceFiles
+  .map((path) => normalize(path))
+  .filter((path) => isEditorModule(path) && !path.endsWith("editor-registrations.ts"));
+if (blockEditorModules.length === 0) {
+  throw new Error("boundary proof found no block editor module to guard; the tree is not in the expected shape");
+}
+
 for (const entrypoint of ["ts/src/core.ts", "ts/src/validation.ts"]) {
   for (const path of await sourceGraph(entrypoint)) {
     const source = await Bun.file(path).text();
-    if (/import\s+(?!type\b)[^;]*from\s+["']svelte(?:\/|["'])/.test(source)) {
+    if (hasSvelteRuntimeEdge(path, source)) {
       throw new Error(`${entrypoint} has a Svelte runtime edge through ${path}`);
     }
   }
@@ -181,7 +221,7 @@ for (const entrypoint of ["ts/src/core.ts", "ts/src/validation.ts"]) {
 
 const rendererGraph = await sourceGraph("ts/src/renderer.ts");
 for (const path of rendererGraph) {
-  if (/(?:^|\/)(?:editor-registrations|render-registrations)\.ts$|\/editor\/|\/(?:markup|download-card|rich-text)\/editor\.ts$/.test(path)) {
+  if (isEditorModule(path)) {
     throw new Error(`renderer source graph contains editor/registration module: ${path}`);
   }
 }
@@ -192,7 +232,7 @@ for (const path of rendererGraph) {
 const renderCatalogGraph = (await sourceGraph("ts/src/render-registrations.ts"))
   .filter((path) => !path.endsWith("render-registrations.ts"));
 for (const path of renderCatalogGraph) {
-  if (/(?:^|\/)editor-registrations\.ts$|\/editor\/|\/(?:markup|download-card|rich-text)\/editor\.ts$/.test(path)) {
+  if (isEditorModule(path)) {
     throw new Error(`render catalog source graph contains editor module: ${path}`);
   }
 }
@@ -203,7 +243,7 @@ for (const path of renderCatalogGraph) {
 for (const path of [...rendererGraph, ...renderCatalogGraph]) {
   if (!path.endsWith(".ts")) continue;
   const source = await Bun.file(path).text();
-  if (/import\s+(?!type\b)[^;]*from\s+["']svelte(?:\/|["'])/.test(source)) {
+  if (hasSvelteRuntimeEdge(path, source)) {
     throw new Error(`render-side graph has a Svelte runtime edge through ${path}`);
   }
 }
@@ -230,7 +270,10 @@ const core = await bundle("ts/src/core.ts");
 const validation = await bundle("ts/src/validator-registry.ts");
 const renderer = await bundle("ts/src/NightfireRenderer.svelte", true);
 const renderCatalog = await bundle("ts/src/render-registrations.ts", true);
-for (const marker of ["editor-registrations", "download-card/editor", "markup/editor", "rich-text/editor", "registerBlockEditor(", POODLE]) {
+// Each shipped block editor is a marker, so the bundle proof grows with the
+// tree instead of naming three blocks by hand.
+const editorMarkers = blockEditorModules.map((path) => path.replace(/^ts\/src\//, "").replace(/\.ts$/, ""));
+for (const marker of ["editor-registrations", ...editorMarkers, "registerBlockEditor(", POODLE]) {
   if (renderer.text.includes(marker)) {
     throw new Error(`renderer bundle contains editor/registration marker: ${marker}`);
   }
@@ -239,7 +282,7 @@ if (renderCatalog.text.includes(POODLE)) {
   throw new Error(`render catalog bundle contains a Poodle import`);
 }
 for (const input of renderer.inputs) {
-  if (/(?:^|\/)(?:editor-registrations|render-registrations)\.ts$|\/editor\/|\/(?:markup|download-card|rich-text)\/editor\.ts$/.test(input)) {
+  if (isEditorModule(input)) {
     throw new Error(`renderer bundle contains editor/registration input: ${input}`);
   }
 }

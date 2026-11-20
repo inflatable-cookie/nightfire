@@ -5,38 +5,16 @@
 // the version, the exact package set from `release-manifest.json`, and the
 // SHA-256 of every tarball -- and that the archive set carries nothing else.
 
-import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 import { basename, join, resolve } from "node:path";
 
-import { readNpmPublicationAuthority } from "./npm-publication";
-
-export const CANDIDATE_SCHEMA = "nightfire.npm-candidate.v1";
-
-export type CandidateManifest = {
-  schema: string;
-  sourceCommit: string;
-  version: string;
-  packages: { name: string; path: string; tarball: string; version: string; sha256: string }[];
-};
-
-export function sha256File(path: string): string {
-  return execFileSync("shasum", ["-a", "256", path], { encoding: "utf8" }).trim().split(/\s+/)[0];
-}
-
-function parseTarballManifest(tarballPath: string): { name: string; version: string } {
-  let raw: string;
-  try {
-    raw = execFileSync("tar", ["-xzOf", tarballPath, "package/package.json"], { encoding: "utf8" });
-  } catch {
-    throw new Error(`candidate tarball ${basename(tarballPath)} has no package/package.json`);
-  }
-  const manifest = JSON.parse(raw) as Record<string, unknown>;
-  if (typeof manifest.name !== "string" || typeof manifest.version !== "string") {
-    throw new Error(`candidate tarball ${basename(tarballPath)} has no name/version`);
-  }
-  return { name: manifest.name, version: manifest.version };
-}
+import {
+  type CandidateManifest,
+  parseTarballManifest,
+  readCandidateManifest,
+  readNpmPublicationAuthority,
+  sha256File,
+} from "./npm-publication";
 
 export function verifyNpmCandidate(args: {
   root: string;
@@ -45,13 +23,7 @@ export function verifyNpmCandidate(args: {
   tagVersion?: string;
   sourceCommit?: string;
 }): CandidateManifest {
-  if (!existsSync(args.manifestPath)) {
-    throw new Error(`candidate identity manifest not found: ${args.manifestPath}`);
-  }
-  const manifest = JSON.parse(readFileSync(args.manifestPath, "utf8")) as CandidateManifest;
-  if (manifest.schema !== CANDIDATE_SCHEMA) {
-    throw new Error(`unexpected candidate identity schema: ${manifest.schema}`);
-  }
+  const manifest = readCandidateManifest(args.manifestPath);
   if (args.tagVersion !== undefined && manifest.version !== args.tagVersion) {
     throw new Error(`candidate version ${manifest.version} does not match tag ${args.tagVersion}`);
   }
@@ -108,9 +80,16 @@ export function verifyNpmCandidate(args: {
   return manifest;
 }
 
-function cliValue(args: string[], flag: string): string | undefined {
+// A flag without a value is a broken invocation, not an absent flag: silently
+// dropping it would skip the tag or commit check the workflow asked for.
+export function cliValue(args: string[], flag: string): string | undefined {
   const index = args.indexOf(flag);
-  return index === -1 ? undefined : args[index + 1];
+  if (index === -1) return undefined;
+  const value = args[index + 1];
+  if (value === undefined || value.length === 0 || value.startsWith("--")) {
+    throw new Error(`${flag} requires a value`);
+  }
+  return value;
 }
 
 if (import.meta.main) {

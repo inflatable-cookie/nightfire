@@ -36,10 +36,16 @@
         "colspan": { "type": "integer", "minimum": 1 },
         "rowspan": { "type": "integer", "minimum": 1 },
         "horizontal_align": {
-          "anyOf": [{ "type": "string" }, { "type": "null" }]
+          "anyOf": [
+            { "enum": ["left", "center", "right", "justify"] },
+            { "type": "null" }
+          ]
         },
         "vertical_align": {
-          "anyOf": [{ "type": "string" }, { "type": "null" }]
+          "anyOf": [
+            { "enum": ["top", "middle", "bottom", "baseline"] },
+            { "type": "null" }
+          ]
         },
         "borders": { "$ref": "#/$defs/borders" }
       },

@@ -19,6 +19,92 @@ export function fail(message: string): never {
   throw new Error(message);
 }
 
+// Deep equality over JSON values. Members are compared by key set, not by
+// text, so key order never decides whether an `enum`, a `const` or a
+// `uniqueItems` check passes.
+export function jsonEqual(left: unknown, right: unknown): boolean {
+  if (left === right) return true;
+  if (Array.isArray(left) || Array.isArray(right)) {
+    if (!Array.isArray(left) || !Array.isArray(right) || left.length !== right.length) return false;
+    return left.every((entry, index) => jsonEqual(entry, right[index]));
+  }
+  const leftObject = asObject(left);
+  const rightObject = asObject(right);
+  if (!leftObject || !rightObject) return false;
+  const keys = Object.keys(leftObject);
+  if (keys.length !== Object.keys(rightObject).length) return false;
+  return keys.every((key) => key in rightObject && jsonEqual(leftObject[key], rightObject[key]));
+}
+
+// The keywords this validator enforces. Anything else is refused rather than
+// ignored: a constraint a document states and the validator drops is worse than
+// no constraint, because the document looks proved.
+const SUPPORTED_KEYWORDS = new Set([
+  "$schema",
+  "$id",
+  "title",
+  "description",
+  "$ref",
+  "$defs",
+  "allOf",
+  "anyOf",
+  "enum",
+  "const",
+  "type",
+  "minLength",
+  "minimum",
+  "minItems",
+  "uniqueItems",
+  "items",
+  "properties",
+  "required",
+  "additionalProperties",
+]);
+
+export function assertSupportedSchema(schema: JsonSchema, path: string): void {
+  if (typeof schema === "boolean") return;
+  for (const keyword of Object.keys(schema)) {
+    if (!SUPPORTED_KEYWORDS.has(keyword)) {
+      fail(
+        `${path}: unsupported JSON Schema keyword \`${keyword}\`; this validator would ignore it, ` +
+          "so add support in ts/scripts/schema-documents.ts or remove it from the document",
+      );
+    }
+  }
+
+  const definitions = schema.$defs;
+  if (definitions !== undefined) {
+    const map = asObject(definitions) ?? fail(`${path}: $defs must be an object of schemas`);
+    for (const [name, definition] of Object.entries(map)) {
+      assertSupportedSchema(definition as JsonSchema, `${path}#/$defs/${name}`);
+    }
+  }
+
+  for (const keyword of ["allOf", "anyOf"] as const) {
+    const entries = schema[keyword];
+    if (entries === undefined) continue;
+    if (!Array.isArray(entries)) fail(`${path}: ${keyword} must be an array of schemas`);
+    entries.forEach((entry, index) => {
+      assertSupportedSchema(entry as JsonSchema, `${path}#/${keyword}/${index}`);
+    });
+  }
+
+  if (schema.items !== undefined) {
+    assertSupportedSchema(schema.items as JsonSchema, `${path}#/items`);
+  }
+
+  if (schema.properties !== undefined) {
+    const map = asObject(schema.properties) ?? fail(`${path}: properties must be an object of schemas`);
+    for (const [name, entry] of Object.entries(map)) {
+      assertSupportedSchema(entry as JsonSchema, `${path}#/properties/${name}`);
+    }
+  }
+
+  if (schema.additionalProperties !== undefined) {
+    assertSupportedSchema(schema.additionalProperties as JsonSchema, `${path}#/additionalProperties`);
+  }
+}
+
 export function asObject(value: unknown): JsonObject | null {
   return value !== null && typeof value === "object" && !Array.isArray(value)
     ? (value as JsonObject)
@@ -36,7 +122,12 @@ export async function loadPublishedSchemas(): Promise<SchemaCatalog> {
     const path = resolve(schemaRoot, entry);
     const raw = await Bun.file(path).text();
     rawDocuments.set(path, raw);
-    documents.set(path, JSON.parse(raw) as JsonObject);
+    const document = JSON.parse(raw) as JsonObject;
+    if (document === null || typeof document !== "object" || Array.isArray(document)) {
+      fail(`${entry}: a published schema document must be a JSON object`);
+    }
+    assertSupportedSchema(document, entry);
+    documents.set(path, document);
   }
 
   cached = { repoRoot, schemaRoot, documents, rawDocuments };
@@ -134,10 +225,10 @@ export function validate(
     errors.push(`${instancePath}: does not match any allowed shape`);
   }
 
-  if (Array.isArray(schema.enum) && !schema.enum.some((entry) => JSON.stringify(entry) === JSON.stringify(value))) {
+  if (Array.isArray(schema.enum) && !schema.enum.some((entry) => jsonEqual(entry, value))) {
     errors.push(`${instancePath}: value is not in enum`);
   }
-  if ("const" in schema && JSON.stringify(schema.const) !== JSON.stringify(value)) {
+  if ("const" in schema && !jsonEqual(schema.const, value)) {
     errors.push(`${instancePath}: value does not match const`);
   }
 
@@ -158,8 +249,10 @@ export function validate(
       errors.push(`${instancePath}: shorter than minItems ${schema.minItems}`);
     }
     if (schema.uniqueItems === true) {
-      const keys = value.map((entry) => JSON.stringify(entry));
-      if (new Set(keys).size !== keys.length) errors.push(`${instancePath}: items are not unique`);
+      const unique = value.every((entry, index) =>
+        value.slice(index + 1).every((other) => !jsonEqual(entry, other))
+      );
+      if (!unique) errors.push(`${instancePath}: items are not unique`);
     }
     if (schema.items !== undefined) {
       value.forEach((entry, index) => {
