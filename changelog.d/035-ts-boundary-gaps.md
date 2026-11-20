@@ -4,14 +4,19 @@
   `BlockValidator` answers with. A validator that retyped or re-versioned a
   block could previously carry an unknown version past the save boundary.
   A validator that throws now fails that block closed instead of failing the
-  whole save.
+  whole save. A validator answer whose explicit `version` is not a string
+  (a number, `null`) is rejected rather than coerced to `initial`; an answer
+  that omits `version` still coerces as before.
 - An envelope whose `blocks` member is not an array is rejected rather than
   coerced to an empty list, so a corrupt value fails closed instead of looking
   empty.
 - `findNightfireBlockById` resolves a nested block (an `item_list` item body,
   for instance) and no longer throws on a non-object element. Block and media
-  lookup checks every top-level block before searching nested ones, matching
-  the documented locator contract and the Rust crate.
+  lookup checks every top-level block before searching nested ones, and a
+  nested payload counts as a block only with an `id`, a string `type` and a
+  `data` member. A locator can no longer resolve unrelated payload metadata
+  that happens to carry an `id` and a `data`, and both lookups name the same
+  object.
 - A non-string media locator `blockId` is a domain `Error`, not a `TypeError`
   from `.trim()`.
 - `normaliseNightfireValue` falls back to the caller's schema when the stored
@@ -39,6 +44,8 @@
 
 - A custom `BlockValidator` must answer within its type's registered versions;
   a retype to an unregistered type or an unsupported version drops the block.
+  When it returns a `version`, that value must be a string; coercion no longer
+  rewrites a number or `null` to `initial`.
 - Expect `validateNightfireValue` to reject `{ schema, blocks: <non-array> }`
   and to resolve versions again after a validator runs.
 - Set `cacheTtl: 0` where `cacheTtl: -1` was used to disable caching, and read
@@ -47,3 +54,6 @@
 - Import `clearRichTextInlineNodeRenderers` from `./rich-text` in test or hot
   reload cleanup, and `BlockValidator` from `./validation` instead of the
   registry module.
+- Expect a media locator to resolve only a nested payload that carries an `id`,
+  a string `type` and a `data` member: re-key a stored locator that pointed at
+  plain payload metadata.

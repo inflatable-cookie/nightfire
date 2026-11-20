@@ -70,6 +70,13 @@ function validateBlock(schema: string, block: unknown): NightfireBlock | null {
     return null;
   }
 
+  // An explicit version must be a version, not a number or null that coercion
+  // would quietly rewrite to `initial`. A validator that says nothing about the
+  // version inherits the resolved one through coercion, as before.
+  if (Object.hasOwn(validated, "version") && typeof validated.version !== "string") {
+    return null;
+  }
+
   const result = coerceNightfireBlock(validated);
   if (!result) {
     return null;

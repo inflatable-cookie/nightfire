@@ -205,6 +205,31 @@ describe("nightfire/media-locator", () => {
 		expect(block?.type).toBe("gallery");
 	});
 
+	it("does not address payload metadata that only looks like a block", () => {
+		// `metadata` carries an `id` and a `data` member but no block type, so it
+		// is payload metadata. The block lookup and the resolver must agree that
+		// the real block is the one with a type.
+		const value = {
+			schema: "test:schema",
+			blocks: [
+				{
+					id: "container_01",
+					type: "item_list",
+					version: "initial",
+					data: {
+						metadata: { id: "x", data: { media: "wrong" } },
+						body: { id: "x", type: "image", version: "initial", data: { media: "right" } }
+					}
+				}
+			]
+		};
+
+		expect(findNightfireBlockById(value as any, "x")?.type).toBe("image");
+		expect(
+			resolveNightfireMediaLocator(value as any, parseNightfireMediaLocator("x#/media"))
+		).toBe("right");
+	});
+
 	it("prefers a top-level block over a nested one with the same id", () => {
 		const duplicated = {
 			schema: "test:schema",

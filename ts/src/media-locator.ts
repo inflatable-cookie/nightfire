@@ -109,6 +109,25 @@ function isObjectRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
+/**
+ * A nested payload is a block when it carries the id being looked up, a string
+ * `type` and a `data` member. Everything else that happens to have an `id` and
+ * a `data` is payload metadata, not a block, and a locator must not address it.
+ *
+ * Both the block lookup and the data lookup use this one rule, so they always
+ * name the same object.
+ */
+function isNestedBlockRecord(
+  value: Record<string, unknown>,
+  blockId: string
+): boolean {
+  return (
+    value.id === blockId &&
+    typeof value.type === "string" &&
+    Object.hasOwn(value, "data")
+  );
+}
+
 export function findNightfireBlockById(
   value: NightfireValue,
   blockId: string
@@ -155,11 +174,7 @@ function findBlockInJson(value: unknown, blockId: string): NightfireBlock | null
     return null;
   }
 
-  if (
-    value.id === blockId &&
-    typeof value.type === "string" &&
-    Object.hasOwn(value, "data")
-  ) {
+  if (isNestedBlockRecord(value, blockId)) {
     return value as unknown as NightfireBlock;
   }
 
@@ -176,8 +191,10 @@ function findBlockInJson(value: unknown, blockId: string): NightfireBlock | null
 /**
  * A block's `data`, anchored on its id, wherever the block sits: a top-level
  * block of the value, or a nested block inside another block's data (an
- * `item_list` item body, for instance). Mirrors `find_block_data_in_value` in
- * the Rust crate.
+ * `item_list` item body, for instance). Follows `find_block_data_in_value` in
+ * the Rust crate, with one difference: a nested payload must also carry a
+ * string `type`, the same shape `findNightfireBlockById` requires, so an
+ * unrelated `{ id, data }` payload is not addressable by a locator.
  */
 function findBlockData(value: NightfireValue, blockId: string): Lookup {
   if (!Array.isArray(value.blocks)) {
@@ -220,7 +237,7 @@ function findBlockDataInJson(value: unknown, blockId: string): Lookup {
   }
 
   const record = value as Record<string, unknown>;
-  if (record.id === blockId && Object.hasOwn(record, "data")) {
+  if (isNestedBlockRecord(record, blockId)) {
     return record.data;
   }
 

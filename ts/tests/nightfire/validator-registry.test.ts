@@ -151,6 +151,44 @@ describe("nightfire/validator-registry", () => {
 		).toEqual({ schema: "schema-unknown-type", blocks: [] });
 	});
 
+	it("rejects a validator answer whose version is not a string", () => {
+		for (const version of [42, null, undefined, {}, true]) {
+			registerBlockValidator("schema-bad-version", "markdown", (block: any) => ({
+				...block,
+				version,
+			}));
+
+			// Coercion would rewrite this to `initial` and save a version the
+			// validator never asked for. An explicit bad version fails closed.
+			expect(
+				validateNightfireValue({
+					schema: "schema-bad-version",
+					blocks: [{ type: "markdown", data: {} }],
+				} as any),
+				String(version)
+			).toEqual({ schema: "schema-bad-version", blocks: [] });
+		}
+	});
+
+	it("still coerces a validator answer that omits the version", () => {
+		registerBlockValidator("schema-no-version", "markdown", () => ({
+			type: "markdown",
+			data: { text: "kept" },
+		}));
+
+		expect(
+			validateNightfireValue({
+				schema: "schema-no-version",
+				blocks: [{ type: "markdown", data: {} }],
+			} as any)
+		).toEqual({
+			schema: "schema-no-version",
+			blocks: [
+				{ id: undefined, type: "markdown", version: "initial", data: { text: "kept" } },
+			],
+		});
+	});
+
 	it("fails a block closed when a validator throws", () => {
 		registerBlockValidator("schema-t", "markdown", () => {
 			throw new Error("validator exploded");

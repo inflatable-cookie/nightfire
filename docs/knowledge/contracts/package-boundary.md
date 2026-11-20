@@ -97,7 +97,10 @@ block's `data`. The TypeScript and Rust implementations agree on every rule:
 - An array segment is `0` or a digit string without a leading zero.
 - A segment resolves only an own property, so `#/constructor` resolves nothing.
 - Resolution finds the block by ID among top-level blocks and then inside
-  another block's data, so a nested `item_list` body resolves too.
+  another block's data, so a nested `item_list` body resolves too. A nested
+  payload is a block only when it carries the id, a string `type` and a `data`
+  member: another `{ id, data }` object in the payload is metadata, and a
+  locator does not address it.
 
 ## Dependencies
 
