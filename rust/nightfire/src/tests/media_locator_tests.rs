@@ -173,6 +173,62 @@ fn resolves_pointer_inside_nested_block_id() {
 }
 
 #[test]
+fn ignores_nested_payload_metadata_that_looks_like_a_block() {
+    // `metadata` carries an `id` and a `data` but no block type, so it is
+    // payload metadata. Only the typed block is addressable.
+    let value = NightfireValue::single(
+        "test:schema",
+        block(
+            "container_01",
+            json!({
+                "metadata": { "id": "x", "data": { "media": "wrong" } },
+                "body": {
+                    "id": "x",
+                    "type": "image",
+                    "version": "initial",
+                    "data": { "media": "right" }
+                }
+            }),
+        ),
+    );
+
+    let resolved = NightfireMediaLocator::parse("x#/media")
+        .unwrap()
+        .resolve_in_value(&value)
+        .expect("reference should resolve");
+
+    assert_eq!(resolved, &json!("right"));
+}
+
+#[test]
+fn prefers_a_top_level_block_over_a_nested_one_with_the_same_id() {
+    let value = NightfireValue::multi(
+        "test:schema",
+        vec![
+            block(
+                "list_01",
+                json!({
+                    "items": [{
+                        "id": "dup",
+                        "type": "image",
+                        "version": "initial",
+                        "data": { "image_id": "nested" }
+                    }]
+                }),
+            ),
+            block("dup", json!({ "image_id": "top" })),
+        ],
+    );
+
+    let resolved = NightfireMediaLocator::parse("dup#/image_id")
+        .unwrap()
+        .resolve_in_value(&value)
+        .expect("reference should resolve");
+
+    assert_eq!(resolved, &json!("top"));
+}
+
+#[test]
 fn returns_none_when_block_or_path_does_not_exist() {
     let value = NightfireValue::single(
         "test:schema",

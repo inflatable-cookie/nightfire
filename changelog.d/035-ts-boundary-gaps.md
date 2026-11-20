@@ -17,6 +17,11 @@
   `data` member. A locator can no longer resolve unrelated payload metadata
   that happens to carry an `id` and a `data`, and both lookups name the same
   object.
+- The Rust crate resolves media locators by the same two rules, so both
+  languages name one block: top-level blocks answer before nested ones, and a
+  nested payload is a block only with an `id`, a string `type` and a `data`.
+  Shared conformance cases in `fixtures/wire/v1/nightfire-values.json` cover a
+  metadata collision and a duplicate id held by a nested and a top-level block.
 - A non-string media locator `blockId` is a domain `Error`, not a `TypeError`
   from `.trim()`.
 - `normaliseNightfireValue` falls back to the caller's schema when the stored
