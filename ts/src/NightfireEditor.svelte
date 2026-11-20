@@ -72,8 +72,8 @@
      *   with a `category` are grouped by `buildGroupedOptions`.
      *
      * When these are not provided, the editor falls back to the
-     * local registry definitions so it remains usable in student views
-     * or in tests without a strategy API.
+     * local registry definitions so it remains usable without a
+     * strategy API or in tests.
      */
     modeOverride?: NightfireFieldMode | null;
     defaultTypeOverride?: string | null;
@@ -313,9 +313,10 @@
           candidate.dataset.blockIndex === String(index) && !hasCardAncestor(candidate, root)
       );
 
-      const focusTarget = card?.querySelector<HTMLElement>(
-        "textarea, input:not([type='hidden']), select, button"
-      );
+      const focusTarget =
+        card?.querySelector<HTMLElement>(
+          'textarea, [contenteditable="true"], input:not([type="hidden"]), select'
+        ) ?? card?.querySelector<HTMLElement>("button");
 
       focusTarget?.focus();
     });
@@ -397,11 +398,13 @@
   // For required fields, ensure there is at least one block when the
   // editor is first initialised and the value is empty.
   $effect(() => {
-    if (!hasInitialisedRequired && required && isEmptyNightfire(value)) {
-      value = createRequiredInitialValue(
-        schema,
-        effectiveDef.defaultType ?? "markdown"
-      );
+    if (!hasInitialisedRequired && required) {
+      if (isEmptyNightfire(value, false)) {
+        value = createRequiredInitialValue(
+          schema,
+          effectiveDef.defaultType ?? "markdown"
+        );
+      }
 
       hasInitialisedRequired = true;
     }

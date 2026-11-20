@@ -13,6 +13,7 @@
     modeOverride?: "single" | "multi" | null;
     defaultTypeOverride?: string | null;
     blockOptions?: NightfireBlockOptionInput[] | null;
+    required?: boolean;
     slashCommands?: NightfireSlashCommandsConfig | null;
   }
 
@@ -33,6 +34,7 @@
     modeOverride = null,
     defaultTypeOverride = null,
     blockOptions = null,
+    required = false,
     slashCommands = null
   }: Props = $props();
 
@@ -46,6 +48,7 @@
   {modeOverride}
   {defaultTypeOverride}
   {blockOptions}
+  {required}
   {slashCommands}
 />
 

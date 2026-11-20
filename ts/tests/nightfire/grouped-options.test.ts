@@ -5,13 +5,14 @@ describe("nightfire/editor/grouped-options", () => {
 	it("groups by category with priority and formatted labels", () => {
 		const result = buildGroupedOptions([
 			{ type: "x", label: "Other A" },
+			{ type: "l", label: "Table", category: "Layout" },
 			{ type: "t", label: "Text B", category: "Text" },
 			{ type: "m", label: "Media A", category: "Media" },
 			{ type: "i", label: "Interactive", category: "InteractiveContent" },
 		]);
 
-		expect(result.map((g) => g.label)).toEqual(["Text", "Media", "Interactive Content", "Other"]);
-		expect(result[3].category).toBeNull();
+		expect(result.map((g) => g.label)).toEqual(["Text", "Media", "Layout", "Interactive Content", "Other"]);
+		expect(result[4].category).toBeNull();
 	});
 
 	it("preserves explicit subcategory for non-interactive categories", () => {

@@ -115,4 +115,29 @@ describe("nightfire/NightfireEditor slash commands", () => {
     });
     expect(firstEditor.container.contains(document.activeElement)).toBe(false);
   });
+
+  it("focuses the editing control rather than a toolbar button when inserting a markdown block", async () => {
+    const view = render(NightfireEditorHarness, {
+      modeOverride: "multi",
+      slashCommands: { enabled: true },
+    });
+    const textarea = view.container.querySelector("textarea") as HTMLTextAreaElement;
+
+    textarea.value = "/markdown";
+    textarea.selectionStart = textarea.value.length;
+    textarea.selectionEnd = textarea.value.length;
+    await fireEvent.input(textarea);
+
+    const dialog = await screen.findByRole("dialog", { name: "Slash commands" });
+    await fireEvent.click(within(dialog).getByRole("option", { name: /markdown/i }));
+
+    await waitFor(() => {
+      const insertedCard = view.container.querySelector(
+        "[data-nightfire-block-card][data-block-index='1']",
+      ) as HTMLElement;
+      const insertedTextarea = insertedCard?.querySelector("textarea");
+      expect(insertedTextarea).toBeTruthy();
+      expect(document.activeElement).toBe(insertedTextarea);
+    });
+  });
 });

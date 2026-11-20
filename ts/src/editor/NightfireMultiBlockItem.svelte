@@ -1,5 +1,4 @@
 <script lang="ts">
-  import type { MarkdownEditorContext } from "../markup/markdown-editor-context";
   import type { BlockTypeOption, SchemaDefinition } from "../editor-registry";
   import type { GroupedOptions } from "./grouped-options";
   import { default as NightfireBlockEditor } from "../NightfireBlockEditor.svelte";
@@ -17,7 +16,6 @@
     onMove: (from: number, to: number) => void;
     onRemove: (index: number) => void;
     onBlockChange: (index: number, next: any) => void;
-    onBlockContextChange?: (index: number, context: MarkdownEditorContext) => void;
   }
 
   let {
@@ -31,8 +29,7 @@
     onTypeChange,
     onMove,
     onRemove,
-    onBlockChange,
-    onBlockContextChange = () => {}
+    onBlockChange
   }: Props = $props();
 </script>
 
@@ -85,7 +82,6 @@
     definition={effectiveDef}
     typeOptions={editorTypeOptions}
     onChange={(next) => onBlockChange(index, next)}
-    onContextChange={(context) => onBlockContextChange(index, context)}
   />
 </div>
 

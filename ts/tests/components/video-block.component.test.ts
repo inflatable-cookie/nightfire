@@ -234,6 +234,34 @@ describe("nightfire/video block", () => {
     expect(calls.at(-1).data.embed).toEqual(external);
   });
 
+  it("keeps the input when a parent clones the emitted block in onChange", async () => {
+    let view: ReturnType<typeof render>;
+    const calls: any[] = [];
+    view = render(VideoEditorHarness, {
+      initial: { type: "video", data: {} },
+      onChange: (next: unknown) => {
+        calls.push(next);
+        (view.component as any).setBlock(JSON.parse(JSON.stringify(next)));
+      },
+    });
+
+    const iframeMarkup = `<iframe src="https://www.youtube.com/embed/${YOUTUBE_ID}"></iframe>`;
+    await fireEvent.input(urlInput(view.container), { target: { value: iframeMarkup } });
+    await waitFor(() => expect(calls.length).toBeGreaterThan(0));
+    flushSync();
+
+    expect(calls.at(-1).data.embed.provider).toBe("youtube");
+    expect(urlInput(view.container).value).toBe(iframeMarkup);
+
+    await fireEvent.input(urlInput(view.container), { target: { value: "not a url" } });
+    await waitFor(() =>
+      expect(view.container.textContent).toContain("Could not parse embed source")
+    );
+    (view.component as any).setBlock(JSON.parse(JSON.stringify(calls.at(-1))));
+    flushSync();
+    expect(urlInput(view.container).value).toBe("not a url");
+  });
+
   it("survives the scenario oracle: paste, title, save, reload", async () => {
     const calls: unknown[] = [];
     const editorView = render(EditorComponent as any, {
