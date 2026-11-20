@@ -1,7 +1,5 @@
 //! Nightfire value validation and two-lookup resolution.
 
-use std::hash::Hash;
-
 use crate::block::BlockData;
 use crate::registry::{BlockDescriptor, BlockRegistry, StrategyRegistry};
 use crate::strategy::{NightfireStrategy, StrategyCardinality};
@@ -9,12 +7,10 @@ use crate::value::NightfireValue;
 
 /// Validation error when checking a `NightfireValue` against a
 /// `NightfireStrategy`.
-#[derive(Debug, Clone, thiserror::Error)]
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 pub enum NightfireValidationError {
     /// The value's block count does not match the strategy's cardinality.
-    #[error(
-        "cardinality mismatch for schema {schema}: expected {expected:?}, got {actual_blocks} blocks"
-    )]
+    #[error("cardinality mismatch for schema {schema}: expected {expected}, got {actual_blocks}")]
     CardinalityMismatch {
         schema: String,
         expected: StrategyCardinality,
@@ -58,35 +54,26 @@ pub struct ResolvedNightfireValue<'a, C> {
     pub blocks: Vec<ResolvedBlock<'a, C>>,
 }
 
-/// Resolve a stored block type+version to the current implementation.
+/// Resolve one stored block's type and version to its current implementation.
 ///
 /// Unknown types and unknown versions fail closed.
-pub fn resolve_block_implementation<'a, C>(
-    block_type: &str,
-    version: &str,
-    block_registry: &'a BlockRegistry<C>,
-) -> Result<(&'a BlockDescriptor<C>, &'static str), NightfireValidationError> {
-    resolve_block_implementation_for_schema(block_type, version, "", block_registry)
-}
-
-fn resolve_block_implementation_for_schema<'a, C>(
-    block_type: &str,
-    version: &str,
+fn resolve_block<'a, C>(
     schema: &str,
+    block: &BlockData,
     block_registry: &'a BlockRegistry<C>,
 ) -> Result<(&'a BlockDescriptor<C>, &'static str), NightfireValidationError> {
-    let descriptor = block_registry.get(block_type).ok_or_else(|| {
+    let descriptor = block_registry.get(&block.r#type).ok_or_else(|| {
         NightfireValidationError::UnknownBlockType {
             schema: schema.to_owned(),
-            block_type: block_type.to_owned(),
+            block_type: block.r#type.clone(),
         }
     })?;
 
-    let current = descriptor.versions.coerce(version).ok_or_else(|| {
+    let current = descriptor.versions.coerce(&block.version).ok_or_else(|| {
         NightfireValidationError::UnknownBlockVersion {
             schema: schema.to_owned(),
-            block_type: block_type.to_owned(),
-            version: version.to_owned(),
+            block_type: block.r#type.clone(),
+            version: block.version.clone(),
         }
     })?;
 
@@ -95,20 +82,28 @@ fn resolve_block_implementation_for_schema<'a, C>(
 
 /// Coerce every supported older block version onto the current
 /// implementation version. Unknown versions fail closed.
+///
+/// Every block is resolved before any is changed, so an error leaves `value`
+/// exactly as it was.
 pub fn coerce_block_versions<C>(
     value: &mut NightfireValue,
     block_registry: &BlockRegistry<C>,
 ) -> Result<(), NightfireValidationError> {
-    let schema = value.schema.as_str().to_owned();
-    for block in &mut value.blocks {
-        let (_descriptor, current) = resolve_block_implementation_for_schema(
-            &block.r#type,
-            &block.version,
-            &schema,
-            block_registry,
-        )?;
-        block.version = current.to_string();
+    let schema = value.schema.as_str();
+
+    for block in &value.blocks {
+        resolve_block(schema, block, block_registry)?;
     }
+
+    // The registry is borrowed immutably and each block is resolved against its
+    // own original version before that block changes, so this pass cannot fail.
+    for block in &mut value.blocks {
+        let (_, current) = resolve_block(schema, block, block_registry)?;
+        if block.version != current {
+            block.version = current.to_owned();
+        }
+    }
+
     Ok(())
 }
 
@@ -119,21 +114,16 @@ pub fn resolve_nightfire_value<'a, C>(
     block_registry: &'a BlockRegistry<C>,
 ) -> Result<ResolvedNightfireValue<'a, C>, NightfireValidationError>
 where
-    C: Clone + Eq + Hash,
+    C: PartialEq,
 {
     validate_cardinality(value, strategy)?;
 
-    let schema_str = value.schema.as_str();
+    let schema = value.schema.as_str();
     let mut resolved_blocks = Vec::with_capacity(value.blocks.len());
 
     for block in &value.blocks {
-        check_block_allowed(schema_str, block, strategy, block_registry)?;
-        let (descriptor, current_version) = resolve_block_implementation_for_schema(
-            &block.r#type,
-            &block.version,
-            schema_str,
-            block_registry,
-        )?;
+        check_block_allowed(schema, block, strategy, block_registry)?;
+        let (descriptor, current_version) = resolve_block(schema, block, block_registry)?;
         resolved_blocks.push(ResolvedBlock {
             block,
             descriptor,
@@ -142,7 +132,7 @@ where
     }
 
     Ok(ResolvedNightfireValue {
-        schema: schema_str,
+        schema,
         strategy,
         blocks: resolved_blocks,
     })
@@ -155,6 +145,8 @@ where
 /// - Allowed block types, derived from:
 ///   - `allowed_types` (explicit allow list), and/or
 ///   - `allowed_categories` via the provided `BlockRegistry`.
+///
+/// When either list is non-empty, a block must match one of them.
 /// - Block type registration and supported versions (unknown version fails
 ///   closed).
 pub fn validate_nightfire_value<C>(
@@ -163,7 +155,7 @@ pub fn validate_nightfire_value<C>(
     block_registry: &BlockRegistry<C>,
 ) -> Result<(), NightfireValidationError>
 where
-    C: Clone + Eq + Hash,
+    C: PartialEq,
 {
     resolve_nightfire_value(value, strategy, block_registry).map(|_| ())
 }
@@ -176,12 +168,12 @@ pub fn resolve_nightfire_value_by_schema<'a, C>(
     block_registry: &'a BlockRegistry<C>,
 ) -> Result<ResolvedNightfireValue<'a, C>, NightfireValidationError>
 where
-    C: Clone + Eq + Hash,
+    C: PartialEq,
 {
-    let schema_str = value.schema.as_str();
-    let strategy = strategy_registry.get_by_str(schema_str).ok_or_else(|| {
+    let schema = value.schema.as_str();
+    let strategy = strategy_registry.get_by_str(schema).ok_or_else(|| {
         NightfireValidationError::UnknownStrategy {
-            schema: schema_str.to_owned(),
+            schema: schema.to_owned(),
         }
     })?;
 
@@ -192,82 +184,65 @@ fn validate_cardinality<C>(
     value: &NightfireValue,
     strategy: &NightfireStrategy<C>,
 ) -> Result<(), NightfireValidationError> {
-    let schema_str = value.schema.as_str().to_owned();
     let block_count = value.blocks.len();
-
-    match strategy.cardinality {
-        StrategyCardinality::Single => {
-            if block_count != 1 {
-                return Err(NightfireValidationError::CardinalityMismatch {
-                    schema: schema_str,
-                    expected: StrategyCardinality::Single,
-                    actual_blocks: block_count,
-                });
-            }
-        }
+    let within_bounds = match strategy.cardinality {
+        StrategyCardinality::Single => block_count == 1,
         StrategyCardinality::Multi(config) => {
-            let min = config.min_blocks().get();
-            if block_count < min {
-                return Err(NightfireValidationError::CardinalityMismatch {
-                    schema: schema_str,
-                    expected: StrategyCardinality::Multi(config),
-                    actual_blocks: block_count,
-                });
-            }
-            if let Some(max) = config.max_blocks() {
-                if block_count > max {
-                    return Err(NightfireValidationError::CardinalityMismatch {
-                        schema: schema_str,
-                        expected: StrategyCardinality::Multi(config),
-                        actual_blocks: block_count,
-                    });
-                }
-            }
+            block_count >= config.min_blocks().get()
+                && config.max_blocks().is_none_or(|max| block_count <= max)
         }
+    };
+
+    if within_bounds {
+        return Ok(());
     }
 
-    Ok(())
+    Err(NightfireValidationError::CardinalityMismatch {
+        schema: value.schema.as_str().to_owned(),
+        expected: strategy.cardinality,
+        actual_blocks: block_count,
+    })
 }
 
+/// Reject a block whose type fails both allowlists.
+///
+/// With neither list set, every type is allowed here and the registry lookup
+/// in `resolve_block` decides. With either list set, a block must match a
+/// listed type or a listed category; a block that matches neither is rejected.
 fn check_block_allowed<C>(
-    schema_str: &str,
+    schema: &str,
     block: &BlockData,
     strategy: &NightfireStrategy<C>,
     block_registry: &BlockRegistry<C>,
 ) -> Result<(), NightfireValidationError>
 where
-    C: Clone + Eq + Hash,
+    C: PartialEq,
 {
-    let block_type = block.r#type.clone();
+    if strategy.allowed_types.is_empty() && strategy.allowed_categories.is_empty() {
+        return Ok(());
+    }
 
-    if !strategy.allowed_types.is_empty() && strategy.allowed_types.iter().any(|t| t == &block_type)
-    {
+    if strategy.allowed_types.iter().any(|t| t == &block.r#type) {
         return Ok(());
     }
 
     if !strategy.allowed_categories.is_empty() {
-        let descriptor = block_registry.get(block_type.as_str()).ok_or_else(|| {
+        let descriptor = block_registry.get(&block.r#type).ok_or_else(|| {
             NightfireValidationError::UnknownBlockType {
-                schema: schema_str.to_owned(),
-                block_type: block_type.clone(),
+                schema: schema.to_owned(),
+                block_type: block.r#type.clone(),
             }
         })?;
 
-        if strategy
-            .allowed_categories
-            .iter()
-            .any(|c| c == &descriptor.category)
-        {
+        if strategy.allowed_categories.contains(&descriptor.category) {
             return Ok(());
         }
-
-        return Err(NightfireValidationError::DisallowedBlockType {
-            schema: schema_str.to_owned(),
-            block_type,
-        });
     }
 
-    Ok(())
+    Err(NightfireValidationError::DisallowedBlockType {
+        schema: schema.to_owned(),
+        block_type: block.r#type.clone(),
+    })
 }
 
 #[cfg(test)]

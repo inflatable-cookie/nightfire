@@ -10,6 +10,14 @@ fn hash_is_deterministic() {
 }
 
 #[test]
+fn hash_ignores_object_key_order() {
+    let ab = json!({"a": 1, "b": 2});
+    let ba = json!({"b": 2, "a": 1});
+
+    assert_eq!(compute_block_hash(&ab), compute_block_hash(&ba));
+}
+
+#[test]
 fn different_data_produces_different_hash() {
     let data1 = json!({"text": "hello"});
     let data2 = json!({"text": "world"});

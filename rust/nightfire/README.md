@@ -56,7 +56,7 @@ Define validation rules using strategies and registries:
 use nightfire::{
     NightfireStrategy, StrategyCardinality, MultiConfig,
     BlockRegistry, StrategyRegistry, BlockDescriptor,
-    validate_nightfire_value, SchemaId,
+    NightfireValue, SchemaId,
 };
 
 // Define your category enum
@@ -81,8 +81,13 @@ strategies.register(NightfireStrategy {
     default_type: "paragraph".to_string(),
 });
 
-// Validate content
-let result = validate_nightfire_value(&value, &strategy, &blocks);
+// Validate content against the strategy registered for its schema.
+// `value` holds blocks exported from a `Block` impl such as `ParagraphBlock` above.
+let value = NightfireValue::multi(
+    "app:content/body",
+    vec![ParagraphBlock { text: "Hello".into() }.export()],
+);
+let result = strategies.validate(&value, &blocks);
 ```
 
 ## JSON Wire Format
@@ -113,6 +118,12 @@ Examples:
 
 - `hero_01#/image_id`
 - `gallery_02#/pages/1/image_id`
+
+Constraints, enforced by `NightfireMediaLocator::new` and `parse`:
+
+- The block id is trimmed, must be non-empty, and must not contain `#`.
+- The pointer must be non-empty, start with `/`, and escape `~` only as `~0`
+  or `~1`.
 
 Use `ensure_block_ids()` before persistence so stored values have stable
 top-level block ids. `BlockRegistration<C, M>` lets one consumer module

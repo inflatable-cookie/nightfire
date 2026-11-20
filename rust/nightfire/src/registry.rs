@@ -1,7 +1,6 @@
 //! Block and strategy registries.
 
 use std::collections::HashMap;
-use std::hash::Hash;
 
 use crate::block::BlockVersions;
 use crate::strategy::NightfireStrategy;
@@ -153,22 +152,16 @@ impl<C> BlockRegistry<C> {
 /// application.
 #[derive(Debug, Clone)]
 pub struct StrategyRegistry<C> {
-    strategies: HashMap<String, NightfireStrategy<C>>,
+    strategies: HashMap<SchemaId, NightfireStrategy<C>>,
 }
 
-impl<C> Default for StrategyRegistry<C>
-where
-    C: Clone + Eq + Hash,
-{
+impl<C> Default for StrategyRegistry<C> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<C> StrategyRegistry<C>
-where
-    C: Clone + Eq + Hash,
-{
+impl<C> StrategyRegistry<C> {
     /// Create a new empty strategy registry.
     pub fn new() -> Self {
         Self {
@@ -176,15 +169,14 @@ where
         }
     }
 
-    /// Register a strategy.
+    /// Register a strategy, replacing any earlier one with the same schema.
     pub fn register(&mut self, strategy: NightfireStrategy<C>) {
-        let id_str = strategy.id.as_str().to_owned();
-        self.strategies.insert(id_str, strategy);
+        self.strategies.insert(strategy.id.clone(), strategy);
     }
 
     /// Look up a strategy by schema identifier.
     pub fn get(&self, schema: &SchemaId) -> Option<&NightfireStrategy<C>> {
-        self.strategies.get(schema.as_str())
+        self.strategies.get(schema)
     }
 
     /// Look up a strategy by schema identifier string.
@@ -205,7 +197,10 @@ where
         &self,
         value: &NightfireValue,
         block_registry: &BlockRegistry<C>,
-    ) -> Result<(), NightfireValidationError> {
+    ) -> Result<(), NightfireValidationError>
+    where
+        C: PartialEq,
+    {
         resolve_nightfire_value_by_schema(value, self, block_registry).map(|_| ())
     }
 }
