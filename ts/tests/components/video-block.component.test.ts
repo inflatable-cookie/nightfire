@@ -314,6 +314,41 @@ describe("nightfire/video block", () => {
     expect(calls.length).toBe(0);
   });
 
+  it("does not emit a prior pending embed on title or caption edits after a parse error", async () => {
+    const calls: any[] = [];
+    const view = render(EditorComponent as any, {
+      block: { type: "video", version: "initial", data: {} },
+      onChange: (next: unknown) => calls.push(next),
+      parseDebounce: 0,
+    });
+
+    await fireEvent.input(urlInput(view.container), { target: { value: YOUTUBE_URL } });
+    await waitFor(() => expect(calls.length).toBe(1));
+    expect(calls[0].data.embed.id).toBe(YOUTUBE_ID);
+
+    await fireEvent.input(urlInput(view.container), { target: { value: "not a url" } });
+    await waitFor(() =>
+      expect(view.container.textContent).toContain("Could not parse embed source")
+    );
+    expect(calls.length).toBe(1);
+
+    await fireEvent.input(
+      within(view.container).getByPlaceholderText(
+        "Title (optional, used as the embed's accessible name)"
+      ),
+      { target: { value: "Updated title" } }
+    );
+    expect(calls.at(-1).data.embed).toBeUndefined();
+    expect(calls.at(-1).data.title).toBe("Updated title");
+
+    await fireEvent.input(
+      within(view.container).getByPlaceholderText("Caption (optional)"),
+      { target: { value: "Updated caption" } }
+    );
+    expect(calls.at(-1).data.embed).toBeUndefined();
+    expect(calls.at(-1).data.caption).toBe("Updated caption");
+  });
+
   it("drops the embed when the input is cleared and keeps title and caption", async () => {
     const calls: unknown[] = [];
     const view = render(EditorComponent as any, {

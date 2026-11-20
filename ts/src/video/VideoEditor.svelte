@@ -100,7 +100,10 @@
     }
     // Unparseable: Poodle shows the error; the block is left unchanged, so no
     // partial embed is ever stored.
-    if (error) return;
+    if (error) {
+      pendingEmbed = undefined;
+      return;
+    }
     // Cleared input: drop the embed, keep the author's title and caption.
     pendingEmbed = null;
     if (embed) emit(null, title, caption);
@@ -114,8 +117,13 @@
     {providers}
     {parseDebounce}
     onValueChange={(nextValue) => {
+      const changed = nextValue !== url;
       url = nextValue;
-      if (!nextValue.trim()) pendingEmbed = null;
+      if (!nextValue.trim()) {
+        pendingEmbed = null;
+      } else if (changed) {
+        pendingEmbed = undefined;
+      }
     }}
     onParse={handleParse}
   />
