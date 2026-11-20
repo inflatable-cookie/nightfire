@@ -58,8 +58,17 @@
       : undefined
   );
 
+  // A throwing source or a resolution without a URL is the same as an unknown
+  // reference: the block renders inert.
   function resolveReference(reference: string): ResolvedMedia | null {
-    return getMediaSource()?.resolve({ media_id: reference }) ?? null;
+    try {
+      const resolved = getMediaSource()?.resolve({ media_id: reference }) ?? null;
+      return resolved && typeof resolved.url === "string" && resolved.url.length > 0
+        ? resolved
+        : null;
+    } catch {
+      return null;
+    }
   }
 
   function dimension(value: number | undefined): number | undefined {

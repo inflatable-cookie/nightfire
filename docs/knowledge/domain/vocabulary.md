@@ -79,6 +79,10 @@ borders are authored; column widths are not. The package has no undo, so destruc
 confirm in-page. Named row sections are not authored (see below). New rows omit `section`; the editor
 round-trips a value it does not manage, and the published document permits either.
 
+The renderer writes a header-flagged cell as `<th>` in any row. It drops an alignment value outside
+the closed sets (horizontal `left | center | right | justify`, vertical `top | middle | bottom |
+baseline`), so stored data cannot write CSS.
+
 The media blocks are:
 
 ```
@@ -133,6 +137,10 @@ reference. Nightfire bridges the two: it supplies Poodle's host function from th
 inserting an image in rich text picks a reference and resolves it to a URL. No source registered means
 no insert command, which is Poodle's own behaviour.
 
+A rendered image node admits relative, `http:`, `https:` and `mailto:` sources. A `data:image/` source is
+admitted only as `png`, `jpeg`, `gif`, `webp` or `avif`; an SVG data URL is dropped, because SVG can carry
+script.
+
 ### Consumer inline nodes
 
 The motivating case is a consumer that already stores a `math_inline` leaf with `{ latex }` in
@@ -160,8 +168,8 @@ const html = renderRichTextHtml(storedDocument, { schema: "acme.maths" });
 The rules are fixed here so a consumer implements a decision rather than inventing one:
 
 - **Scope is the schema and nothing else.** Matching is exact and there is no wildcard, so a
-  registration for one schema never answers for another. A document rendered with no schema gets the
-  built-ins only.
+  registration for one schema never answers for another. Schema and type names are trimmed before
+  matching. A document rendered with no schema gets the built-ins only.
 - **Built-ins cannot be overridden.** Registering an admitted node type throws; the committed
   rich-text fixtures render identically with or without the registry.
 - **Last registration wins.** Registering the same schema and node type again replaces the earlier
@@ -170,7 +178,8 @@ The rules are fixed here so a consumer implements a decision rather than inventi
 - **Composition is defined.** A registered renderer receives the node's attributes, its rendered
   children as `childrenHtml` (empty for a leaf), and `escapeText`/`escapeAttribute` helpers. The
   node's marks compose around the returned HTML as they do around text, so `bold` yields
-  `<strong>`, and an inadmissible link mark is dropped.
+  `<strong>`, and an inadmissible link mark is dropped. A link with `target="_blank"` gets
+  `rel="noopener noreferrer"`, with any stored `rel` tokens kept.
 - **The fallback is visible and escaped.** An unregistered custom leaf renders
   `<span data-nightfire-inline-node="math_inline" data-nightfire-inline-fallback="unregistered">math_inline</span>`.
   A renderer that throws or returns a non-string renders the same hook with
@@ -204,6 +213,9 @@ registerMediaSource({
 `ResolvedMedia` carries what its consumers need: `url` always, plus `filename` and `size` for a
 download row, and `width`, `height` and `title` for an image. A consumer reads the fields it needs and
 ignores the rest, so one source serves both.
+
+A source that throws, a resolution with no `url`, or a download `url` whose scheme is not `http`, `https`
+or `blob` (relative URLs pass) renders the reference inert. The block keeps its own title and description.
 
 Two constraints make it usable where it is needed:
 

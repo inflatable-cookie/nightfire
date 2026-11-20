@@ -4,6 +4,7 @@
   import type { NightfireDraftValue } from "./types";
 
   type BlockLike = {
+    id?: string;
     type?: string;
     data?: Record<string, unknown>;
   };
@@ -36,18 +37,18 @@
 {#if blocks.length === 0}
   <!-- No Nightfire content -->
 {:else}
-  {#each blocks as block}
+  {#each blocks as block, index (block.id ?? index)}
     {#if block?.type}
-      {#key `${value?.schema ?? ""}:${block.type}`}
-        {#if resolveRenderer(value?.schema, block.type)}
-          {@const BlockRenderer = resolveRenderer(value?.schema, block.type)}
+      {@const BlockRenderer = resolveRenderer(value?.schema, block.type)}
+      {#if BlockRenderer}
+        {#key `${value?.schema ?? ""}:${block.type}`}
           <BlockRenderer
             {block}
             {value}
             schema={value?.schema ?? null}
           />
-        {/if}
-      {/key}
+        {/key}
+      {/if}
     {/if}
   {/each}
 {/if}

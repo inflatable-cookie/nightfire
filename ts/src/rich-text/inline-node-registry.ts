@@ -17,6 +17,8 @@
 // - The last registration for a schema and type wins; unregistering restores
 //   the built-in unknown-leaf fallback.
 
+import { ADMITTED_BUILTIN_NODE_TYPES } from "./builtin-node-types";
+
 export type RichTextInlineNode = {
   type: string;
   attrs: Readonly<Record<string, unknown>>;
@@ -44,41 +46,15 @@ export type RichTextInlineNodeRenderer = (
   context: RichTextInlineNodeContext
 ) => string;
 
-// Every node the built-in serializer handles. Registering one of these is
-// refused rather than silently ignored, so a consumer cannot change the
-// rendering of a committed fixture by accident.
-const ADMITTED_BUILTIN_NODE_TYPES: ReadonlySet<string> = new Set([
-  "doc",
-  "text",
-  "paragraph",
-  "heading",
-  "bulletList",
-  "orderedList",
-  "listItem",
-  "blockquote",
-  "codeBlock",
-  "horizontalRule",
-  "hardBreak",
-  "image",
-  "table",
-  "tableRow",
-  "tableHeader",
-  "tableCell",
-]);
-
-const SEPARATOR = "\u0000";
-
-const renderers = new Map<string, RichTextInlineNodeRenderer>();
-
-function makeKey(schema: string, type: string): string {
-  return `${schema}${SEPARATOR}${type}`;
-}
+// Two levels, schema then type, so lookup never builds a composite string key
+// that a schema or type containing the separator could collide with.
+const renderers = new Map<string, Map<string, RichTextInlineNodeRenderer>>();
 
 function requireName(label: string, value: unknown): string {
   if (typeof value !== "string" || value.trim().length === 0) {
     throw new TypeError(`rich-text inline node renderer needs a non-empty ${label}`);
   }
-  return value;
+  return value.trim();
 }
 
 /**
@@ -93,7 +69,8 @@ export function isAdmittedBuiltinRichTextNodeType(type: string): boolean {
  * Register a renderer for one consumer inline-node type within one schema.
  * Registering the same schema and type again replaces the earlier renderer.
  * Registering an admitted built-in node type, an empty schema or an empty type
- * throws, because those registrations have no defined scope.
+ * throws, because those registrations have no defined scope. Schema and type
+ * names are stored trimmed.
  */
 export function registerRichTextInlineNodeRenderer(
   schema: string,
@@ -110,7 +87,12 @@ export function registerRichTextInlineNodeRenderer(
       `rich-text node type ${nodeType} is built in and cannot be overridden`
     );
   }
-  renderers.set(makeKey(scope, nodeType), renderer);
+  let byType = renderers.get(scope);
+  if (!byType) {
+    byType = new Map();
+    renderers.set(scope, byType);
+  }
+  byType.set(nodeType, renderer);
 }
 
 /**
@@ -122,7 +104,12 @@ export function unregisterRichTextInlineNodeRenderer(
   type: string
 ): boolean {
   if (typeof schema !== "string" || typeof type !== "string") return false;
-  return renderers.delete(makeKey(schema, type));
+  const scope = schema.trim();
+  const byType = renderers.get(scope);
+  if (!byType) return false;
+  const removed = byType.delete(type.trim());
+  if (byType.size === 0) renderers.delete(scope);
+  return removed;
 }
 
 /**
@@ -134,5 +121,5 @@ export function getRichTextInlineNodeRenderer(
   type: string | undefined
 ): RichTextInlineNodeRenderer | null {
   if (!schema || !type) return null;
-  return renderers.get(makeKey(schema, type)) ?? null;
+  return renderers.get(schema.trim())?.get(type.trim()) ?? null;
 }

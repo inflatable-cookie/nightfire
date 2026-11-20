@@ -1,6 +1,4 @@
-import { marked } from "marked";
-
-import { sanitizeHtml } from "../html.js";
+import { renderSafeMarkdownHtml } from "./safe-markdown";
 
 /**
  * Render markdown to sanitized preview HTML.
@@ -10,5 +8,5 @@ import { sanitizeHtml } from "../html.js";
  * `<img onerror>` cannot execute at authoring time.
  */
 export function renderSafeMarkdownPreview(markdown: string): string {
-  return sanitizeHtml(marked.parse(markdown, { async: false }) as string);
+  return renderSafeMarkdownHtml(markdown);
 }
