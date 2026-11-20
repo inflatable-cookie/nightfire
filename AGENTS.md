@@ -60,7 +60,8 @@ ideas or observations with `lead.add` (see the Nucleus skill). There is no
 
 Before a PR: targeted checks only, run once. That means the tests for the code
 you changed (`effigy test:unit`, `effigy test:components` or `effigy test:rust`),
-a compile of what you touched (`effigy check:types` and `effigy check` for
+a compile of what you touched (`effigy check:types`, `effigy check`,
+`effigy check:lint`, `effigy check:fmt` and `effigy check:dead-code` for
 TypeScript/Svelte, `effigy check:rust` for Rust), `effigy health` if you touched
 exports, boundaries, schemas or styles, and `effigy qa:docs` if docs changed.
 Full `effigy qa` runs on `main` at release points and after a major chunk of

@@ -13,11 +13,8 @@
   // surfaces the parse error and the block is left unchanged. Clearing the
   // input drops the embed and keeps the title and caption the author already
   // wrote, so re-pasting a URL does not cost retyping.
-  import {
-    EmbedInput,
-    TextInput,
-    type ParsedEmbed
-  } from "@inflatable-cookie/poodle-svelte";
+  import { EmbedInput, TextInput } from '@inflatable-cookie/poodle-svelte';
+import type { ParsedEmbed } from '@inflatable-cookie/poodle-svelte';
 
   type VideoBlock = {
     id?: string;
@@ -37,7 +34,7 @@
      * Consumer-supplied provider allow-list, passed straight to `EmbedInput`.
      * Absent means Poodle's full supported set.
      */
-    providers?: string[];
+    providers?: Array<string>;
     /** Parse debounce in milliseconds, passed straight to `EmbedInput`. */
     parseDebounce?: number;
   }
@@ -46,12 +43,12 @@
   const inputId = createStableId("nightfire-video");
 
   function storedEmbed(value: unknown): ParsedEmbed | null {
-    if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+    if (!value || typeof value !== "object" || Array.isArray(value)) {return null;}
     const candidate = value as { provider?: unknown; id?: unknown };
     if (typeof candidate.provider !== "string" || candidate.provider.length === 0) {
       return null;
     }
-    if (typeof candidate.id !== "string" || candidate.id.length === 0) return null;
+    if (typeof candidate.id !== "string" || candidate.id.length === 0) {return null;}
     return value as ParsedEmbed;
   }
 
@@ -62,8 +59,8 @@
   );
 
   function sameEmbed(a: ParsedEmbed | null, b: ParsedEmbed | null): boolean {
-    if (a === b) return true;
-    if (!a || !b) return false;
+    if (a === b) {return true;}
+    if (!a || !b) {return false;}
     return (
       a.provider === b.provider &&
       a.id === b.id &&
@@ -117,7 +114,7 @@
     }
     // Cleared input: drop the embed, keep the author's title and caption.
     pendingEmbed = null;
-    if (embed) emit(null, title, caption);
+    if (embed) {emit(null, title, caption);}
   }
 </script>
 

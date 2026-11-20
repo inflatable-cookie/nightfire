@@ -1,10 +1,6 @@
 import { describe, expect, it } from "bun:test";
-import {
-  assertSupportedSchema,
-  type JsonSchema,
-  type SchemaCatalog,
-  validate,
-} from "../../scripts/schema-documents";
+import { assertSupportedSchema, validate } from "../../scripts/schema-documents";
+import type { JsonSchema, SchemaCatalog } from "../../scripts/schema-documents";
 
 // The validator refuses a keyword it cannot enforce instead of ignoring it, and
 // compares enum, const and uniqueItems members by value rather than by the
@@ -14,12 +10,12 @@ const catalog: SchemaCatalog = {
   repoRoot: "/nightfire",
   schemaRoot: "/nightfire/schemas",
   documents: new Map(),
-  rawDocuments: new Map(),
+  rawDocuments: new Map()
 };
 
 const SCHEMA_PATH = "/nightfire/schemas/synthetic.schema.json";
 
-function errors(value: unknown, schema: JsonSchema): string[] {
+function errors(value: unknown, schema: JsonSchema): Array<string> {
   return validate(catalog, value, schema, SCHEMA_PATH);
 }
 
@@ -34,14 +30,17 @@ describe("tooling/schema-documents", () => {
     const nested: JsonSchema = {
       type: "object",
       properties: {
-        rows: { type: "array", items: { type: "string", maxLength: 2 } },
-      },
+        rows: { type: "array", items: { type: "string", maxLength: 2 } }
+      }
     };
     expect(() => assertSupportedSchema(nested, "synthetic.schema.json")).toThrow(
       /unsupported JSON Schema keyword `maxLength`/
     );
     expect(() =>
-      assertSupportedSchema({ anyOf: [{ type: "string", format: "email" }] }, "synthetic.schema.json")
+      assertSupportedSchema(
+        { anyOf: [{ type: "string", format: "email" }] },
+        "synthetic.schema.json"
+      )
     ).toThrow(/unsupported JSON Schema keyword `format`/);
   });
 
@@ -49,8 +48,8 @@ describe("tooling/schema-documents", () => {
     const schema: JsonSchema = {
       enum: [
         { align: "left", width: 2 },
-        { width: 2, align: "center" },
-      ],
+        { width: 2, align: "center" }
+      ]
     };
     expect(errors({ width: 2, align: "left" }, schema)).toEqual([]);
     expect(errors({ width: 2, align: "right" }, schema)).toEqual(["$: value is not in enum"]);
@@ -60,17 +59,31 @@ describe("tooling/schema-documents", () => {
     const schema: JsonSchema = { const: { rows: [], caption: null } };
     expect(errors({ caption: null, rows: [] }, schema)).toEqual([]);
     expect(errors({ caption: null, rows: [{}] }, schema)).toEqual([
-      "$: value does not match const",
+      "$: value does not match const"
     ]);
     expect(errors(1, { const: 2 })).toEqual(["$: value does not match const"]);
   });
 
   it("treats reordered duplicate items as duplicates for uniqueItems", () => {
     const schema: JsonSchema = { type: "array", uniqueItems: true };
-    expect(errors([{ a: 1, b: 2 }, { b: 2, a: 1 }], schema)).toEqual([
-      "$: items are not unique",
-    ]);
-    expect(errors([{ a: 1, b: 2 }, { a: 1, b: 3 }], schema)).toEqual([]);
+    expect(
+      errors(
+        [
+          { a: 1, b: 2 },
+          { b: 2, a: 1 }
+        ],
+        schema
+      )
+    ).toEqual(["$: items are not unique"]);
+    expect(
+      errors(
+        [
+          { a: 1, b: 2 },
+          { a: 1, b: 3 }
+        ],
+        schema
+      )
+    ).toEqual([]);
   });
 
   it("applies both a $ref target and the keywords beside it", () => {
@@ -78,11 +91,11 @@ describe("tooling/schema-documents", () => {
       $ref: "#/$defs/name",
       minLength: 3,
       enum: ["abc", "abd"],
-      $defs: { name: { type: "string" } },
+      $defs: { name: { type: "string" } }
     };
     const withDefs: SchemaCatalog = {
       ...catalog,
-      documents: new Map([[SCHEMA_PATH, document as Record<string, unknown>]]),
+      documents: new Map([[SCHEMA_PATH, document as Record<string, unknown>]])
     };
     const check = (value: unknown) => validate(withDefs, value, document, SCHEMA_PATH);
 

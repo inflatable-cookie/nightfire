@@ -3,17 +3,18 @@ import { existsSync } from "node:fs";
 import { isAbsolute, join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { JSDOM } from "jsdom";
+import type { mount as mountSvelte, unmount as unmountSvelte } from "svelte";
 import { registerSveltePlugin } from "../tests/setup/svelte-plugin";
 
-function run(command: string[], cwd?: string) {
+function run(command: Array<string>, cwd?: string) {
   const child = Bun.spawnSync(command, {
     cwd,
     stdout: "pipe",
-    stderr: "pipe",
+    stderr: "pipe"
   });
   if (child.exitCode !== 0) {
     throw new Error(
-      `${command.join(" ")} failed\n${child.stdout.toString()}\n${child.stderr.toString()}`,
+      `${command.join(" ")} failed\n${child.stdout.toString()}\n${child.stderr.toString()}`
     );
   }
   return child.stdout.toString();
@@ -22,7 +23,7 @@ function run(command: string[], cwd?: string) {
 // The consumer pins the same Svelte this repository builds against, so the proof
 // follows a Svelte bump instead of a copy of its version here.
 const repoRoot = resolve(import.meta.dir, "../..");
-const repoManifest = await Bun.file(join(repoRoot, "package.json")).json() as {
+const repoManifest = (await Bun.file(join(repoRoot, "package.json")).json()) as {
   devDependencies?: Record<string, unknown>;
 };
 const svelteVersion = repoManifest.devDependencies?.svelte;
@@ -33,25 +34,37 @@ if (typeof svelteVersion !== "string" || svelteVersion.length === 0) {
 const destination = await mkdtemp(join(tmpdir(), "nightfire-renderer-consumer-"));
 try {
   const packed = Bun.spawnSync([
-    "bun", "pm", "pack", "--ignore-scripts", "--quiet", "--destination", destination,
+    "bun",
+    "pm",
+    "pack",
+    "--ignore-scripts",
+    "--quiet",
+    "--destination",
+    destination
   ]);
-  if (packed.exitCode !== 0) throw new Error(packed.stderr.toString());
-  const filename = packed.stdout.toString().trim().split("\n").at(-1)!;
+  if (packed.exitCode !== 0) {
+    throw new Error(packed.stderr.toString());
+  }
+  const filename = packed.stdout.toString().trim().split("\n").at(-1) ?? "";
   const tarball = isAbsolute(filename) ? filename : join(destination, filename);
 
   const consumer = join(destination, "app");
   await mkdir(consumer);
   await Bun.write(
     join(consumer, "package.json"),
-    `${JSON.stringify({
-      name: "nightfire-renderer-consumer",
-      private: true,
-      type: "module",
-      dependencies: {
-        "@inflatable-cookie/nightfire": tarball,
-        svelte: svelteVersion,
+    `${JSON.stringify(
+      {
+        name: "nightfire-renderer-consumer",
+        private: true,
+        type: "module",
+        dependencies: {
+          "@inflatable-cookie/nightfire": tarball,
+          svelte: svelteVersion
+        }
       },
-    }, null, 2)}\n`,
+      null,
+      2
+    )}\n`
   );
   run(["bun", "install"], consumer);
 
@@ -61,18 +74,23 @@ try {
   }
 
   const pkg = join(consumer, "node_modules/@inflatable-cookie/nightfire");
-  const fixture = await Bun.file(join(pkg, "fixtures/wire/v1/nightfire-values.json")).json() as {
+  const fixture = (await Bun.file(join(pkg, "fixtures/wire/v1/nightfire-values.json")).json()) as {
     values: Array<{ name: string; value: { blocks: Array<{ type: string }> } }>;
   };
   const corePayloads = fixture.values.find((entry) => entry.name === "core-payloads");
-  if (!corePayloads) throw new Error("core-payloads fixture missing from packed package");
+  if (!corePayloads) {
+    throw new Error("core-payloads fixture missing from packed package");
+  }
 
   const dom = new JSDOM("<!doctype html><html><body></body></html>", {
-    url: "https://nightfire.test/",
+    url: "https://nightfire.test/"
   });
   Object.defineProperty(globalThis, "window", { configurable: true, value: dom.window });
   Object.defineProperty(globalThis, "document", { configurable: true, value: dom.window.document });
-  Object.defineProperty(globalThis, "navigator", { configurable: true, value: dom.window.navigator });
+  Object.defineProperty(globalThis, "navigator", {
+    configurable: true,
+    value: dom.window.navigator
+  });
   for (const name of [
     "Node",
     "Text",
@@ -80,26 +98,26 @@ try {
     "Element",
     "HTMLElement",
     "DocumentFragment",
-    "HTMLIFrameElement",
+    "HTMLIFrameElement"
   ]) {
     Object.defineProperty(globalThis, name, {
       configurable: true,
-      value: (dom.window as unknown as Record<string, unknown>)[name],
+      value: (dom.window as unknown as Record<string, unknown>)[name]
     });
   }
   registerSveltePlugin("client");
 
-  const { mount, unmount } = await import(join(consumer, "node_modules/svelte")) as {
-    mount: typeof import("svelte").mount;
-    unmount: typeof import("svelte").unmount;
+  const { mount, unmount } = (await import(join(consumer, "node_modules/svelte"))) as {
+    mount: typeof mountSvelte;
+    unmount: typeof unmountSvelte;
   };
 
   // The public entries resolve through the installed package's export map, as a
   // consumer's own import would.
   await import(Bun.resolveSync("@inflatable-cookie/nightfire/renderer", consumer));
   await import(Bun.resolveSync("@inflatable-cookie/nightfire/render-registrations", consumer));
-  const { CORE_BLOCK_TYPE_NAMES } = await import(join(pkg, "ts/src/core-blocks.ts")) as {
-    CORE_BLOCK_TYPE_NAMES: string[];
+  const { CORE_BLOCK_TYPE_NAMES } = (await import(join(pkg, "ts/src/core-blocks.ts"))) as {
+    CORE_BLOCK_TYPE_NAMES: Array<string>;
   };
   const { default: NightfireRenderer } = await import(join(pkg, "ts/src/NightfireRenderer.svelte"));
 
@@ -107,7 +125,7 @@ try {
   document.body.append(container);
   const instance = mount(NightfireRenderer, {
     target: container,
-    props: { value: corePayloads.value },
+    props: { value: corePayloads.value }
   });
   try {
     for (const type of CORE_BLOCK_TYPE_NAMES) {
@@ -134,10 +152,10 @@ try {
         content: [
           { type: "text", text: "The value " },
           { type: "math_inline", attrs: { latex: "x^2" } },
-          { type: "text", text: " is small." },
-        ],
-      },
-    ],
+          { type: "text", text: " is small." }
+        ]
+      }
+    ]
   };
   await Bun.write(
     probe,
@@ -156,24 +174,28 @@ registerRichTextInlineNodeRenderer("consumer.maths", "math_inline", ({ node, esc
 const html = renderRichTextHtml(probeDocument, { schema: "consumer.maths" });
 const other = renderRichTextHtml(probeDocument, { schema: "consumer.other" });
 process.stdout.write(JSON.stringify({ html, other }));
-`,
+`
   );
   const probeRun = Bun.spawnSync(["bun", probe], { cwd: consumer });
   if (probeRun.exitCode !== 0) {
-    throw new Error(`rich-text consumer probe failed\n${probeRun.stdout.toString()}\n${probeRun.stderr.toString()}`);
+    throw new Error(
+      `rich-text consumer probe failed\n${probeRun.stdout.toString()}\n${probeRun.stderr.toString()}`
+    );
   }
   const rendered = JSON.parse(probeRun.stdout.toString()) as { html: string; other: string };
   const expected =
     '<p>The value <span class="math-inline" data-latex="x^2">x^2</span> is small.</p>';
   if (rendered.html !== expected) {
-    throw new Error(`rich-text consumer rendering mismatch\nexpected ${expected}\nactual   ${rendered.html}`);
+    throw new Error(
+      `rich-text consumer rendering mismatch\nexpected ${expected}\nactual   ${rendered.html}`
+    );
   }
   if (!rendered.other.includes('data-nightfire-inline-fallback="unregistered"')) {
     throw new Error("a registration leaked into another schema or the fallback is missing");
   }
 
   console.log(
-    `renderer consumer proof passed: Nightfire installed without Poodle; ${CORE_BLOCK_TYPE_NAMES.length} core blocks rendered; schema-scoped maths rendered through the public rich-text path`,
+    `renderer consumer proof passed: Nightfire installed without Poodle; ${CORE_BLOCK_TYPE_NAMES.length} core blocks rendered; schema-scoped maths rendered through the public rich-text path`
   );
 } finally {
   await rm(destination, { recursive: true, force: true });

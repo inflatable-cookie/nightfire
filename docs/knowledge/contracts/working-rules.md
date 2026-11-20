@@ -43,6 +43,22 @@ verify and unsafe to coordinate.
   it, not the proof.
 - The export map is a checked contract: `check-exports.ts` compares it against an
   explicit expectation in both directions, so a new subpath is declared there.
+- `ts/tsconfig.json` is the published-source program: strict, with
+  `noUncheckedIndexedAccess`, `verbatimModuleSyntax`, `noImplicitOverride` and
+  `noFallthroughCasesInSwitch`, and no `types` entry, so `ts/src` cannot reach a
+  Bun global. `ts/tsconfig.tooling.json` is the scripts-and-tests program and the
+  only place `types: ["bun"]` belongs.
+- `check` runs svelte-check with `--fail-on-warnings`; a compiler warning fails
+  validation. `check:lint` is oxlint over the Cloudflare shared config with
+  type-aware rules off: `check:types` and `check` already own type facts, and
+  the type-aware set reports assertions in test doubles and Svelte component
+  casts by the hundred. `oxlint.config.ts` names each override and its reason.
+- `check:fmt` is oxfmt over `ts/**` code and the root JSON/TS configs. Docs are
+  hand-wrapped prose and the wire fixtures and schemas are the conformance
+  boundary, so formatting leaves them alone.
+- `check:dead-code` is knip. Its entries are the Effigy-driven proof scripts and
+  the tests; `oxfmt` and `svelte-check` are ignored dependencies because Effigy
+  invokes them, not source imports.
 - `health` runs the export, boundary, schema, colour-literal, and version-sync
   proofs; `qa` adds sanitization, pack, the Poodle-free renderer consumer,
   Git-consumer proofs, docs, and the release-automation guard.

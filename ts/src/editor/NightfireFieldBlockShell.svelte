@@ -15,19 +15,19 @@
     schema: string;
     isMulti: boolean;
     definition: SchemaDefinition;
-    editorTypeOptions: BlockTypeOption[];
-    groupedOptions: GroupedOptions[] | null;
+    editorTypeOptions: Array<BlockTypeOption>;
+    groupedOptions: Array<GroupedOptions> | null;
     singleBlock: any;
-    blocks: any[];
+    blocks: Array<any>;
     slashState: {
       blockIndex: number;
       start: number;
       end: number;
       query: string;
     } | null;
-    filteredSlashCommands: NightfireSlashCommand[];
+    filteredSlashCommands: Array<NightfireSlashCommand>;
     onSingleBlockChange: (nextBlock: any) => void;
-    onBlocksChange: (nextBlocks: any[]) => void;
+    onBlocksChange: (nextBlocks: Array<any>) => void;
     onSingleTypeChange: (nextType: string) => void;
     onTypeChange: (index: number, nextType: string) => void;
     onBlockContextChange?: (index: number, context: MarkdownEditorContext) => void;
@@ -69,7 +69,7 @@
 
   const shellBlocks = $derived.by(() => {
     if (isMulti) {
-      return toEditorBlocks(blocks as any[], {
+      return toEditorBlocks(blocks as Array<any>, {
         fallbackType: definition.defaultType,
         fallbackIdPrefix,
       });
@@ -90,7 +90,7 @@
     );
   });
 
-  function handleShellChange(nextBlocks: any[]): void {
+  function handleShellChange(nextBlocks: Array<any>): void {
     const normalisedBlocks = nextBlocks.map((block) => {
       if (!block || typeof block !== "object") {
         return block;

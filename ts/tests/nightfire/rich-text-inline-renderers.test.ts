@@ -4,25 +4,21 @@ import {
   getRichTextInlineNodeRenderer,
   registerRichTextInlineNodeRenderer,
   renderRichTextHtml,
-  unregisterRichTextInlineNodeRenderer,
-  type RichTextInlineNodeRenderer
+  unregisterRichTextInlineNodeRenderer
 } from "../../src/rich-text";
+import type { RichTextInlineNodeRenderer } from "../../src/rich-text";
 
 const SCHEMA_A = "test.schema-a";
 const SCHEMA_B = "test.schema-b";
 
 const registered: Array<[string, string]> = [];
 
-function register(
-  schema: string,
-  type: string,
-  renderer: RichTextInlineNodeRenderer
-): void {
+function register(schema: string, type: string, renderer: RichTextInlineNodeRenderer): void {
   registerRichTextInlineNodeRenderer(schema, type, renderer);
   registered.push([schema, type]);
 }
 
-function paragraphWith(...content: unknown[]) {
+function paragraphWith(...content: Array<unknown>) {
   return { type: "doc", content: [{ type: "paragraph", content }] };
 }
 
@@ -51,11 +47,10 @@ describe("nightfire/rich-text inline node renderers", () => {
     register(SCHEMA_A, "math_inline", latexRenderer());
 
     const html = renderRichTextHtml(
-      paragraphWith(
-        { type: "text", text: "The value " },
-        mathNode(),
-        { type: "text", text: " is small." }
-      ),
+      paragraphWith({ type: "text", text: "The value " }, mathNode(), {
+        type: "text",
+        text: " is small."
+      }),
       { schema: SCHEMA_A }
     );
 
@@ -118,9 +113,7 @@ describe("nightfire/rich-text inline node renderers", () => {
           {
             type: "callout",
             attrs: { tone: "warn" },
-            content: [
-              { type: "paragraph", content: [{ type: "text", text: "Careful" }] }
-            ]
+            content: [{ type: "paragraph", content: [{ type: "text", text: "Careful" }] }]
           }
         ]
       },
@@ -138,10 +131,9 @@ describe("nightfire/rich-text inline node renderers", () => {
   it("composes supported marks around registered output", () => {
     register(SCHEMA_A, "math_inline", latexRenderer());
 
-    const bold = renderRichTextHtml(
-      paragraphWith({ ...mathNode(), marks: [{ type: "bold" }] }),
-      { schema: SCHEMA_A }
-    );
+    const bold = renderRichTextHtml(paragraphWith({ ...mathNode(), marks: [{ type: "bold" }] }), {
+      schema: SCHEMA_A
+    });
     const linked = renderRichTextHtml(
       paragraphWith({
         ...mathNode(),
@@ -163,10 +155,9 @@ describe("nightfire/rich-text inline node renderers", () => {
     });
     register(SCHEMA_A, "broken_inline", (() => 42) as unknown as RichTextInlineNodeRenderer);
 
-    const thrown = renderRichTextHtml(
-      paragraphWith(mathNode(), { type: "broken_inline" }),
-      { schema: SCHEMA_A }
-    );
+    const thrown = renderRichTextHtml(paragraphWith(mathNode(), { type: "broken_inline" }), {
+      schema: SCHEMA_A
+    });
 
     expect(thrown).toContain('data-nightfire-inline-node="math_inline"');
     expect(thrown).toContain('data-nightfire-inline-fallback="failed"');
@@ -178,18 +169,22 @@ describe("nightfire/rich-text inline node renderers", () => {
 
   it("refuses to override an admitted built-in node", () => {
     for (const type of ["paragraph", "heading", "text", "image", "table"]) {
-      expect(() => registerRichTextInlineNodeRenderer(SCHEMA_A, type, latexRenderer()))
-        .toThrow(/built in/);
+      expect(() => registerRichTextInlineNodeRenderer(SCHEMA_A, type, latexRenderer())).toThrow(
+        /built in/
+      );
     }
   });
 
   it("refuses a registration with no usable scope", () => {
-    expect(() => registerRichTextInlineNodeRenderer("", "math_inline", latexRenderer()))
-      .toThrow(TypeError);
-    expect(() => registerRichTextInlineNodeRenderer("   ", "math_inline", latexRenderer()))
-      .toThrow(TypeError);
-    expect(() => registerRichTextInlineNodeRenderer(SCHEMA_A, "", latexRenderer()))
-      .toThrow(TypeError);
+    expect(() => registerRichTextInlineNodeRenderer("", "math_inline", latexRenderer())).toThrow(
+      TypeError
+    );
+    expect(() => registerRichTextInlineNodeRenderer("   ", "math_inline", latexRenderer())).toThrow(
+      TypeError
+    );
+    expect(() => registerRichTextInlineNodeRenderer(SCHEMA_A, "", latexRenderer())).toThrow(
+      TypeError
+    );
     expect(() =>
       registerRichTextInlineNodeRenderer(
         SCHEMA_A,
@@ -229,7 +224,7 @@ describe("nightfire/rich-text inline node renderers", () => {
     register(SCHEMA_A, "math_inline", ({ escapeText }) => {
       return (
         `<span class="math-inline" onclick="alert(1)">${escapeText("<script>evil()</script>")}</span>` +
-        '<script>alert(2)</script>' +
+        "<script>alert(2)</script>" +
         '<a href="javascript:alert(3)">bad link</a>' +
         '<img src="x" onerror="alert(4)">'
       );
@@ -256,11 +251,10 @@ describe("nightfire/rich-text inline node renderers", () => {
     });
 
     const html = renderRichTextHtml(
-      paragraphWith(
-        { type: "text", text: "So " },
-        mathNode({ latex: "x^2" }),
-        { type: "text", text: " stays small." }
-      ),
+      paragraphWith({ type: "text", text: "So " }, mathNode({ latex: "x^2" }), {
+        type: "text",
+        text: " stays small."
+      }),
       { schema: SCHEMA_A }
     );
 

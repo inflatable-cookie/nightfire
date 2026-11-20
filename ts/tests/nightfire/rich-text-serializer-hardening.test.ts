@@ -3,14 +3,25 @@ import { renderRichTextDocumentHtml } from "../../src/rich-text/render-document"
 import {
   getRichTextInlineNodeRenderer,
   registerRichTextInlineNodeRenderer,
-  unregisterRichTextInlineNodeRenderer,
+  unregisterRichTextInlineNodeRenderer
 } from "../../src/rich-text/inline-node-registry";
 import { renderRichTextHtml } from "../../src/rich-text";
 
-const doc = (...content: unknown[]) => ({ type: "doc", content });
-const paragraph = (...content: unknown[]) => ({ type: "paragraph", content });
-const text = (value: string, marks?: unknown[]) =>
+const doc = (...content: Array<unknown>) => ({ type: "doc", content });
+const paragraph = (...content: Array<unknown>) => ({ type: "paragraph", content });
+const text = (value: string, marks?: Array<unknown>) =>
   marks ? { type: "text", text: value, marks } : { type: "text", text: value };
+
+const list = (start: unknown) =>
+  renderRichTextDocumentHtml(doc({ type: "orderedList", attrs: { start }, content: [] }));
+const image = (src: string) => renderRichTextDocumentHtml(doc({ type: "image", attrs: { src } }));
+const link = (attrs: Record<string, unknown>) =>
+  renderRichTextDocumentHtml(
+    doc(
+      paragraph(text("open", [{ type: "link", attrs: { href: "https://example.com", ...attrs } }]))
+    )
+  );
+const inlineWidget = () => "<b>w</b>";
 
 function tableWithCell(attrs: Record<string, unknown>) {
   return doc({
@@ -18,9 +29,9 @@ function tableWithCell(attrs: Record<string, unknown>) {
     content: [
       {
         type: "tableRow",
-        content: [{ type: "tableCell", attrs, content: [paragraph(text("cell"))] }],
-      },
-    ],
+        content: [{ type: "tableCell", attrs, content: [paragraph(text("cell"))] }]
+      }
+    ]
   });
 }
 
@@ -31,7 +42,7 @@ describe("rich-text serializer: numeric attributes", () => {
     ["a fraction", 2.5],
     ["zero", 0],
     ["a negative", -3],
-    ["above the HTML limit", 1001],
+    ["above the HTML limit", 1001]
   ])("drops a %s colspan instead of writing it", (_label, value) => {
     const html = renderRichTextDocumentHtml(tableWithCell({ colspan: value }));
     expect(html).not.toContain("colspan");
@@ -50,10 +61,6 @@ describe("rich-text serializer: numeric attributes", () => {
   });
 
   it("writes only a positive safe integer list start", () => {
-    const list = (start: unknown) =>
-      renderRichTextDocumentHtml(
-        doc({ type: "orderedList", attrs: { start }, content: [] })
-      );
     expect(list(Number.NaN)).toBe("<ol></ol>");
     expect(list(Number.POSITIVE_INFINITY)).toBe("<ol></ol>");
     expect(list(2.5)).toBe("<ol></ol>");
@@ -67,7 +74,11 @@ describe("rich-text serializer: numeric attributes", () => {
 describe("rich-text serializer: unknown and empty nodes", () => {
   it("keeps an empty content array on an unknown container instead of a fallback", () => {
     const html = renderRichTextDocumentHtml(
-      doc(paragraph(text("before ")), { type: "unknown_wrapper", content: [] }, paragraph(text("after")))
+      doc(
+        paragraph(text("before ")),
+        { type: "unknown_wrapper", content: [] },
+        paragraph(text("after"))
+      )
     );
     expect(html).toBe("<p>before </p><p>after</p>");
     expect(html).not.toContain("data-nightfire-inline-node");
@@ -87,8 +98,6 @@ describe("rich-text serializer: unknown and empty nodes", () => {
 });
 
 describe("rich-text serializer: image URLs", () => {
-  const image = (src: string) => renderRichTextDocumentHtml(doc({ type: "image", attrs: { src } }));
-
   it("admits safe raster data URLs", () => {
     for (const type of ["png", "jpeg", "gif", "webp", "avif"]) {
       expect(image(`data:image/${type};base64,AAAA`)).toContain("<img");
@@ -107,11 +116,6 @@ describe("rich-text serializer: image URLs", () => {
 });
 
 describe("rich-text serializer: links", () => {
-  const link = (attrs: Record<string, unknown>) =>
-    renderRichTextDocumentHtml(
-      doc(paragraph(text("open", [{ type: "link", attrs: { href: "https://example.com", ...attrs } }])))
-    );
-
   it("adds noopener noreferrer to a new-context link", () => {
     expect(link({ target: "_blank" })).toBe(
       '<p><a href="https://example.com" target="_blank" rel="noopener noreferrer">open</a></p>'
@@ -137,10 +141,9 @@ describe("rich-text inline-node registry keys", () => {
   });
 
   it("stores schema and type names trimmed", () => {
-    const renderer = () => "<b>w</b>";
-    registerRichTextInlineNodeRenderer(`  ${SCHEMA}  `, "  widget ", renderer);
-    expect(getRichTextInlineNodeRenderer(SCHEMA, "widget")).toBe(renderer);
-    expect(getRichTextInlineNodeRenderer(`${SCHEMA} `, "widget ")).toBe(renderer);
+    registerRichTextInlineNodeRenderer(`  ${SCHEMA}  `, "  widget ", inlineWidget);
+    expect(getRichTextInlineNodeRenderer(SCHEMA, "widget")).toBe(inlineWidget);
+    expect(getRichTextInlineNodeRenderer(`${SCHEMA} `, "widget ")).toBe(inlineWidget);
   });
 
   it("does not let a schema and type joined together collide with another pair", () => {
@@ -155,11 +158,14 @@ describe("rich-text inline-node registry keys", () => {
   });
 
   it("renders a registered widget through the public path", () => {
-    registerRichTextInlineNodeRenderer(SCHEMA, "widget", ({ escapeText }) => `<i>${escapeText("ok")}</i>`);
-    const html = renderRichTextHtml(
-      doc(paragraph({ type: "widget", attrs: {} })),
-      { schema: `${SCHEMA}` }
+    registerRichTextInlineNodeRenderer(
+      SCHEMA,
+      "widget",
+      ({ escapeText }) => `<i>${escapeText("ok")}</i>`
     );
+    const html = renderRichTextHtml(doc(paragraph({ type: "widget", attrs: {} })), {
+      schema: `${SCHEMA}`
+    });
     expect(html).toBe("<p><i>ok</i></p>");
   });
 });

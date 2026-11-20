@@ -16,7 +16,7 @@ export type NpmPublicationPackage = { name: string; path: string };
 
 export type NpmPublicationAuthority = {
   candidateManifestName: string;
-  packages: NpmPublicationPackage[];
+  packages: Array<NpmPublicationPackage>;
 };
 
 export function readNpmPublicationAuthority(root: string): NpmPublicationAuthority {
@@ -62,7 +62,7 @@ export type CandidateManifest = {
   schema: string;
   sourceCommit: string;
   version: string;
-  packages: CandidatePackage[];
+  packages: Array<CandidatePackage>;
 };
 
 // `node:crypto` rather than a `shasum` shell-out: the digest is the same, and
@@ -83,10 +83,14 @@ export function parseTarballManifest(tarballPath: string): { name: string; versi
   try {
     parsed = JSON.parse(raw);
   } catch {
-    throw new Error(`candidate tarball ${basename(tarballPath)} has a malformed package/package.json`);
+    throw new Error(
+      `candidate tarball ${basename(tarballPath)} has a malformed package/package.json`
+    );
   }
   if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
-    throw new Error(`candidate tarball ${basename(tarballPath)} has a non-object package/package.json`);
+    throw new Error(
+      `candidate tarball ${basename(tarballPath)} has a non-object package/package.json`
+    );
   }
   const manifest = parsed as Record<string, unknown>;
   if (typeof manifest.name !== "string" || typeof manifest.version !== "string") {
@@ -118,7 +122,9 @@ export function parseCandidateManifest(raw: string, origin: string): CandidateMa
   }
   const document = parsed as Record<string, unknown>;
   if (document.schema !== CANDIDATE_SCHEMA) {
-    throw new Error(`${origin} declares schema ${String(document.schema)}, expected ${CANDIDATE_SCHEMA}`);
+    throw new Error(
+      `${origin} declares schema ${String(document.schema)}, expected ${CANDIDATE_SCHEMA}`
+    );
   }
   if (!Array.isArray(document.packages) || document.packages.length === 0) {
     throw new Error(`${origin} must list at least one package`);
@@ -133,18 +139,20 @@ export function parseCandidateManifest(raw: string, origin: string): CandidateMa
       path: requireString(entry, "path", `${origin} package ${index}`),
       tarball: requireString(entry, "tarball", `${origin} package ${index}`),
       version: requireString(entry, "version", `${origin} package ${index}`),
-      sha256: requireString(entry, "sha256", `${origin} package ${index}`),
+      sha256: requireString(entry, "sha256", `${origin} package ${index}`)
     };
   });
   return {
     schema: CANDIDATE_SCHEMA,
     sourceCommit: requireString(document, "sourceCommit", origin),
     version: requireString(document, "version", origin),
-    packages,
+    packages
   };
 }
 
 export function readCandidateManifest(path: string): CandidateManifest {
-  if (!existsSync(path)) throw new Error(`candidate identity manifest not found: ${path}`);
+  if (!existsSync(path)) {
+    throw new Error(`candidate identity manifest not found: ${path}`);
+  }
   return parseCandidateManifest(readFileSync(path, "utf8"), path);
 }

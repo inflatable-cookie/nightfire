@@ -23,7 +23,7 @@ const expected = [
   "./types",
   "./utils",
   "./validation",
-  "./validator-registry",
+  "./validator-registry"
 ];
 
 // Subpaths whose target is TypeScript with no `.svelte` import, so plain `bun`
@@ -40,17 +40,21 @@ const pureTypeScript = [
   "./types",
   "./utils",
   "./validation",
-  "./validator-registry",
+  "./validator-registry"
 ];
 
 const manifest = await Bun.file("package.json").json();
 const actual = Object.keys(manifest.exports).sort();
 if (JSON.stringify(actual) !== JSON.stringify(expected)) {
-  throw new Error(`export map mismatch\nexpected ${JSON.stringify(expected)}\nactual   ${JSON.stringify(actual)}`);
+  throw new Error(
+    `export map mismatch\nexpected ${JSON.stringify(expected)}\nactual   ${JSON.stringify(actual)}`
+  );
 }
 
 for (const [subpath, target] of Object.entries<string>(manifest.exports)) {
-  if (!existsSync(target)) throw new Error(`missing export target ${subpath}: ${target}`);
+  if (!existsSync(target)) {
+    throw new Error(`missing export target ${subpath}: ${target}`);
+  }
 }
 
 for (const subpath of pureTypeScript) {
@@ -60,4 +64,6 @@ for (const subpath of pureTypeScript) {
   }
 }
 
-console.log(`export proof passed: ${actual.length} explicit subpaths resolve, ${pureTypeScript.length} runtime-imported`);
+console.log(
+  `export proof passed: ${actual.length} explicit subpaths resolve, ${pureTypeScript.length} runtime-imported`
+);

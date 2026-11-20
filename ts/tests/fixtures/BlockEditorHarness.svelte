@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { untrack, type Component } from "svelte";
+  import { untrack } from 'svelte';
+import type { Component } from 'svelte';
 
   interface Props {
     Editor: Component<any>;

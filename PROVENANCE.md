@@ -79,3 +79,17 @@ Poodle editor.
 stored ProseMirror JSON vocabulary to semantic HTML without TipTap or Poodle.
 Underlay, SvelteKit, Vite, bits-ui, lucide-svelte, zod, and smol-toml are not
 dependencies or transitive framework assumptions of the retained source.
+
+## Static tooling
+
+Four devDependencies carry the TypeScript and Svelte static gates:
+`oxlint` with `@cloudflare/oxlint-config` lints, `oxfmt` formats, and `knip`
+finds dead files, exports and dependencies. None is a runtime dependency, none
+reaches `ts/src`, and the packed package contains none of them. `knip` parses
+TOML with `smol-toml` for its own config handling; that package stays outside
+the published runtime closure the boundary proof follows.
+
+`ts/tsconfig.json` is the published-source program and holds no Bun types, so
+`ts/src` cannot reference a Bun global. `ts/tsconfig.tooling.json` adds
+`types: ["bun"]` for the scripts and tests, which are the only programs that
+run under Bun.

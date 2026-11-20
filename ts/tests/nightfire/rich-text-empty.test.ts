@@ -17,9 +17,7 @@ describe("nightfire/rich-text emptiness", () => {
   });
 
   it("treats a document with no text and no non-text node as empty", () => {
-    expect(
-      isRichTextDocumentEmpty({ type: "doc", content: [{ type: "paragraph" }] })
-    ).toBe(true);
+    expect(isRichTextDocumentEmpty({ type: "doc", content: [{ type: "paragraph" }] })).toBe(true);
     expect(
       isRichTextDocumentEmpty({
         type: "doc",
@@ -46,24 +44,25 @@ describe("nightfire/rich-text emptiness", () => {
     expect(
       isRichTextDocumentEmpty({
         type: "doc",
-        content: [{ type: "heading", attrs: { level: 2 }, content: [{ type: "text", text: "Title" }] }]
+        content: [
+          { type: "heading", attrs: { level: 2 }, content: [{ type: "text", text: "Title" }] }
+        ]
       })
     ).toBe(false);
   });
 
   it("treats a non-text content node as content", () => {
     for (const type of ["image", "horizontalRule"]) {
-      expect(
-        isRichTextDocumentEmpty({ type: "doc", content: [{ type, attrs: {} }] }),
-        type
-      ).toBe(false);
+      expect(isRichTextDocumentEmpty({ type: "doc", content: [{ type, attrs: {} }] }), type).toBe(
+        false
+      );
     }
   });
 
   it("answers through the registered rich_text checker", () => {
     expect(isBlockContentEmpty({ type: "rich_text", data: {} })).toBe(true);
-    expect(
-      isBlockContentEmpty({ type: "rich_text", data: { document: paragraph("hi") } })
-    ).toBe(false);
+    expect(isBlockContentEmpty({ type: "rich_text", data: { document: paragraph("hi") } })).toBe(
+      false
+    );
   });
 });

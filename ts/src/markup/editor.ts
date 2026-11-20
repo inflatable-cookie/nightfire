@@ -1,15 +1,7 @@
 import MarkdownEditor from "./MarkdownEditor.svelte";
-import {
-  registerBlockEditor,
-  registerBlockEmptyChecker,
-} from "../editor-registry";
+import { registerBlockEditor, registerBlockEmptyChecker } from "../editor-registry";
 
-registerBlockEditor(
-  null,
-  "markdown",
-  "Markdown",
-  MarkdownEditor
-);
+registerBlockEditor(null, "markdown", "Markdown", MarkdownEditor);
 
 registerBlockEmptyChecker("markdown", (block) => {
   const text = block?.data?.text;

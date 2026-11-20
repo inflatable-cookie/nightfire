@@ -16,9 +16,11 @@ const emptyRect = {
   toJSON() {}
 };
 for (const proto of [Node.prototype, (globalThis as any).Range?.prototype].filter(Boolean)) {
-  if (typeof (proto as any).getClientRects !== "function") (proto as any).getClientRects = () => [];
-  if (typeof (proto as any).getBoundingClientRect !== "function") {
-    (proto as any).getBoundingClientRect = () => emptyRect;
+  if (typeof proto.getClientRects !== "function") {
+    proto.getClientRects = () => [];
+  }
+  if (typeof proto.getBoundingClientRect !== "function") {
+    proto.getBoundingClientRect = () => emptyRect;
   }
 }
 
@@ -39,7 +41,10 @@ const structuredDocument = {
     {
       type: "bulletList",
       content: [
-        { type: "listItem", content: [{ type: "paragraph", content: [{ type: "text", text: "One" }] }] }
+        {
+          type: "listItem",
+          content: [{ type: "paragraph", content: [{ type: "text", text: "One" }] }]
+        }
       ]
     },
     {
@@ -81,9 +86,7 @@ describe("nightfire/rich-text block", () => {
   });
 
   it("matches the committed rich-text fixture HTML", () => {
-    const fixture = JSON.parse(
-      readFileSync("fixtures/wire/v1/nightfire-values.json", "utf8")
-    );
+    const fixture = JSON.parse(readFileSync("fixtures/wire/v1/nightfire-values.json", "utf8"));
     const block = fixture.values
       .find((entry: { name: string }) => entry.name === "core-payloads")
       .value.blocks.find((entry: { type: string }) => entry.type === "rich_text");
@@ -225,9 +228,7 @@ describe("nightfire/rich-text with schema-scoped inline nodes", () => {
     });
 
     expect(view.container.querySelector(".math-inline")).toBeNull();
-    expect(
-      view.container.querySelector('[data-nightfire-inline-node="math_inline"]')
-    ).toBeTruthy();
+    expect(view.container.querySelector('[data-nightfire-inline-node="math_inline"]')).toBeTruthy();
     expect(view.container.textContent).toContain("The value math_inline is small.");
   });
 

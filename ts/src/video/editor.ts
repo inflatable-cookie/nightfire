@@ -1,8 +1,5 @@
 import VideoEditor from "./VideoEditor.svelte";
-import {
-  registerBlockEditor,
-  registerBlockEmptyChecker
-} from "../editor-registry";
+import { registerBlockEditor, registerBlockEmptyChecker } from "../editor-registry";
 
 // Register the video block editor as a generic option for schemas that allow it.
 registerBlockEditor(null, "video", "Video", VideoEditor);
@@ -15,8 +12,8 @@ registerBlockEmptyChecker("video", (block) => {
     !embed ||
     typeof embed !== "object" ||
     typeof (embed as { provider?: unknown }).provider !== "string" ||
-    ((embed as { provider: string }).provider.length === 0) ||
+    (embed as { provider: string }).provider.length === 0 ||
     typeof (embed as { id?: unknown }).id !== "string" ||
-    ((embed as { id: string }).id.length === 0)
+    (embed as { id: string }).id.length === 0
   );
 });

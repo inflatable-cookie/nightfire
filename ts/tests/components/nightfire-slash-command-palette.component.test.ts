@@ -3,7 +3,7 @@ import { fireEvent, render, screen } from "../render";
 import SlashCommandPalette from "../../src/SlashCommandPalette.svelte";
 import type { NightfireSlashCommand } from "../../src/editor";
 
-const commands: NightfireSlashCommand[] = [
+const commands: Array<NightfireSlashCommand> = [
   {
     id: "insert-heading",
     type: "heading",

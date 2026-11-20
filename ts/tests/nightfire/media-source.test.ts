@@ -1,16 +1,12 @@
 import { beforeEach, describe, expect, it } from "bun:test";
-import {
-  getMediaSource,
-  registerMediaSource,
-  unregisterMediaSource,
-  type MediaSource,
-} from "../../src/media-source";
+import { getMediaSource, registerMediaSource, unregisterMediaSource } from "../../src/media-source";
+import type { MediaSource } from "../../src/media-source";
 
 function stubSource(overrides: Partial<MediaSource> = {}): MediaSource {
   return {
     pick: async () => null,
     resolve: () => null,
-    ...overrides,
+    ...overrides
   };
 }
 

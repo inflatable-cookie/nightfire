@@ -7,13 +7,23 @@ import { CORE_BLOCK_TYPE_NAMES } from "../src/core-blocks";
 const destination = await mkdtemp(join(tmpdir(), "nightfire-pack-"));
 try {
   const packed = Bun.spawnSync([
-    "bun", "pm", "pack", "--ignore-scripts", "--quiet", "--destination", destination,
+    "bun",
+    "pm",
+    "pack",
+    "--ignore-scripts",
+    "--quiet",
+    "--destination",
+    destination
   ]);
-  if (packed.exitCode !== 0) throw new Error(packed.stderr.toString());
-  const filename = packed.stdout.toString().trim().split("\n").at(-1)!;
+  if (packed.exitCode !== 0) {
+    throw new Error(packed.stderr.toString());
+  }
+  const filename = packed.stdout.toString().trim().split("\n").at(-1) ?? "";
   const tarball = isAbsolute(filename) ? filename : join(destination, filename);
   const listed = Bun.spawnSync(["tar", "-tzf", tarball]);
-  if (listed.exitCode !== 0) throw new Error(listed.stderr.toString());
+  if (listed.exitCode !== 0) {
+    throw new Error(listed.stderr.toString());
+  }
   const entries = listed.stdout.toString().trim().split("\n");
   for (const required of [
     "package/package.json",
@@ -30,11 +40,18 @@ try {
     "package/schemas/strategy.schema.json",
     // One payload schema per declared core block, so a new core block that ships
     // without its schema is caught here rather than at a consumer's migration.
-    ...CORE_BLOCK_TYPE_NAMES.map((type) => `package/schemas/blocks/${type}.schema.json`),
+    ...CORE_BLOCK_TYPE_NAMES.map((type) => `package/schemas/blocks/${type}.schema.json`)
   ]) {
-    if (!entries.includes(required)) throw new Error(`packed artifact missing ${required}`);
+    if (!entries.includes(required)) {
+      throw new Error(`packed artifact missing ${required}`);
+    }
   }
-  for (const forbidden of ["package/ts/tests/", "package/ts/scripts/", "package/docs/", "package/effigy.toml"]) {
+  for (const forbidden of [
+    "package/ts/tests/",
+    "package/ts/scripts/",
+    "package/docs/",
+    "package/effigy.toml"
+  ]) {
     if (entries.some((entry) => entry.startsWith(forbidden))) {
       throw new Error(`packed artifact leaked ${forbidden}`);
     }

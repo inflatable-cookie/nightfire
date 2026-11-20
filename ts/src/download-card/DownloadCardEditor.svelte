@@ -18,7 +18,7 @@
     version?: string;
     data?: {
       description?: string;
-      files?: CardFile[];
+      files?: Array<CardFile>;
     };
   };
 
@@ -68,7 +68,7 @@
     }
   }
 
-  function emit(updates: { description?: string; files?: CardFile[] }) {
+  function emit(updates: { description?: string; files?: Array<CardFile> }) {
     const nextDescription = updates.description ?? description;
     const nextFiles = updates.files ?? files.map((file) => ({ ...file }));
     onChange({
@@ -83,12 +83,12 @@
   }
 
   async function handlePick() {
-    if (!mediaSource || picking) return;
+    if (!mediaSource || picking) {return;}
     picking = true;
 
     try {
       const picked = await mediaSource.pick({ multiple: true });
-      if (!picked) return; // cancelled
+      if (!picked) {return;} // cancelled
 
       const known = new Set(files.map((file) => file.media_id));
       const additions = picked
@@ -99,7 +99,7 @@
             typeof reference.media_id !== "string" ||
             reference.media_id.trim().length === 0 ||
             known.has(reference.media_id)
-          ) return false;
+          ) {return false;}
           known.add(reference.media_id);
           return true;
         })
@@ -124,8 +124,8 @@
       files: files.map((file, i) => {
         const next = { ...file };
         if (i === index) {
-          if (value.length > 0) next.title = value;
-          else delete next.title;
+          if (value.length > 0) {next.title = value;}
+          else {delete next.title;}
         }
         return next;
       })
@@ -137,8 +137,8 @@
       files: files.map((file, i) => {
         const next = { ...file };
         if (i === index) {
-          if (value.length > 0) next.description = value;
-          else delete next.description;
+          if (value.length > 0) {next.description = value;}
+          else {delete next.description;}
         }
         return next;
       })

@@ -6,7 +6,10 @@ export interface StrategyNormalisationResult {
   schemaMismatch: string | null;
 }
 
-export function normaliseForStrategy(value: NightfireValue, schema: string): StrategyNormalisationResult {
+export function normaliseForStrategy(
+  value: NightfireValue,
+  schema: string
+): StrategyNormalisationResult {
   const normalised = normaliseNightfireValue(value, schema);
   const actualSchema = value?.schema ?? null;
 

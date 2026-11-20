@@ -9,12 +9,12 @@ import { existsSync, readdirSync } from "node:fs";
 import { basename, join, resolve } from "node:path";
 
 import {
-  type CandidateManifest,
   parseTarballManifest,
   readCandidateManifest,
   readNpmPublicationAuthority,
-  sha256File,
+  sha256File
 } from "./npm-publication";
+import type { CandidateManifest } from "./npm-publication";
 
 export function verifyNpmCandidate(args: {
   root: string;
@@ -29,29 +29,35 @@ export function verifyNpmCandidate(args: {
   }
   if (args.sourceCommit !== undefined && manifest.sourceCommit !== args.sourceCommit) {
     throw new Error(
-      `candidate source commit ${manifest.sourceCommit} does not match the tag commit ${args.sourceCommit}`,
+      `candidate source commit ${manifest.sourceCommit} does not match the tag commit ${args.sourceCommit}`
     );
   }
   const authority = readNpmPublicationAuthority(args.root);
   const expected = new Map(authority.packages.map((entry) => [entry.name, entry.path]));
   if (manifest.packages.length !== authority.packages.length) {
     throw new Error(
-      `candidate publishes ${manifest.packages.length} packages; release authority declares ${authority.packages.length}`,
+      `candidate publishes ${manifest.packages.length} packages; release authority declares ${authority.packages.length}`
     );
   }
   const seen = new Set<string>();
   for (const entry of manifest.packages) {
-    if (seen.has(entry.name)) throw new Error(`candidate manifest repeats ${entry.name}`);
+    if (seen.has(entry.name)) {
+      throw new Error(`candidate manifest repeats ${entry.name}`);
+    }
     seen.add(entry.name);
     const expectedPath = expected.get(entry.name);
     if (expectedPath === undefined) {
       throw new Error(`candidate publishes ${entry.name}, which is not in the release authority`);
     }
     if (entry.path !== expectedPath) {
-      throw new Error(`candidate declares ${entry.name} at ${entry.path}, expected ${expectedPath}`);
+      throw new Error(
+        `candidate declares ${entry.name} at ${entry.path}, expected ${expectedPath}`
+      );
     }
     if (entry.version !== manifest.version) {
-      throw new Error(`candidate ${entry.name} is ${entry.version}, expected lockstep ${manifest.version}`);
+      throw new Error(
+        `candidate ${entry.name} is ${entry.version}, expected lockstep ${manifest.version}`
+      );
     }
     const tarballPath = join(args.archiveDir, entry.tarball);
     if (basename(tarballPath) !== entry.tarball || !existsSync(tarballPath)) {
@@ -60,13 +66,13 @@ export function verifyNpmCandidate(args: {
     const digest = sha256File(tarballPath);
     if (digest !== entry.sha256) {
       throw new Error(
-        `candidate tarball ${entry.tarball} hash ${digest} does not match manifest ${entry.sha256}`,
+        `candidate tarball ${entry.tarball} hash ${digest} does not match manifest ${entry.sha256}`
       );
     }
     const packed = parseTarballManifest(tarballPath);
     if (packed.name !== entry.name || packed.version !== entry.version) {
       throw new Error(
-        `candidate tarball ${entry.tarball} contains ${packed.name}@${packed.version}, expected ${entry.name}@${entry.version}`,
+        `candidate tarball ${entry.tarball} contains ${packed.name}@${packed.version}, expected ${entry.name}@${entry.version}`
       );
     }
   }
@@ -80,19 +86,33 @@ export function verifyNpmCandidate(args: {
   return manifest;
 }
 
-export const VERIFY_FLAGS = ["--root", "--dir", "--manifest", "--tag-version", "--source-commit"] as const;
+export const VERIFY_FLAGS = [
+  "--root",
+  "--dir",
+  "--manifest",
+  "--tag-version",
+  "--source-commit"
+] as const;
 
 // An unknown or repeated flag is a typo, not an option to ignore: `--tag-verison`
 // silently dropped would skip the tag check the workflow asked for. A flag's value
 // is the token after it, and `cliValue` refuses a value that is missing or a flag.
-export function assertKnownFlags(args: string[], known: readonly string[] = VERIFY_FLAGS): void {
+export function assertKnownFlags(
+  args: Array<string>,
+  known: ReadonlyArray<string> = VERIFY_FLAGS
+): void {
   const seen = new Set<string>();
   for (let index = 0; index < args.length; index += 1) {
-    const arg = args[index]!;
+    const arg = args[index];
+    if (arg === undefined) {
+      break;
+    }
     if (!known.includes(arg)) {
       throw new Error(`unknown argument ${arg}; expected one of ${known.join(", ")}`);
     }
-    if (seen.has(arg)) throw new Error(`${arg} is given more than once`);
+    if (seen.has(arg)) {
+      throw new Error(`${arg} is given more than once`);
+    }
     seen.add(arg);
     index += 1;
   }
@@ -100,9 +120,11 @@ export function assertKnownFlags(args: string[], known: readonly string[] = VERI
 
 // A flag without a value is a broken invocation, not an absent flag: silently
 // dropping it would skip the tag or commit check the workflow asked for.
-export function cliValue(args: string[], flag: string): string | undefined {
+export function cliValue(args: Array<string>, flag: string): string | undefined {
   const index = args.indexOf(flag);
-  if (index === -1) return undefined;
+  if (index === -1) {
+    return undefined;
+  }
   const value = args[index + 1];
   if (value === undefined || value.length === 0 || value.startsWith("--")) {
     throw new Error(`${flag} requires a value`);
@@ -117,14 +139,14 @@ if (import.meta.main) {
   const archiveDir = resolve(cliValue(argv, "--dir") ?? join(root, "release-artifacts"));
   const manifestPath = resolve(
     cliValue(argv, "--manifest") ??
-      join(archiveDir, readNpmPublicationAuthority(root).candidateManifestName),
+      join(archiveDir, readNpmPublicationAuthority(root).candidateManifestName)
   );
   const manifest = verifyNpmCandidate({
     root,
     manifestPath,
     archiveDir,
     tagVersion: cliValue(argv, "--tag-version"),
-    sourceCommit: cliValue(argv, "--source-commit"),
+    sourceCommit: cliValue(argv, "--source-commit")
   });
   for (const entry of manifest.packages) {
     process.stdout.write(`${entry.name}@${entry.version} ${entry.sha256} ${entry.tarball}\n`);

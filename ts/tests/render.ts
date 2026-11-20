@@ -2,13 +2,16 @@ import {
   fireEvent as domFireEvent,
   getQueriesForElement,
   waitFor,
-  within,
+  within
 } from "@testing-library/dom";
 import { flushSync, mount, tick, unmount } from "svelte";
 
 const mounted: Array<{ component: Record<string, unknown>; container: HTMLElement }> = [];
 
-export function render(component: Parameters<typeof mount>[0], props: Record<string, unknown> = {}) {
+export function render(
+  component: Parameters<typeof mount>[0],
+  props: Record<string, unknown> = {}
+) {
   const container = document.createElement("div");
   document.body.append(container);
   const instance = mount(component, { target: container, props });
@@ -16,7 +19,7 @@ export function render(component: Parameters<typeof mount>[0], props: Record<str
   return {
     ...getQueriesForElement(container),
     component: instance,
-    container,
+    container
   };
 }
 
@@ -25,14 +28,16 @@ export const screen = getQueriesForElement(document.body);
 export const fireEvent = new Proxy(domFireEvent, {
   get(target, property, receiver) {
     const value = Reflect.get(target, property, receiver);
-    if (typeof value !== "function") return value;
-    return async (...args: unknown[]) => {
+    if (typeof value !== "function") {
+      return value;
+    }
+    return async (...args: Array<unknown>) => {
       const result = await value(...args);
       flushSync();
       await tick();
       return result;
     };
-  },
+  }
 });
 
 export function cleanup(): void {

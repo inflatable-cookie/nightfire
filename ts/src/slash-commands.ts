@@ -6,8 +6,8 @@ export interface NightfireSlashCommandInput {
   id?: string;
   label?: string;
   description?: string;
-  aliases?: string[];
-  keywords?: string[];
+  aliases?: Array<string>;
+  keywords?: Array<string>;
 }
 
 export interface NightfireSlashCommand {
@@ -15,14 +15,14 @@ export interface NightfireSlashCommand {
   type: string;
   label: string;
   description: string | null;
-  aliases: string[];
-  keywords: string[];
+  aliases: Array<string>;
+  keywords: Array<string>;
 }
 
 export interface NightfireSlashCommandsConfig {
   enabled?: boolean;
   includeDefaults?: boolean;
-  commands?: NightfireSlashCommandInput[];
+  commands?: Array<NightfireSlashCommandInput>;
 }
 
 export interface NightfireSlashMatch {
@@ -31,8 +31,10 @@ export interface NightfireSlashMatch {
   query: string;
 }
 
-function dedupe(values: string[]): string[] {
-  return Array.from(new Set(values.map((value) => value.trim()).filter((value) => value.length > 0)));
+function dedupe(values: Array<string>): Array<string> {
+  return Array.from(
+    new Set(values.map((value) => value.trim()).filter((value) => value.length > 0))
+  );
 }
 
 function normaliseSearchValue(value: string): string {
@@ -55,9 +57,9 @@ function buildDefaultCommand(option: BlockTypeOption): NightfireSlashCommand {
 }
 
 export function buildNightfireSlashCommands(
-  typeOptions: BlockTypeOption[],
+  typeOptions: Array<BlockTypeOption>,
   config: NightfireSlashCommandsConfig | null | undefined
-): NightfireSlashCommand[] {
+): Array<NightfireSlashCommand> {
   const allowedTypes = new Map(typeOptions.map((option) => [option.type, option.label]));
   const commands = new Map<string, NightfireSlashCommand>();
 
@@ -73,10 +75,12 @@ export function buildNightfireSlashCommands(
       continue;
     }
 
-    const existing = commands.get(input.type) ?? buildDefaultCommand({
-      type: input.type,
-      label: defaultLabel
-    });
+    const existing =
+      commands.get(input.type) ??
+      buildDefaultCommand({
+        type: input.type,
+        label: defaultLabel
+      });
 
     commands.set(input.type, {
       id: input.id ?? existing.id,
@@ -94,9 +98,9 @@ export function buildNightfireSlashCommands(
 }
 
 export function filterNightfireSlashCommands(
-  commands: NightfireSlashCommand[],
+  commands: Array<NightfireSlashCommand>,
   query: string
-): NightfireSlashCommand[] {
+): Array<NightfireSlashCommand> {
   const normalisedQuery = normaliseSearchValue(query);
   if (normalisedQuery.length === 0) {
     return commands;
@@ -149,7 +153,9 @@ export function findNightfireSlashMatch(
 }
 
 function clampToLength(offset: number, length: number): number {
-  if (!Number.isFinite(offset)) return 0;
+  if (!Number.isFinite(offset)) {
+    return 0;
+  }
   return Math.min(Math.max(Math.trunc(offset), 0), length);
 }
 

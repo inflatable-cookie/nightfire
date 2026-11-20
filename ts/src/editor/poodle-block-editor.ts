@@ -37,8 +37,8 @@ export type ToEditorBlocksOptions = {
  * id on every derivation would remount the block on each keystroke.
  */
 export function toEditorBlocks(
-  blocks: NightfireEditorBlock[],
-  options: ToEditorBlocksOptions,
+  blocks: Array<NightfireEditorBlock>,
+  options: ToEditorBlocksOptions
 ): Array<NightfireEditorBlock & { id: string; type: string }> {
   return blocks.map((block, index) => ({
     ...block,
@@ -47,27 +47,27 @@ export function toEditorBlocks(
         ? block.id
         : `${options.fallbackIdPrefix}-${index}`,
     type:
-      typeof block.type === "string" && block.type.length > 0 ? block.type : options.fallbackType,
+      typeof block.type === "string" && block.type.length > 0 ? block.type : options.fallbackType
   }));
 }
 
 export function toBlockTypes(
-  options: Array<BlockTypeOption | NightfireBlockOptionInput>,
-): BlockTypeDefinition[] {
+  options: Array<BlockTypeOption | NightfireBlockOptionInput>
+): Array<BlockTypeDefinition> {
   return options.map((option) => ({
     type: option.type,
     label: option.label,
-    icon: DEFAULT_BLOCK_ICON,
-  })) as BlockTypeDefinition[];
+    icon: DEFAULT_BLOCK_ICON
+  })) as Array<BlockTypeDefinition>;
 }
 
 /**
  * Poodle groups its type picker when given `BlockTypeGroup[]`; Nightfire only
  * has groups to give when the caller supplied them.
  */
-export function toBlockTypeGroups(groups: GroupedOptions[]): BlockTypeGroup[] {
+export function toBlockTypeGroups(groups: Array<GroupedOptions>): Array<BlockTypeGroup> {
   return groups.map((group) => ({
     label: group.label,
-    options: toBlockTypes(group.options),
-  })) as BlockTypeGroup[];
+    options: toBlockTypes(group.options)
+  })) as Array<BlockTypeGroup>;
 }

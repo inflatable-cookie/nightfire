@@ -3,7 +3,7 @@ import { afterEach } from "bun:test";
 import { registerSveltePlugin } from "./svelte-plugin";
 
 const dom = new JSDOM("<!doctype html><html><body></body></html>", {
-  url: "https://nightfire.test/",
+  url: "https://nightfire.test/"
 });
 
 Object.defineProperty(globalThis, "window", { configurable: true, value: dom.window });
@@ -14,9 +14,13 @@ if (process.env.NIGHTFIRE_RUNTIME === "tauri") {
 }
 
 for (const name of Object.getOwnPropertyNames(dom.window)) {
-  if (name in globalThis) continue;
+  if (name in globalThis) {
+    continue;
+  }
   const descriptor = Object.getOwnPropertyDescriptor(dom.window, name);
-  if (!descriptor) continue;
+  if (!descriptor) {
+    continue;
+  }
   try {
     Object.defineProperty(globalThis, name, descriptor);
   } catch {
@@ -39,11 +43,11 @@ for (const name of [
   "KeyboardEvent",
   "MouseEvent",
   "MutationObserver",
-  "CustomEvent",
+  "CustomEvent"
 ]) {
   Object.defineProperty(globalThis, name, {
     configurable: true,
-    value: dom.window[name as keyof Window],
+    value: dom.window[name as keyof Window]
   });
 }
 
@@ -58,8 +62,8 @@ if (typeof dom.window.matchMedia !== "function") {
       removeListener() {},
       addEventListener() {},
       removeEventListener() {},
-      dispatchEvent: () => false,
-    }),
+      dispatchEvent: () => false
+    })
   });
 }
 

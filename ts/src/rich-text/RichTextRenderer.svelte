@@ -23,8 +23,8 @@
   // composes any schema-scoped consumer inline-node renderers, and the result
   // crosses the same sanitizer as markdown before `{@html}`.
   function asDocument(candidate: unknown): unknown | null {
-    if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) return null;
-    if ((candidate as { type?: unknown }).type !== "doc") return null;
+    if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) {return null;}
+    if ((candidate as { type?: unknown }).type !== "doc") {return null;}
     return candidate;
   }
 

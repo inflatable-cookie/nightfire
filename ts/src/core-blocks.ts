@@ -29,9 +29,9 @@ export const CORE_BLOCK_TYPES = {
   table: { renderer: true, editor: true, emptyChecker: true },
   item_list: { renderer: true, editor: true, emptyChecker: true },
   image: { renderer: true, editor: true, emptyChecker: true },
-  video: { renderer: true, editor: true, emptyChecker: true },
+  video: { renderer: true, editor: true, emptyChecker: true }
 } as const satisfies Readonly<Record<string, CoreBlockCapabilities>>;
 
 export type CoreBlockType = keyof typeof CORE_BLOCK_TYPES;
 
-export const CORE_BLOCK_TYPE_NAMES = Object.keys(CORE_BLOCK_TYPES) as CoreBlockType[];
+export const CORE_BLOCK_TYPE_NAMES = Object.keys(CORE_BLOCK_TYPES) as Array<CoreBlockType>;

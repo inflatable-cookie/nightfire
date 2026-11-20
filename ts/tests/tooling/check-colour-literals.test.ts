@@ -16,7 +16,7 @@ describe("tooling/check-colour-literals", () => {
     const source = `<style>\n  .probe {\n    color: var(--nightfire-color-text, rebeccapurple);\n  }\n</style>`;
 
     expect(colourLiterals(source, "probe.svelte").map((finding) => finding.literal)).toEqual([
-      "rebeccapurple",
+      "rebeccapurple"
     ]);
   });
 
@@ -39,7 +39,7 @@ describe("tooling/check-colour-literals", () => {
     const source = `<style>\n  .probe {\n    border: 1px solid red;\n  }\n</style>`;
 
     expect(colourLiterals(source, "probe.svelte").map((finding) => finding.literal)).toEqual([
-      "red",
+      "red"
     ]);
   });
 

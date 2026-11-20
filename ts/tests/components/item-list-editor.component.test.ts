@@ -16,7 +16,7 @@ function itemListBlock(data: Record<string, unknown> = {}) {
     id: "nf_item_list",
     type: "item_list",
     version: "initial",
-    data,
+    data
   };
 }
 
@@ -33,12 +33,12 @@ describe("nightfire/item-list editor", () => {
     expect(
       isBlockContentEmpty(
         itemListBlock({
-          items: [{ body: [{ type: "markdown", data: { text: "Body" } }] }],
-        }),
-      ),
+          items: [{ body: [{ type: "markdown", data: { text: "Body" } }] }]
+        })
+      )
     ).toBe(false);
     expect(isBlockContentEmpty(itemListBlock({ items: [{ title: "Heading", body: [] }] }))).toBe(
-      false,
+      false
     );
   });
 
@@ -47,12 +47,12 @@ describe("nightfire/item-list editor", () => {
     const view = render(EditorComponent as any, {
       block: itemListBlock({}),
       value: { schema: "example:content/list" },
-      onChange,
+      onChange
     });
 
     await fireEvent.input(
       within(view.container).getByRole("textbox", { name: "Item list title (optional)" }),
-      { target: { value: "Heading" } },
+      { target: { value: "Heading" } }
     );
 
     await waitFor(() => expect(onChange).toHaveBeenCalled());
@@ -64,13 +64,13 @@ describe("nightfire/item-list editor", () => {
     const initial = itemListBlock({
       intro: { type: "rich_text", retained: true },
       variant: "ordered",
-      items: [],
+      items: []
     });
 
     let view = render(EditorComponent as any, {
       block: initial,
       value: { schema: "example:content/list" },
-      onChange,
+      onChange
     });
 
     await fireEvent.click(within(view.container).getByRole("button", { name: "Add item" }));
@@ -82,11 +82,11 @@ describe("nightfire/item-list editor", () => {
     view = render(EditorComponent as any, {
       block: current,
       value: { schema: "example:content/list" },
-      onChange,
+      onChange
     });
     await fireEvent.input(
       within(view.container).getByRole("textbox", { name: "Item 1 title (optional)" }),
-      { target: { value: "First" } },
+      { target: { value: "First" } }
     );
     await waitFor(() => expect(onChange).toHaveBeenCalled());
     current = lastBlock(onChange);
@@ -94,7 +94,7 @@ describe("nightfire/item-list editor", () => {
     view = render(EditorComponent as any, {
       block: current,
       value: { schema: "example:content/list" },
-      onChange,
+      onChange
     });
     await fireEvent.click(within(view.container).getByRole("button", { name: "Add item" }));
     current = lastBlock(onChange);
@@ -102,11 +102,11 @@ describe("nightfire/item-list editor", () => {
     view = render(EditorComponent as any, {
       block: current,
       value: { schema: "example:content/list" },
-      onChange,
+      onChange
     });
     await fireEvent.input(
       within(view.container).getByRole("textbox", { name: "Item 2 title (optional)" }),
-      { target: { value: "Second" } },
+      { target: { value: "Second" } }
     );
     await waitFor(() => expect(onChange.mock.calls.at(-1)![0].data.items[1].title).toBe("Second"));
     current = lastBlock(onChange);
@@ -114,10 +114,10 @@ describe("nightfire/item-list editor", () => {
     view = render(EditorComponent as any, {
       block: current,
       value: { schema: "example:content/list" },
-      onChange,
+      onChange
     });
     await fireEvent.click(
-      within(view.container).getByRole("button", { name: "Add child block to item 2" }),
+      within(view.container).getByRole("button", { name: "Add child block to item 2" })
     );
     current = lastBlock(onChange);
     expect(current.data.items[1].body[0].type).toBe("markdown");
@@ -125,19 +125,19 @@ describe("nightfire/item-list editor", () => {
     view = render(EditorComponent as any, {
       block: current,
       value: { schema: "example:content/list" },
-      onChange,
+      onChange
     });
     const markdown = within(view.container).getByPlaceholderText("Write markdown...");
     await fireEvent.input(markdown, { target: { value: "Nested body" } });
     await waitFor(() =>
-      expect(onChange.mock.calls.at(-1)![0].data.items[1].body[0].data.text).toBe("Nested body"),
+      expect(onChange.mock.calls.at(-1)![0].data.items[1].body[0].data.text).toBe("Nested body")
     );
     current = lastBlock(onChange);
 
     view = render(EditorComponent as any, {
       block: current,
       value: { schema: "example:content/list" },
-      onChange,
+      onChange
     });
     await fireEvent.click(within(view.container).getByRole("button", { name: "Move item 2 up" }));
     current = lastBlock(onChange);
@@ -158,13 +158,13 @@ describe("nightfire/item-list editor", () => {
     const block = itemListBlock({
       items: [
         { title: "Empty item", body: [] },
-        { body: [{ type: "markdown", version: "initial", data: { text: "Keep me" } }] },
-      ],
+        { body: [{ type: "markdown", version: "initial", data: { text: "Keep me" } }] }
+      ]
     });
     const view = render(EditorComponent as any, {
       block,
       value: { schema: "example:content/list" },
-      onChange,
+      onChange
     });
 
     await fireEvent.click(within(view.container).getByRole("button", { name: "Remove item 2" }));
@@ -180,9 +180,7 @@ describe("nightfire/item-list editor", () => {
     expect(within(view.container).getByRole("button", { name: "Remove item 2" })).toBeTruthy();
 
     await fireEvent.click(within(view.container).getByRole("button", { name: "Remove item 2" }));
-    await fireEvent.click(
-      within(view.container).getByRole("button", { name: "Confirm removal" }),
-    );
+    await fireEvent.click(within(view.container).getByRole("button", { name: "Confirm removal" }));
     expect(lastBlock(onChange).data.items).toEqual([{ title: "Empty item", body: [] }]);
   });
 
@@ -191,13 +189,13 @@ describe("nightfire/item-list editor", () => {
     const block = itemListBlock({
       items: [
         { title: "First", body: [] },
-        { title: "Second", body: [] },
-      ],
+        { title: "Second", body: [] }
+      ]
     });
     const view = render(EditorComponent as any, {
       block,
       value: { schema: "example:content/list" },
-      onChange,
+      onChange
     });
 
     await fireEvent.click(within(view.container).getByRole("button", { name: "Remove item 2" }));

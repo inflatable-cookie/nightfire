@@ -8,8 +8,8 @@ if (roots.length === 0) {
 
 const component = process.env.NIGHTFIRE_COMPONENT_TESTS === "1";
 const glob = new Bun.Glob("**/*.test.ts");
-const files: string[] = [];
-const failures: string[] = [];
+const files: Array<string> = [];
+const failures: Array<string> = [];
 
 // A selector that names a missing directory, or a directory with no test file,
 // is a broken suite, not a quiet pass: an empty run would report success for
@@ -23,7 +23,7 @@ for (const root of roots) {
     files.push(root);
     continue;
   }
-  const matched: string[] = [];
+  const matched: Array<string> = [];
   for await (const path of glob.scan({ cwd: root, onlyFiles: true })) {
     matched.push(`${root}/${path}`);
   }
@@ -35,18 +35,28 @@ for (const root of roots) {
 }
 
 if (failures.length > 0) {
-  for (const failure of failures) console.error(`run-test-files: ${failure}`);
+  for (const failure of failures) {
+    console.error(`run-test-files: ${failure}`);
+  }
   process.exit(1);
 }
 
 files.sort();
 for (const file of files) {
   const args = ["bun"];
-  if (component) args.push("--conditions=browser");
+  if (component) {
+    args.push("--conditions=browser");
+  }
   args.push("test");
-  if (component) args.push("--timeout=30000");
-  if (component) args.push("--preload", "./ts/tests/setup/component.ts");
+  if (component) {
+    args.push("--timeout=30000");
+  }
+  if (component) {
+    args.push("--preload", "./ts/tests/setup/component.ts");
+  }
   args.push(file);
   const child = Bun.spawnSync(args, { stdout: "inherit", stderr: "inherit" });
-  if (child.exitCode !== 0) process.exit(child.exitCode ?? 1);
+  if (child.exitCode !== 0) {
+    process.exit(child.exitCode ?? 1);
+  }
 }

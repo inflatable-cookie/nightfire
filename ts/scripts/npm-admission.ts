@@ -20,13 +20,13 @@ if (import.meta.main) {
   if (dirty.length > 0) {
     throw new Error(
       `admission requires a clean exact head; ${dirty.length} path(s) are modified or untracked:\n` +
-        dirty.map((line) => `  ${line}`).join("\n"),
+        dirty.map((line) => `  ${line}`).join("\n")
     );
   }
 
   const head = execFileSync("git", ["-C", root, "rev-parse", "HEAD"], { encoding: "utf8" }).trim();
   process.stdout.write(
     `admission ok: ${authority.packages.length} package(s) at ${head.slice(0, 9)}; ` +
-      `authority declares candidate manifest ${authority.candidateManifestName}\n`,
+      `authority declares candidate manifest ${authority.candidateManifestName}\n`
   );
 }

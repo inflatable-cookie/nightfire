@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { getBlockRenderer, type BlockRendererComponent } from "./render-registry";
+  import { getBlockRenderer } from './render-registry';
+import type { BlockRendererComponent } from './render-registry';
   import MarkdownRenderer from "./markup/MarkdownRenderer.svelte";
   import type { NightfireValue } from "./types";
 
@@ -15,10 +16,10 @@
 
   let { value = null }: Props = $props();
 
-  function normalizeBlocks(v: NightfireValue | null): BlockLike[] {
-    if (!v) return [];
+  function normalizeBlocks(v: NightfireValue | null): Array<BlockLike> {
+    if (!v) {return [];}
     if (Array.isArray(v.blocks) && v.blocks.length > 0) {
-      return v.blocks as BlockLike[];
+      return v.blocks as Array<BlockLike>;
     }
     return [];
   }

@@ -15,8 +15,8 @@ export function generateNightfireBlockId(): string {
     bytes[index] = timestamp & 0xff;
     timestamp = Math.floor(timestamp / 256);
   }
-  bytes[6] = (bytes[6]! & 0x0f) | 0x70;
-  bytes[8] = (bytes[8]! & 0x3f) | 0x80;
+  bytes[6] = ((bytes[6] ?? 0) & 0x0f) | 0x70;
+  bytes[8] = ((bytes[8] ?? 0) & 0x3f) | 0x80;
 
   const uuid = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
 
@@ -39,5 +39,5 @@ export function ensureNightfireBlockIds<T extends NightfireValue>(value: T): T {
   return {
     ...value,
     blocks: blocks.map((block) => ensureNightfireBlockId(block))
-  } as T;
+  };
 }

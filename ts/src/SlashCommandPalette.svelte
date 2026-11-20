@@ -4,7 +4,7 @@
   import type { NightfireSlashCommand } from "./slash-commands";
 
   interface Props {
-    commands: NightfireSlashCommand[];
+    commands: Array<NightfireSlashCommand>;
     query?: string;
     onQueryChange?: (query: string) => void;
     onSelect: (command: NightfireSlashCommand) => void;
@@ -95,7 +95,7 @@
         onQueryChange((event.currentTarget as HTMLInputElement).value);
       }}
       aria-controls={listboxId}
-      aria-activedescendant={commands[selectedIndex] ? `${listboxId}-${commands[selectedIndex].id}` : undefined}
+      aria-activedescendant={commands[selectedIndex] ? `${listboxId}-${commands[selectedIndex]?.id}` : undefined}
       placeholder="Search block types"
     />
   </label>

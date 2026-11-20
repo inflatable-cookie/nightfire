@@ -12,20 +12,13 @@
     isEmptyNightfire
   } from "./utils";
   import { ensureNightfireBlockIds } from "./block-ids";
-  import {
-    useNightfireStrategies,
-    type NightfireStrategy
-  } from "./strategies";
-  import {
-    buildGroupedOptions,
-    type NightfireBlockOptionInput
-  } from "./editor/grouped-options";
+  import { useNightfireStrategies } from './strategies';
+import type { NightfireStrategy } from './strategies';
+  import { buildGroupedOptions } from './editor/grouped-options';
+import type { NightfireBlockOptionInput } from './editor/grouped-options';
   import { resolveSchemaDefinition } from "./editor/schema-resolution";
-  import {
-    createPrepareWriter,
-    createRequiredInitialValue,
-    type NightfireFieldMode
-  } from "./editor/field-lifecycle";
+  import { createPrepareWriter, createRequiredInitialValue } from './editor/field-lifecycle';
+import type { NightfireFieldMode } from './editor/field-lifecycle';
   import { default as NightfireFieldBlockShell } from "./editor/NightfireFieldBlockShell.svelte";
   import { normaliseForStrategy } from "./editor/strategy-normalisation";
   import {
@@ -36,14 +29,8 @@
     insertBlockAfter,
     replaceBlockAtIndex
   } from "./editor/value-updates";
-  import {
-    buildNightfireSlashCommands,
-    filterNightfireSlashCommands,
-    findNightfireSlashMatch,
-    removeNightfireSlashText,
-    type NightfireSlashCommand,
-    type NightfireSlashCommandsConfig
-  } from "./slash-commands";
+  import { buildNightfireSlashCommands, filterNightfireSlashCommands, findNightfireSlashMatch, removeNightfireSlashText } from './slash-commands';
+import type { NightfireSlashCommand, NightfireSlashCommandsConfig } from './slash-commands';
 
   /**
    * Field-level Nightfire editor.
@@ -77,7 +64,7 @@
      */
     modeOverride?: NightfireFieldMode | null;
     defaultTypeOverride?: string | null;
-    blockOptions?: NightfireBlockOptionInput[] | null;
+    blockOptions?: Array<NightfireBlockOptionInput> | null;
     /**
      * Whether this Nightfire field is required from the UI's
      * perspective. When true and the value is empty, a simple
@@ -158,7 +145,7 @@
     defaultTypeOverride ?? strategy?.defaultType ?? null
   );
   const effectiveBlockOptions = $derived(
-    blockOptions ?? (strategy?.blockOptions as NightfireBlockOptionInput[] | null) ?? null
+    blockOptions ?? (strategy?.blockOptions as Array<NightfireBlockOptionInput> | null) ?? null
   );
 
   let hasInitialisedRequired = $state(false);
@@ -222,7 +209,7 @@
   // Blocks array is the only stored shape. Single-mode editors use blocks[0].
   const blocks = $derived.by(() => {
     if (Array.isArray(value?.blocks)) {
-      return value.blocks as any[];
+      return value.blocks as Array<any>;
     }
     return [];
   });

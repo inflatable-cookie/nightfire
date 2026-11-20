@@ -19,34 +19,43 @@ const multiBlockItem = readFileSync(MULTI_BLOCK_ITEM, "utf8");
 const paletteStyles = styleBlocks(palette).join("\n");
 const multiBlockItemStyles = styleBlocks(multiBlockItem).join("\n");
 
-function declaredTokens(css: string): string[] {
+function declaredTokens(css: string): Array<string> {
   return [...css.matchAll(/(--nightfire-[\w-]+)\s*:/g)].map((match) => match[1]!);
 }
 
 function tokenValue(css: string, name: string): string {
   const match = css.match(new RegExp(`${name}\\s*:\\s*([^;]+);`));
-  if (!match) throw new Error(`no declaration for ${name}`);
+  if (!match) {
+    throw new Error(`no declaration for ${name}`);
+  }
   return match[1]!.trim();
 }
 
 function hexToRgb(value: string): [number, number, number] | null {
   const match = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(value.trim());
-  if (!match) return null;
+  if (!match) {
+    return null;
+  }
   const hex = match[1]!;
   const full = hex.length === 3 ? [...hex].map((digit) => digit + digit).join("") : hex;
-  return [0, 2, 4].map((offset) => parseInt(full.slice(offset, offset + 2), 16)) as [
+  return [0, 2, 4].map((offset) => Number.parseInt(full.slice(offset, offset + 2), 16)) as [
     number,
     number,
-    number,
+    number
   ];
 }
 
+function lineariseChannel(value: number): number {
+  const scaled = value / 255;
+  return scaled <= 0.03928 ? scaled / 12.92 : ((scaled + 0.055) / 1.055) ** 2.4;
+}
+
 function relativeLuminance([red, green, blue]: [number, number, number]): number {
-  const channel = (value: number) => {
-    const scaled = value / 255;
-    return scaled <= 0.03928 ? scaled / 12.92 : ((scaled + 0.055) / 1.055) ** 2.4;
-  };
-  return 0.2126 * channel(red) + 0.7152 * channel(green) + 0.0722 * channel(blue);
+  return (
+    0.2126 * lineariseChannel(red) +
+    0.7152 * lineariseChannel(green) +
+    0.0722 * lineariseChannel(blue)
+  );
 }
 
 // WCAG 2.x contrast, as the roadmap's measurement uses it. The declared tokens
@@ -74,7 +83,7 @@ describe("nightfire/colour literals", () => {
     expect(findings.map((finding) => finding.literal)).toEqual([
       "#ff0000",
       "rgb(15 23 42)",
-      "rebeccapurple",
+      "rebeccapurple"
     ]);
     expect(findings[0]!.line).toBe(4);
     expect(findings[0]!.property).toBe("color");
@@ -97,8 +106,8 @@ describe("nightfire/colour literals", () => {
   });
 
   it("keeps renderers free of tokens and scoped styles", () => {
-    const renderers = readdirSync("ts/src", { recursive: true, encoding: "utf8" }).filter(
-      (path) => /Renderer\.svelte$/.test(path)
+    const renderers = readdirSync("ts/src", { recursive: true, encoding: "utf8" }).filter((path) =>
+      /Renderer\.svelte$/.test(path)
     );
     expect(renderers.length).toBeGreaterThan(0);
     for (const path of renderers) {

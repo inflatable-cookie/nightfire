@@ -20,7 +20,7 @@ const EMBED_ALLOWED_ATTR = [
   "loop",
   "preload",
   "poster",
-  "type",
+  "type"
 ];
 
 const SVG_ALLOWED_ATTR = [
@@ -48,7 +48,7 @@ const SVG_ALLOWED_ATTR = [
   "points",
   "transform",
   "class",
-  "id",
+  "id"
 ];
 
 // SVG admits no `style` attribute and no `<style>` element. A `<style>` block is
@@ -64,7 +64,7 @@ function toInput(value: string | null | undefined): string {
 
 export function sanitizeHtml(html: string | null | undefined): string {
   return DOMPurify.sanitize(toInput(html), {
-    USE_PROFILES: { html: true },
+    USE_PROFILES: { html: true }
   });
 }
 
@@ -72,7 +72,7 @@ export function sanitizeEmbedHtml(html: string | null | undefined): string {
   return DOMPurify.sanitize(toInput(html), {
     ALLOWED_TAGS: EMBED_ALLOWED_TAGS,
     ALLOWED_ATTR: EMBED_ALLOWED_ATTR,
-    ALLOW_UNKNOWN_PROTOCOLS: false,
+    ALLOW_UNKNOWN_PROTOCOLS: false
   });
 }
 
@@ -83,6 +83,6 @@ export function sanitizeSvgHtml(svg: string | null | undefined): string {
     // The svg profile adds its own attributes to ALLOWED_ATTR, so `style` must be
     // forbidden explicitly rather than left out of the allow-list.
     FORBID_ATTR: SVG_FORBIDDEN_ATTR,
-    FORBID_TAGS: SVG_FORBIDDEN_TAGS,
+    FORBID_TAGS: SVG_FORBIDDEN_TAGS
   });
 }

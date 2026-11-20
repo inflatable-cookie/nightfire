@@ -20,7 +20,7 @@
       title?: string | null;
       intro?: unknown;
       variant?: string;
-      items?: Item[];
+      items?: Array<Item>;
     };
   };
 
@@ -39,9 +39,9 @@
 
   // An item body holds one or more child blocks. A bare object is treated as a single
   // block; an array is a child sequence. Anything else contributes no children.
-  function childBlocks(body: unknown): ChildBlock[] {
-    if (Array.isArray(body)) return body.filter((entry): entry is ChildBlock => isBlock(entry));
-    if (isBlock(body)) return [body];
+  function childBlocks(body: unknown): Array<ChildBlock> {
+    if (Array.isArray(body)) {return body.filter((entry): entry is ChildBlock => isBlock(entry));}
+    if (isBlock(body)) {return [body];}
     return [];
   }
 

@@ -1,8 +1,5 @@
-import {
-  coerceNightfireBlock,
-  type NightfireBlock,
-  type NightfireValue
-} from "../types";
+import { coerceNightfireBlock } from "../types";
+import type { NightfireBlock, NightfireValue } from "../types";
 import { addBlockToList, insertBlockIntoList } from "./block-list";
 
 function asBlockObject(value: unknown): NightfireBlock {
@@ -24,14 +21,18 @@ export function asSingleBlockValue(schema: string, block: unknown): NightfireVal
   };
 }
 
-export function asMultiBlockValue(schema: string, blocks: unknown[]): NightfireValue {
+export function asMultiBlockValue(schema: string, blocks: Array<unknown>): NightfireValue {
   return {
     schema,
     blocks: blocks.map((block) => asBlockObject(block))
   };
 }
 
-export function replaceBlockAtIndex(blocks: unknown[], index: number, nextBlock: unknown): unknown[] {
+export function replaceBlockAtIndex(
+  blocks: Array<unknown>,
+  index: number,
+  nextBlock: unknown
+): Array<unknown> {
   const nextBlocks = blocks.slice();
   nextBlocks[index] = asBlockObject(nextBlock);
   return nextBlocks;
@@ -52,10 +53,14 @@ export function changeBlockType(currentBlock: unknown, nextType: string): Nightf
   };
 }
 
-export function addBlock(blocks: unknown[], defaultType: string): unknown[] {
+export function addBlock(blocks: Array<unknown>, defaultType: string): Array<unknown> {
   return addBlockToList(blocks, defaultType);
 }
 
-export function insertBlockAfter(blocks: unknown[], index: number, defaultType: string): unknown[] {
+export function insertBlockAfter(
+  blocks: Array<unknown>,
+  index: number,
+  defaultType: string
+): Array<unknown> {
   return insertBlockIntoList(blocks, index, defaultType);
 }

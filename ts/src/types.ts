@@ -7,7 +7,7 @@ export interface NightfireBlock {
 
 export interface NightfireValue {
   schema: string;
-  blocks: NightfireBlock[];
+  blocks: Array<NightfireBlock>;
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -33,9 +33,7 @@ export function coerceNightfireBlock(
   }
 
   const type =
-    typeof record.type === "string" && record.type.trim().length > 0
-      ? record.type
-      : fallbackType;
+    typeof record.type === "string" && record.type.trim().length > 0 ? record.type : fallbackType;
 
   if (!type) {
     return null;
@@ -43,15 +41,9 @@ export function coerceNightfireBlock(
 
   return {
     // A blank id is no id. `block-ids.ts` treats whitespace as missing too.
-    id:
-      typeof record.id === "string" && record.id.trim().length > 0
-        ? record.id
-        : undefined,
+    id: typeof record.id === "string" && record.id.trim().length > 0 ? record.id : undefined,
     type,
-    version:
-      typeof record.version === "string"
-        ? record.version
-        : "initial",
+    version: typeof record.version === "string" ? record.version : "initial",
     data: asRecord(record.data) ?? {}
   };
 }

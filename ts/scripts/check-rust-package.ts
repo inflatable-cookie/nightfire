@@ -1,18 +1,14 @@
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import {
-  captureRustTool,
-  prepareDisposableWorkspace,
-  runRustTool,
-} from "./rust-route";
+import { captureRustTool, prepareDisposableWorkspace, runRustTool } from "./rust-route";
 
-function run(command: string[], cwd: string): void {
+function run(command: Array<string>, cwd: string): void {
   const child = Bun.spawnSync(command, {
     cwd,
     env: { ...process.env },
     stdout: "inherit",
-    stderr: "inherit",
+    stderr: "inherit"
   });
   if (child.exitCode !== 0) {
     throw new Error(`${command.join(" ")} failed`);
@@ -28,22 +24,12 @@ try {
   // Oxide owns where a Cargo command writes, so the archive location comes from
   // Cargo's own metadata rather than a target directory this proof picks.
   const metadata = JSON.parse(
-    captureRustTool(workspaceManifest, [
-      "cargo",
-      "metadata",
-      "--no-deps",
-      "--format-version",
-      "1",
-    ])
+    captureRustTool(workspaceManifest, ["cargo", "metadata", "--no-deps", "--format-version", "1"])
   ) as { target_directory: string };
 
   runRustTool(workspaceManifest, ["cargo", "package", "-p", "nightfire", "--locked"]);
 
-  const crate = join(
-    metadata.target_directory,
-    "package",
-    `nightfire-${manifest.version}.crate`
-  );
+  const crate = join(metadata.target_directory, "package", `nightfire-${manifest.version}.crate`);
   if (!(await Bun.file(crate).exists())) {
     throw new Error(`no crate archive at ${crate}`);
   }

@@ -25,10 +25,10 @@ export interface NightfireBlockOption {
 export interface NightfireStrategy {
   id: string;
   cardinality: NightfireStrategyCardinality;
-  allowedTypes: string[];
-  allowedCategories: string[];
+  allowedTypes: Array<string>;
+  allowedCategories: Array<string>;
   defaultType: string;
-  blockOptions?: NightfireBlockOption[];
+  blockOptions?: Array<NightfireBlockOption>;
 }
 
 export interface NightfireStrategiesConfig {
@@ -36,7 +36,7 @@ export interface NightfireStrategiesConfig {
    * Function to fetch strategies from the API.
    * Should return the list of strategies.
    */
-  fetchStrategies: () => Promise<NightfireStrategy[]>;
+  fetchStrategies: () => Promise<Array<NightfireStrategy>>;
   /**
    * Cache TTL in milliseconds. Defaults to 1 hour.
    */
@@ -47,8 +47,8 @@ export interface NightfireStrategiesStore {
   strategies: typeof strategiesStore;
   loading: typeof loadingStore;
   error: typeof errorStore;
-  ensure: () => Promise<NightfireStrategy[]>;
-  refresh: () => Promise<NightfireStrategy[]>;
+  ensure: () => Promise<Array<NightfireStrategy>>;
+  refresh: () => Promise<Array<NightfireStrategy>>;
   invalidate: () => void;
   findById: (id: string) => NightfireStrategy | null;
 }
@@ -57,7 +57,7 @@ const CONTEXT_KEY = Symbol("nightfire-strategies");
 const DEFAULT_CACHE_TTL = 60 * 60 * 1000; // 1 hour
 
 // Module-level stores (singleton)
-const strategiesStore = writable<NightfireStrategy[]>([]);
+const strategiesStore = writable<Array<NightfireStrategy>>([]);
 const loadingStore = writable(false);
 const errorStore = writable<string | null>(null);
 const byIdStore = derived(strategiesStore, ($strategies) => {
@@ -70,7 +70,7 @@ const byIdStore = derived(strategiesStore, ($strategies) => {
 
 let fetchedAt: number | null = null;
 let hasLoaded = false;
-let fetchPromise: Promise<NightfireStrategy[]> | null = null;
+let fetchPromise: Promise<Array<NightfireStrategy>> | null = null;
 let config: NightfireStrategiesConfig | null = null;
 // The in-flight request that currently owns the store. A response from any
 // other token is a superseded request and must not write cache or error state.
@@ -104,7 +104,7 @@ export function configureNightfireStrategies(cfg: NightfireStrategiesConfig): vo
         "fetchStrategies closure usually captures per-user auth, and this is " +
         "process-global state shared across concurrent server requests. Call " +
         "it only in the browser (onMount or a `typeof window !== 'undefined'` " +
-        "guard).",
+        "guard)."
     );
   }
   config = cfg;
@@ -113,7 +113,9 @@ export function configureNightfireStrategies(cfg: NightfireStrategiesConfig): vo
 }
 
 function isStale(): boolean {
-  if (fetchedAt === null) return true;
+  if (fetchedAt === null) {
+    return true;
+  }
   const ttl = config?.cacheTtl ?? DEFAULT_CACHE_TTL;
   // A non-positive TTL means "never cache": `cacheTtl: 0` is a real request to
   // refetch every time, not a value that needs to be spelled `-1`.
@@ -137,7 +139,7 @@ function resetCache(): void {
  * otherwise fetches from the API. Multiple concurrent calls share the same
  * fetch promise.
  */
-async function ensure(): Promise<NightfireStrategy[]> {
+async function ensure(): Promise<Array<NightfireStrategy>> {
   // A cached empty list is a real answer: it stays cached until it goes stale.
   if (hasLoaded && !isStale()) {
     return get(strategiesStore);
@@ -150,7 +152,9 @@ async function ensure(): Promise<NightfireStrategy[]> {
 
   // Check if configured
   if (!config) {
-    errorStore.set("Nightfire strategies not configured. Call configureNightfireStrategies() first.");
+    errorStore.set(
+      "Nightfire strategies not configured. Call configureNightfireStrategies() first."
+    );
     return [];
   }
 
@@ -182,11 +186,11 @@ async function ensure(): Promise<NightfireStrategy[]> {
       settle();
       return result;
     })
-    .catch((e) => {
+    .catch((error) => {
       if (!settle()) {
         return get(strategiesStore);
       }
-      errorStore.set(e instanceof Error ? e.message : "Failed to load strategies");
+      errorStore.set(error instanceof Error ? error.message : "Failed to load strategies");
       // The answer is whatever the store holds, so a caller that read
       // `strategies` and a caller that awaited `ensure()` never disagree: a
       // failed refetch keeps the stale list rather than pretending it is empty.
@@ -199,7 +203,7 @@ async function ensure(): Promise<NightfireStrategy[]> {
 /**
  * Force a refresh of strategies, ignoring the cache.
  */
-async function refresh(): Promise<NightfireStrategy[]> {
+async function refresh(): Promise<Array<NightfireStrategy>> {
   resetCache();
   return ensure();
 }

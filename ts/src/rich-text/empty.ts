@@ -15,13 +15,17 @@ import type { ProseMirrorNodeJSON } from "@inflatable-cookie/poodle-svelte/rich-
 const NON_TEXT_CONTENT_NODES = new Set(["image", "horizontalRule"]);
 
 function hasContent(node: unknown): boolean {
-  if (!node || typeof node !== "object" || Array.isArray(node)) return false;
+  if (!node || typeof node !== "object" || Array.isArray(node)) {
+    return false;
+  }
 
   const typed = node as ProseMirrorNodeJSON;
   if (typed.type === "text") {
     return typeof typed.text === "string" && typed.text.trim().length > 0;
   }
-  if (typed.type === "hardBreak") return false;
+  if (typed.type === "hardBreak") {
+    return false;
+  }
   if (typeof typed.type === "string" && NON_TEXT_CONTENT_NODES.has(typed.type)) {
     return true;
   }

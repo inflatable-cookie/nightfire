@@ -53,8 +53,8 @@ describe("nightfire/NightfireEditor slash commands", () => {
       slashCommands: { enabled: true },
       initialValue: {
         schema: "example:content/markup",
-        blocks: [{ id: "nf_typed", type: "markdown", version: "initial", data: { text: "" } }],
-      },
+        blocks: [{ id: "nf_typed", type: "markdown", version: "initial", data: { text: "" } }]
+      }
     });
     const textarea = view.container.querySelector("textarea") as HTMLTextAreaElement;
 
@@ -81,9 +81,9 @@ describe("nightfire/NightfireEditor slash commands", () => {
         schema: "example:content/markup",
         blocks: [
           { id: "nf_first_a", type: "markdown", version: "initial", data: { text: "First" } },
-          { id: "nf_first_b", type: "markdown", version: "initial", data: { text: "Second" } },
-        ],
-      },
+          { id: "nf_first_b", type: "markdown", version: "initial", data: { text: "Second" } }
+        ]
+      }
     });
     const secondEditor = render(NightfireEditorHarness, {
       modeOverride: "multi",
@@ -92,9 +92,9 @@ describe("nightfire/NightfireEditor slash commands", () => {
         schema: "example:content/markup",
         blocks: [
           { id: "nf_second_a", type: "markdown", version: "initial", data: { text: "/download" } },
-          { id: "nf_second_b", type: "markdown", version: "initial", data: { text: "Other" } },
-        ],
-      },
+          { id: "nf_second_b", type: "markdown", version: "initial", data: { text: "Other" } }
+        ]
+      }
     });
 
     const textarea = secondEditor.container.querySelector("textarea") as HTMLTextAreaElement;
@@ -103,13 +103,13 @@ describe("nightfire/NightfireEditor slash commands", () => {
     await fireEvent.input(textarea);
 
     const dialog = await within(secondEditor.container).findByRole("dialog", {
-      name: "Slash commands",
+      name: "Slash commands"
     });
     await fireEvent.click(within(dialog).getByRole("option", { name: /download/i }));
 
     await waitFor(() => {
       const insertedCard = secondEditor.container.querySelector(
-        "[data-nightfire-block-card][data-block-index='1']",
+        "[data-nightfire-block-card][data-block-index='1']"
       ) as HTMLElement;
       expect(insertedCard.contains(document.activeElement)).toBe(true);
     });
@@ -119,7 +119,7 @@ describe("nightfire/NightfireEditor slash commands", () => {
   it("focuses the editing control rather than a toolbar button when inserting a markdown block", async () => {
     const view = render(NightfireEditorHarness, {
       modeOverride: "multi",
-      slashCommands: { enabled: true },
+      slashCommands: { enabled: true }
     });
     const textarea = view.container.querySelector("textarea") as HTMLTextAreaElement;
 
@@ -133,7 +133,7 @@ describe("nightfire/NightfireEditor slash commands", () => {
 
     await waitFor(() => {
       const insertedCard = view.container.querySelector(
-        "[data-nightfire-block-card][data-block-index='1']",
+        "[data-nightfire-block-card][data-block-index='1']"
       ) as HTMLElement;
       const insertedTextarea = insertedCard?.querySelector("textarea");
       expect(insertedTextarea).toBeTruthy();

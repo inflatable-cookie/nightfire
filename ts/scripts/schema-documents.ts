@@ -23,16 +23,24 @@ export function fail(message: string): never {
 // text, so key order never decides whether an `enum`, a `const` or a
 // `uniqueItems` check passes.
 export function jsonEqual(left: unknown, right: unknown): boolean {
-  if (left === right) return true;
+  if (left === right) {
+    return true;
+  }
   if (Array.isArray(left) || Array.isArray(right)) {
-    if (!Array.isArray(left) || !Array.isArray(right) || left.length !== right.length) return false;
+    if (!Array.isArray(left) || !Array.isArray(right) || left.length !== right.length) {
+      return false;
+    }
     return left.every((entry, index) => jsonEqual(entry, right[index]));
   }
   const leftObject = asObject(left);
   const rightObject = asObject(right);
-  if (!leftObject || !rightObject) return false;
+  if (!leftObject || !rightObject) {
+    return false;
+  }
   const keys = Object.keys(leftObject);
-  if (keys.length !== Object.keys(rightObject).length) return false;
+  if (keys.length !== Object.keys(rightObject).length) {
+    return false;
+  }
   return keys.every((key) => key in rightObject && jsonEqual(leftObject[key], rightObject[key]));
 }
 
@@ -58,7 +66,7 @@ const SUPPORTED_KEYWORDS = new Set([
   "items",
   "properties",
   "required",
-  "additionalProperties",
+  "additionalProperties"
 ]);
 
 const SCHEMA_TYPES = new Set(["array", "boolean", "integer", "null", "number", "object", "string"]);
@@ -66,28 +74,34 @@ const SCHEMA_TYPES = new Set(["array", "boolean", "integer", "null", "number", "
 // `type` names one type or a non-empty array of them. An unknown name fails when
 // the document loads, so no document can pass by naming a type this validator
 // does not check.
-function schemaTypes(type: unknown, path: string): string[] {
-  const names: unknown[] = typeof type === "string" ? [type] : Array.isArray(type) ? type : [];
-  if (names.length === 0) fail(`${path}: type must be a type name or a non-empty array of type names`);
+function schemaTypes(type: unknown, path: string): Array<string> {
+  const names: Array<unknown> = typeof type === "string" ? [type] : Array.isArray(type) ? type : [];
+  if (names.length === 0) {
+    fail(`${path}: type must be a type name or a non-empty array of type names`);
+  }
   for (const name of names) {
     if (typeof name !== "string" || !SCHEMA_TYPES.has(name)) {
       fail(`${path}: unsupported schema type ${JSON.stringify(name)}`);
     }
   }
-  return names as string[];
+  return names as Array<string>;
 }
 
 export function assertSupportedSchema(schema: JsonSchema, path: string): void {
-  if (typeof schema === "boolean") return;
+  if (typeof schema === "boolean") {
+    return;
+  }
   for (const keyword of Object.keys(schema)) {
     if (!SUPPORTED_KEYWORDS.has(keyword)) {
       fail(
         `${path}: unsupported JSON Schema keyword \`${keyword}\`; this validator would ignore it, ` +
-          "so add support in ts/scripts/schema-documents.ts or remove it from the document",
+          "so add support in ts/scripts/schema-documents.ts or remove it from the document"
       );
     }
   }
-  if (schema.type !== undefined) schemaTypes(schema.type, path);
+  if (schema.type !== undefined) {
+    schemaTypes(schema.type, path);
+  }
 
   const definitions = schema.$defs;
   if (definitions !== undefined) {
@@ -99,8 +113,12 @@ export function assertSupportedSchema(schema: JsonSchema, path: string): void {
 
   for (const keyword of ["allOf", "anyOf"] as const) {
     const entries = schema[keyword];
-    if (entries === undefined) continue;
-    if (!Array.isArray(entries)) fail(`${path}: ${keyword} must be an array of schemas`);
+    if (entries === undefined) {
+      continue;
+    }
+    if (!Array.isArray(entries)) {
+      fail(`${path}: ${keyword} must be an array of schemas`);
+    }
     entries.forEach((entry, index) => {
       assertSupportedSchema(entry as JsonSchema, `${path}#/${keyword}/${index}`);
     });
@@ -111,14 +129,18 @@ export function assertSupportedSchema(schema: JsonSchema, path: string): void {
   }
 
   if (schema.properties !== undefined) {
-    const map = asObject(schema.properties) ?? fail(`${path}: properties must be an object of schemas`);
+    const map =
+      asObject(schema.properties) ?? fail(`${path}: properties must be an object of schemas`);
     for (const [name, entry] of Object.entries(map)) {
       assertSupportedSchema(entry as JsonSchema, `${path}#/properties/${name}`);
     }
   }
 
   if (schema.additionalProperties !== undefined) {
-    assertSupportedSchema(schema.additionalProperties as JsonSchema, `${path}#/additionalProperties`);
+    assertSupportedSchema(
+      schema.additionalProperties as JsonSchema,
+      `${path}#/additionalProperties`
+    );
   }
 }
 
@@ -129,7 +151,9 @@ export function asObject(value: unknown): JsonObject | null {
 }
 
 export async function loadPublishedSchemas(): Promise<SchemaCatalog> {
-  if (cached) return cached;
+  if (cached) {
+    return cached;
+  }
 
   const documents = new Map<string, JsonObject>();
   const rawDocuments = new Map<string, string>();
@@ -152,29 +176,43 @@ export async function loadPublishedSchemas(): Promise<SchemaCatalog> {
 }
 
 export function schemaAt(catalog: SchemaCatalog, path: string): JsonObject {
-  return catalog.documents.get(resolve(catalog.schemaRoot, path))
-    ?? fail(`missing schema document: ${path}`);
+  return (
+    catalog.documents.get(resolve(catalog.schemaRoot, path)) ??
+    fail(`missing schema document: ${path}`)
+  );
 }
 
 export function visit(value: unknown, callback: (object: JsonObject) => void): void {
   if (Array.isArray(value)) {
-    for (const entry of value) visit(entry, callback);
+    for (const entry of value) {
+      visit(entry, callback);
+    }
     return;
   }
   const object = asObject(value);
-  if (!object) return;
+  if (!object) {
+    return;
+  }
   callback(object);
-  for (const entry of Object.values(object)) visit(entry, callback);
+  for (const entry of Object.values(object)) {
+    visit(entry, callback);
+  }
 }
 
 function resolvePointer(document: unknown, fragment: string): unknown {
-  if (fragment === "" || fragment === "#") return document;
-  if (!fragment.startsWith("#/")) fail(`unsupported schema fragment: ${fragment}`);
+  if (fragment === "" || fragment === "#") {
+    return document;
+  }
+  if (!fragment.startsWith("#/")) {
+    fail(`unsupported schema fragment: ${fragment}`);
+  }
   let current = document;
   for (const part of fragment.slice(2).split("/")) {
     const key = part.replaceAll("~1", "/").replaceAll("~0", "~");
     const object = asObject(current);
-    if (!object || !(key in object)) fail(`unresolved schema fragment: ${fragment}`);
+    if (!object || !(key in object)) {
+      fail(`unresolved schema fragment: ${fragment}`);
+    }
     current = object[key];
   }
   return current;
@@ -183,10 +221,10 @@ function resolvePointer(document: unknown, fragment: string): unknown {
 export function resolveReference(
   catalog: SchemaCatalog,
   ref: string,
-  fromPath: string,
+  fromPath: string
 ): { schema: JsonSchema; path: string } {
   const [filePart, fragmentPart] = ref.split("#", 2);
-  const path = filePart.length > 0 ? resolve(dirname(fromPath), filePart) : fromPath;
+  const path = filePart ? resolve(dirname(fromPath), filePart) : fromPath;
   if (!path.startsWith(`${catalog.schemaRoot}/`) && path !== catalog.schemaRoot) {
     fail(`schema reference escapes the published tree: ${ref}`);
   }
@@ -200,14 +238,22 @@ export function resolveReference(
 
 function matchesType(value: unknown, type: string): boolean {
   switch (type) {
-    case "array": return Array.isArray(value);
-    case "boolean": return typeof value === "boolean";
-    case "integer": return typeof value === "number" && Number.isInteger(value);
-    case "null": return value === null;
-    case "number": return typeof value === "number" && Number.isFinite(value);
-    case "object": return asObject(value) !== null;
-    case "string": return typeof value === "string";
-    default: fail(`unsupported schema type: ${type}`);
+    case "array":
+      return Array.isArray(value);
+    case "boolean":
+      return typeof value === "boolean";
+    case "integer":
+      return typeof value === "number" && Number.isInteger(value);
+    case "null":
+      return value === null;
+    case "number":
+      return typeof value === "number" && Number.isFinite(value);
+    case "object":
+      return asObject(value) !== null;
+    case "string":
+      return typeof value === "string";
+    default:
+      fail(`unsupported schema type: ${type}`);
   }
 }
 
@@ -216,15 +262,19 @@ export function validate(
   value: unknown,
   schema: JsonSchema,
   schemaPath: string,
-  instancePath = "$",
-): string[] {
-  if (schema === true) return [];
-  if (schema === false) return [`${instancePath}: rejected by false schema`];
+  instancePath = "$"
+): Array<string> {
+  if (schema === true) {
+    return [];
+  }
+  if (schema === false) {
+    return [`${instancePath}: rejected by false schema`];
+  }
 
   // JSON Schema 2020-12: `$ref` sits beside sibling keywords and both apply, so
   // the sibling checks below run after the referenced schema rather than instead
   // of it.
-  const errors: string[] = [];
+  const errors: Array<string> = [];
   if (typeof schema.$ref === "string") {
     const resolved = resolveReference(catalog, schema.$ref, schemaPath);
     errors.push(...validate(catalog, value, resolved.schema, resolved.path, instancePath));
@@ -237,9 +287,10 @@ export function validate(
 
   const anyOf = Array.isArray(schema.anyOf) ? schema.anyOf : [];
   if (
-    anyOf.length > 0
-    && !anyOf.some((child) =>
-      validate(catalog, value, child as JsonSchema, schemaPath, instancePath).length === 0
+    anyOf.length > 0 &&
+    !anyOf.some(
+      (child) =>
+        validate(catalog, value, child as JsonSchema, schemaPath, instancePath).length === 0
     )
   ) {
     errors.push(`${instancePath}: does not match any allowed shape`);
@@ -260,7 +311,11 @@ export function validate(
     }
   }
 
-  if (typeof value === "string" && typeof schema.minLength === "number" && value.length < schema.minLength) {
+  if (
+    typeof value === "string" &&
+    typeof schema.minLength === "number" &&
+    value.length < schema.minLength
+  ) {
     errors.push(`${instancePath}: shorter than minLength ${schema.minLength}`);
   }
   if (typeof value === "number" && typeof schema.minimum === "number" && value < schema.minimum) {
@@ -275,7 +330,9 @@ export function validate(
       const unique = value.every((entry, index) =>
         value.slice(index + 1).every((other) => !jsonEqual(entry, other))
       );
-      if (!unique) errors.push(`${instancePath}: items are not unique`);
+      if (!unique) {
+        errors.push(`${instancePath}: items are not unique`);
+      }
     }
     if (schema.items !== undefined) {
       value.forEach((entry, index) => {
@@ -285,8 +342,8 @@ export function validate(
             entry,
             schema.items as JsonSchema,
             schemaPath,
-            `${instancePath}[${index}]`,
-          ),
+            `${instancePath}[${index}]`
+          )
         );
       });
     }
@@ -296,13 +353,21 @@ export function validate(
   if (object) {
     const required = Array.isArray(schema.required) ? schema.required : [];
     for (const key of required) {
-      if (typeof key === "string" && !(key in object)) errors.push(`${instancePath}: missing ${key}`);
+      if (typeof key === "string" && !(key in object)) {
+        errors.push(`${instancePath}: missing ${key}`);
+      }
     }
     const properties = asObject(schema.properties) ?? {};
     for (const [key, entry] of Object.entries(object)) {
       if (key in properties) {
         errors.push(
-          ...validate(catalog, entry, properties[key] as JsonSchema, schemaPath, `${instancePath}.${key}`),
+          ...validate(
+            catalog,
+            entry,
+            properties[key] as JsonSchema,
+            schemaPath,
+            `${instancePath}.${key}`
+          )
         );
       } else if (schema.additionalProperties === false) {
         errors.push(`${instancePath}: unknown property ${key}`);
@@ -313,8 +378,8 @@ export function validate(
             entry,
             schema.additionalProperties as JsonSchema,
             schemaPath,
-            `${instancePath}.${key}`,
-          ),
+            `${instancePath}.${key}`
+          )
         );
       }
     }
@@ -326,8 +391,8 @@ export function validate(
 export function validateDocument(
   catalog: SchemaCatalog,
   value: unknown,
-  relativePath: string,
-): string[] {
+  relativePath: string
+): Array<string> {
   const absolutePath = resolve(catalog.schemaRoot, relativePath);
   return validate(catalog, value, schemaAt(catalog, relativePath), absolutePath);
 }
@@ -339,7 +404,7 @@ export function payloadDocumentPath(type: string): string {
 export function validatePayload(
   catalog: SchemaCatalog,
   type: string,
-  data: unknown,
-): string[] {
+  data: unknown
+): Array<string> {
   return validateDocument(catalog, data, payloadDocumentPath(type));
 }

@@ -8,10 +8,10 @@ import { join } from "node:path";
 
 const RUNNER = join(import.meta.dir, "../../scripts/run-test-files.ts");
 
-function run(...roots: string[]) {
+function run(...roots: Array<string>) {
   return Bun.spawnSync([process.execPath, RUNNER, ...roots], {
     stdout: "pipe",
-    stderr: "pipe",
+    stderr: "pipe"
   });
 }
 
@@ -53,7 +53,7 @@ describe("tooling/run-test-files", () => {
       mkdirSync(suite);
       writeFileSync(
         join(suite, "passes.test.ts"),
-        'import { expect, it } from "bun:test";\nit("passes", () => { expect(1).toBe(1); });\n',
+        'import { expect, it } from "bun:test";\nit("passes", () => { expect(1).toBe(1); });\n'
       );
       const result = run(suite);
       expect(result.exitCode).toBe(0);

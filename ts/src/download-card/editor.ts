@@ -1,8 +1,5 @@
 import DownloadCardEditor from "./DownloadCardEditor.svelte";
-import {
-  registerBlockEditor,
-  registerBlockEmptyChecker
-} from "../editor-registry";
+import { registerBlockEditor, registerBlockEmptyChecker } from "../editor-registry";
 
 // Register the download-card block editor as a generic option for schemas that allow it.
 registerBlockEditor(null, "download_card", "Download card", DownloadCardEditor);
@@ -11,7 +8,9 @@ registerBlockEditor(null, "download_card", "Download card", DownloadCardEditor);
 // nothing for such a block, so the checker agrees with the renderer.
 registerBlockEmptyChecker("download_card", (block) => {
   const files = block?.data?.files;
-  if (!Array.isArray(files)) return true;
+  if (!Array.isArray(files)) {
+    return true;
+  }
   return !files.some(
     (file) =>
       file !== null &&

@@ -16,20 +16,27 @@ const installedRoot = join(checkoutRoot, "node_modules") + sep;
  */
 export function assertLoaderToolchain(
   typescript: unknown,
-  resolve: (specifier: string) => string = (specifier) =>
-    Bun.resolveSync(specifier, checkoutRoot),
+  resolve: (specifier: string) => string = (specifier) => Bun.resolveSync(specifier, checkoutRoot)
 ): void {
   for (const specifier of ["typescript", "svelte/compiler"]) {
     const resolved = resolve(specifier);
-    if (resolved.startsWith(installedRoot)) continue;
+    if (resolved.startsWith(installedRoot)) {
+      continue;
+    }
     throw new Error(
-      `shared Svelte loader: ${specifier} resolved outside this checkout to ${resolved}; run \`effigy bootstrap:deps\` so the loader uses the pinned toolchain`,
+      `shared Svelte loader: ${specifier} resolved outside this checkout to ${resolved}; run \`effigy bootstrap:deps\` so the loader uses the pinned toolchain`
     );
   }
-  const compiler = typescript as { transpileModule?: unknown; ModuleKind?: { ESNext?: unknown } } | null;
-  if (typeof compiler?.transpileModule !== "function" || compiler.ModuleKind?.ESNext === undefined) {
+  const compiler = typescript as {
+    transpileModule?: unknown;
+    ModuleKind?: { ESNext?: unknown };
+  } | null;
+  if (
+    typeof compiler?.transpileModule !== "function" ||
+    compiler.ModuleKind?.ESNext === undefined
+  ) {
     throw new Error(
-      "shared Svelte loader: the resolved typescript has no compiler API (transpileModule, ModuleKind); run `effigy bootstrap:deps` so the loader uses the pinned TypeScript",
+      "shared Svelte loader: the resolved typescript has no compiler API (transpileModule, ModuleKind); run `effigy bootstrap:deps` so the loader uses the pinned TypeScript"
     );
   }
 }
@@ -47,9 +54,9 @@ export function createSveltePlugin(generate: "client" | "server" = "client") {
               compilerOptions: {
                 module: ts.ModuleKind.ESNext,
                 target: ts.ScriptTarget.ES2022,
-                verbatimModuleSyntax: true,
+                verbatimModuleSyntax: true
               },
-              fileName: path,
+              fileName: path
             }).outputText
           : source;
         const compiled = compileModule(code, { filename: path, generate, dev: true });
@@ -59,28 +66,30 @@ export function createSveltePlugin(generate: "client" | "server" = "client") {
         const source = await Bun.file(path).text();
         const processed = await preprocess(source, {
           script({ attributes, content }) {
-            if (attributes.lang !== "ts") return;
+            if (attributes.lang !== "ts") {
+              return;
+            }
             return {
               code: ts.transpileModule(content, {
                 compilerOptions: {
                   module: ts.ModuleKind.ESNext,
                   target: ts.ScriptTarget.ES2022,
-                  verbatimModuleSyntax: true,
+                  verbatimModuleSyntax: true
                 },
-                fileName: path,
-              }).outputText,
+                fileName: path
+              }).outputText
             };
-          },
+          }
         });
         const compiled = compile(processed.code, {
           filename: path,
           generate,
           dev: true,
-          css: "injected",
+          css: "injected"
         });
         return { contents: compiled.js.code, loader: "js" };
       });
-    },
+    }
   } satisfies Bun.BunPlugin;
 }
 

@@ -10,21 +10,21 @@ export type RustRoute = "oxide" | "cargo";
 
 const runner = join(import.meta.dir, "oxide-rust-runner.sh");
 
-function routed(args: string[], capture: boolean, cwd?: string): string {
+function routed(args: Array<string>, capture: boolean, cwd?: string): string {
   const child = Bun.spawnSync(["/bin/sh", runner, ...args], {
     cwd,
     env: { ...process.env },
     stdout: capture ? "pipe" : "inherit",
-    stderr: capture ? "pipe" : "inherit",
+    stderr: capture ? "pipe" : "inherit"
   });
   if (child.exitCode !== 0) {
-    const detail = capture ? child.stderr?.toString().trim() ?? "" : "";
+    const detail = capture ? (child.stderr?.toString().trim() ?? "") : "";
     throw new Error(
       `Rust route ${args.join(" ")} failed with exit ${child.exitCode}` +
-        (detail ? `: ${detail}` : ""),
+        (detail ? `: ${detail}` : "")
     );
   }
-  return capture ? child.stdout?.toString() ?? "" : "";
+  return capture ? (child.stdout?.toString() ?? "") : "";
 }
 
 /** Which command the route selects right now. */
@@ -37,12 +37,16 @@ export function rustRoute(): RustRoute {
 }
 
 /** Runs one tool that calls Cargo itself, bound to one Cargo workspace. */
-export function runRustTool(manifestPath: string, command: string[], cwd?: string): void {
+export function runRustTool(manifestPath: string, command: Array<string>, cwd?: string): void {
   routed(["tool", manifestPath, "--", ...command], false, cwd);
 }
 
 /** Runs one tool through the route and returns its standard output. */
-export function captureRustTool(manifestPath: string, command: string[], cwd?: string): string {
+export function captureRustTool(
+  manifestPath: string,
+  command: Array<string>,
+  cwd?: string
+): string {
   return routed(["tool", manifestPath, "--", ...command], true, cwd);
 }
 
@@ -52,11 +56,13 @@ export function captureRustTool(manifestPath: string, command: string[], cwd?: s
 // a throwaway repository before Oxide is asked to build in it. Cargo needs no
 // such preparation, so the CI and escape routes leave the workspace untouched.
 export async function prepareDisposableWorkspace(directory: string): Promise<void> {
-  if (rustRoute() !== "oxide") return;
+  if (rustRoute() !== "oxide") {
+    return;
+  }
   const init = Bun.spawnSync(["git", "init", "-q"], {
     cwd: directory,
     stdout: "inherit",
-    stderr: "inherit",
+    stderr: "inherit"
   });
   if (init.exitCode !== 0) {
     throw new Error(`git init failed in ${directory}`);

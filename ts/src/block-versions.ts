@@ -2,7 +2,7 @@ import { KeyedRegistry } from "./registry-map";
 
 export interface BlockVersionSpec {
   readonly current: string;
-  readonly supported: readonly string[];
+  readonly supported: ReadonlyArray<string>;
 }
 
 const DEFAULT_VERSIONS: BlockVersionSpec = Object.freeze({
@@ -20,10 +20,7 @@ const blockVersions = new KeyedRegistry<BlockVersionSpec>();
  * in the registration rather than a version policy, so it throws. A later
  * mutation of the caller's array must not reach the registry.
  */
-export function registerBlockVersions(
-  type: string,
-  spec: BlockVersionSpec
-): void {
+export function registerBlockVersions(type: string, spec: BlockVersionSpec): void {
   const current = spec?.current;
   const supported = spec?.supported;
 
@@ -32,9 +29,7 @@ export function registerBlockVersions(
   }
 
   if (!Array.isArray(supported) || supported.length === 0) {
-    throw new TypeError(
-      `block type ${type} must list at least one supported version`
-    );
+    throw new TypeError(`block type ${type} must list at least one supported version`);
   }
 
   if (!supported.every((version) => typeof version === "string")) {
@@ -47,10 +42,7 @@ export function registerBlockVersions(
     );
   }
 
-  blockVersions.set(
-    type,
-    Object.freeze({ current, supported: Object.freeze([...supported]) })
-  );
+  blockVersions.set(type, Object.freeze({ current, supported: Object.freeze([...supported]) }));
 }
 
 export function unregisterBlockVersions(type: string): boolean {
@@ -69,10 +61,7 @@ export function getBlockVersions(type: string): BlockVersionSpec {
  * Resolve a stored block version to the current implementation.
  * Unknown versions fail closed (`null`).
  */
-export function resolveBlockVersion(
-  type: string,
-  version: string
-): string | null {
+export function resolveBlockVersion(type: string, version: string): string | null {
   const spec = getBlockVersions(type);
   return spec.supported.includes(version) ? spec.current : null;
 }

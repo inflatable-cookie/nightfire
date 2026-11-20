@@ -1,8 +1,5 @@
-import {
-  coerceNightfireBlock,
-  type NightfireBlock,
-  type NightfireValue
-} from "./types";
+import { coerceNightfireBlock } from "./types";
+import type { NightfireBlock, NightfireValue } from "./types";
 import { ensureNightfireBlockIds } from "./block-ids";
 import { resolveBlockVersion } from "./block-versions";
 import { SchemaScopedRegistry } from "./registry-map";
@@ -19,10 +16,7 @@ export function registerBlockValidator(
   validators.set(schema, type, fn);
 }
 
-export function unregisterBlockValidator(
-  schema: string | null,
-  type: string
-): boolean {
+export function unregisterBlockValidator(schema: string | null, type: string): boolean {
   return validators.delete(schema, type);
 }
 
@@ -94,7 +88,7 @@ function validateBlock(schema: string, block: unknown): NightfireBlock | null {
   return result;
 }
 
-function readEnvelope(value: unknown): { schema: string; blocks: unknown[] } | null {
+function readEnvelope(value: unknown): { schema: string; blocks: Array<unknown> } | null {
   const record = asRecord(value);
   if (!record) {
     return null;
@@ -137,9 +131,7 @@ export function validateNightfireValue(value: NightfireValue): NightfireValue {
   return { schema: envelope.schema, blocks };
 }
 
-export function prepareNightfireForSave(
-  value: NightfireValue
-): NightfireValue | null {
+export function prepareNightfireForSave(value: NightfireValue): NightfireValue | null {
   const validated = validateNightfireValue(value);
   if (validated.schema.length === 0 || validated.blocks.length === 0) {
     return null;

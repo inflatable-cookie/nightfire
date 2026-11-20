@@ -38,12 +38,12 @@
   // An embed is addressable when it carries a provider and an id, both
   // non-empty strings. Anything else renders nothing at all.
   function asEmbed(value: unknown): StoredEmbed | null {
-    if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+    if (!value || typeof value !== "object" || Array.isArray(value)) {return null;}
     const candidate = value as { provider?: unknown; id?: unknown; originalEmbed?: unknown };
     if (typeof candidate.provider !== "string" || candidate.provider.length === 0) {
       return null;
     }
-    if (typeof candidate.id !== "string" || candidate.id.length === 0) return null;
+    if (typeof candidate.id !== "string" || candidate.id.length === 0) {return null;}
     return {
       provider: candidate.provider,
       id: candidate.id,
@@ -59,8 +59,8 @@
   // keeps it, so the markup never gets a duplicate attribute. The replacement is a
   // callback, so a `$&` or `$1` in the title is written literally.
   function withAccessibleName(markup: string, title: string): string {
-    if (!title) return markup;
-    if (/<iframe\b[^>]*\stitle\s*=/i.test(markup)) return markup;
+    if (!title) {return markup;}
+    if (/<iframe\b[^>]*\stitle\s*=/i.test(markup)) {return markup;}
     const escaped = title.replaceAll("&", "&amp;").replaceAll('"', "&quot;");
     return markup.replace(/<iframe(?=[\s>])/i, () => `<iframe title="${escaped}"`);
   }

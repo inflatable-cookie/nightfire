@@ -62,8 +62,8 @@ describe("nightfire/slash-commands", () => {
       }
     ];
 
-    expect(filterNightfireSlashCommands(commands, "para")).toEqual([commands[0]]);
-    expect(filterNightfireSlashCommands(commands, "attachment")).toEqual([commands[1]]);
+    expect(filterNightfireSlashCommands(commands, "para")).toEqual([commands[0]!]);
+    expect(filterNightfireSlashCommands(commands, "attachment")).toEqual([commands[1]!]);
   });
 
   it("detects slash tokens at the caret and removes them after selection", () => {
@@ -83,28 +83,29 @@ describe("nightfire/slash-commands", () => {
   });
 
   it("ignores selections and non-command slashes", () => {
-    expect(findNightfireSlashMatch({
-      value: "https://example.com",
-      selectionStart: 19,
-      selectionEnd: 19
-    })).toBeNull();
+    expect(
+      findNightfireSlashMatch({
+        value: "https://example.com",
+        selectionStart: 19,
+        selectionEnd: 19
+      })
+    ).toBeNull();
 
-    expect(findNightfireSlashMatch({
-      value: "/download",
-      selectionStart: 0,
-      selectionEnd: 9
-    })).toBeNull();
+    expect(
+      findNightfireSlashMatch({
+        value: "/download",
+        selectionStart: 0,
+        selectionEnd: 9
+      })
+    ).toBeNull();
   });
 
   it("keeps the default label when a custom command passes a blank one", () => {
-    const commands = buildNightfireSlashCommands(
-      [{ type: "markdown", label: "Markdown" }],
-      { commands: [{ type: "markdown", label: "   " }] }
-    );
+    const commands = buildNightfireSlashCommands([{ type: "markdown", label: "Markdown" }], {
+      commands: [{ type: "markdown", label: "   " }]
+    });
 
-    expect(commands).toEqual([
-      expect.objectContaining({ type: "markdown", label: "Markdown" })
-    ]);
+    expect(commands).toEqual([expect.objectContaining({ type: "markdown", label: "Markdown" })]);
   });
 
   it("clamps a caret past the end of the value", () => {

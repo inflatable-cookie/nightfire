@@ -4,20 +4,30 @@ import { fireEvent, render, screen, waitFor } from "../render";
 import NightfireTypeSelect from "../../src/editor/NightfireTypeSelect.svelte";
 import type { GroupedOptions } from "../../src/editor/grouped-options";
 
-const groupedOptions: GroupedOptions[] = [
+const groupedOptions: Array<GroupedOptions> = [
   {
     category: "Interactive",
     label: "Interactive",
     options: [
-      { type: "question.multiple", label: "Question - Multiple choice", category: "Interactive", subcategory: "multipleChoice" },
-      { type: "question.other", label: "Question - Other", category: "Interactive", subcategory: "other" },
-    ],
+      {
+        type: "question.multiple",
+        label: "Question - Multiple choice",
+        category: "Interactive",
+        subcategory: "multipleChoice"
+      },
+      {
+        type: "question.other",
+        label: "Question - Other",
+        category: "Interactive",
+        subcategory: "other"
+      }
+    ]
   },
   {
     category: "Text",
     label: "Text",
-    options: [{ type: "markdown", label: "Markdown", category: "Text" }],
-  },
+    options: [{ type: "markdown", label: "Markdown", category: "Text" }]
+  }
 ];
 
 describe("nightfire/editor NightfireTypeSelect", () => {
@@ -26,17 +36,13 @@ describe("nightfire/editor NightfireTypeSelect", () => {
       value: "markdown",
       groupedOptions,
       typeOptions: [{ type: "markdown", label: "Markdown" }],
-      onChange: mock(),
+      onChange: mock()
     });
 
     await fireEvent.click(screen.getByRole("combobox", { name: "Block type" }));
 
     const names = screen.getAllByRole("option").map((option) => option.textContent?.trim());
-    expect(names).toEqual([
-      "Question - Multiple choice",
-      "Question - Other",
-      "Markdown",
-    ]);
+    expect(names).toEqual(["Question - Multiple choice", "Question - Other", "Markdown"]);
   });
 
   it("falls back to the flat type options when no groups are given", async () => {
@@ -46,13 +52,13 @@ describe("nightfire/editor NightfireTypeSelect", () => {
       groupedOptions: null,
       typeOptions: [
         { type: "a", label: "Question - Stays as given" },
-        { type: "b", label: "Beta" },
+        { type: "b", label: "Beta" }
       ],
-      onChange,
+      onChange
     });
 
     await fireEvent.change(screen.getByRole("combobox", { name: "Block type" }), {
-      target: { value: "b" },
+      target: { value: "b" }
     });
 
     await waitFor(() => expect(onChange).toHaveBeenCalledWith("b"));

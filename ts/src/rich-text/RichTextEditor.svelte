@@ -1,9 +1,6 @@
 <script lang="ts">
-  import {
-    RichTextEditor as PoodleRichTextEditor,
-    RICH_TEXT_FEATURES,
-    type ProseMirrorDocumentJSON
-  } from "@inflatable-cookie/poodle-svelte/rich-text";
+  import { RichTextEditor as PoodleRichTextEditor, RICH_TEXT_FEATURES } from '@inflatable-cookie/poodle-svelte/rich-text';
+import type { ProseMirrorDocumentJSON } from '@inflatable-cookie/poodle-svelte/rich-text';
   import { createRichTextImageRequest } from "./images";
 
   type RichTextBlock = {

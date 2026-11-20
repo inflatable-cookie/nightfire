@@ -7,8 +7,8 @@
 
   interface Props {
     value?: string;
-    groupedOptions?: GroupedOptions[] | null;
-    typeOptions?: TypeOption[];
+    groupedOptions?: Array<GroupedOptions> | null;
+    typeOptions?: Array<TypeOption>;
     onChange: (value: string) => void;
     variant?: "default" | "ghost";
     menuMinWidth?: string | null;
@@ -25,8 +25,8 @@
 
   function formatSubgroupLabel(input: string): string {
     return input
-      .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
-      .replace(/[_-]/g, " ")
+      .replaceAll(/([a-z0-9])([A-Z])/g, "$1 $2")
+      .replaceAll(/[_-]/g, " ")
       .trim();
   }
 
@@ -37,9 +37,9 @@
   // Lays out the groups `groupedOptions` already ordered, without re-sorting:
   // each group's options come first, then one group per subcategory.
   const options = $derived.by<SelectItems>(() => {
-    if (!groupedOptions?.length) return items;
+    if (!groupedOptions?.length) {return items;}
 
-    const renderedGroups: SelectOptionGroup[] = [];
+    const renderedGroups: Array<SelectOptionGroup> = [];
 
     for (const group of groupedOptions) {
       const subgroups = new Map<string, Array<{ value: string; label: string }>>();

@@ -18,7 +18,9 @@ import { MediaKind, getMediaSource } from "../media-source";
  */
 export function createRichTextImageRequest(): (() => Promise<RichTextImageInput | null>) | null {
   const source = getMediaSource();
-  if (!source) return null;
+  if (!source) {
+    return null;
+  }
 
   return async () => {
     try {
@@ -32,7 +34,9 @@ export function createRichTextImageRequest(): (() => Promise<RichTextImageInput 
               reference.media_id.trim().length > 0
           )
         : undefined;
-      if (!first) return null;
+      if (!first) {
+        return null;
+      }
 
       const resolved = source.resolve(first);
       if (!resolved || typeof resolved.url !== "string" || resolved.url.trim().length === 0) {

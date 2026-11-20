@@ -7,18 +7,19 @@ import {
   loadPublishedSchemas,
   resolveReference,
   schemaAt,
-  type JsonObject,
-  type JsonSchema,
   validateDocument,
-  visit,
+  visit
 } from "./schema-documents";
+import type { JsonObject, JsonSchema } from "./schema-documents";
 
 const catalog = await loadPublishedSchemas();
 const { repoRoot, schemaRoot, documents, rawDocuments } = catalog;
 
 function assertValid(value: unknown, path: string, label: string): void {
   const errors = validateDocument(catalog, value, path);
-  if (errors.length > 0) fail(`${label} failed ${path}:\n${errors.join("\n")}`);
+  if (errors.length > 0) {
+    fail(`${label} failed ${path}:\n${errors.join("\n")}`);
+  }
 }
 
 function assertInvalid(value: unknown, path: string, label: string): void {
@@ -31,7 +32,7 @@ const mechanicsIds = new Map([
   ["value.schema.json", "nightfire.value@1"],
   ["block.schema.json", "nightfire.block@1"],
   ["registry.schema.json", "nightfire.registry@1"],
-  ["strategy.schema.json", "nightfire.strategy@1"],
+  ["strategy.schema.json", "nightfire.strategy@1"]
 ]);
 
 for (const [path, expectedId] of mechanicsIds) {
@@ -39,17 +40,23 @@ for (const [path, expectedId] of mechanicsIds) {
   if (document.$schema !== "https://json-schema.org/draft/2020-12/schema") {
     fail(`${path} is not declared as JSON Schema 2020-12`);
   }
-  if (document.$id !== expectedId) fail(`${path} has unexpected $id ${String(document.$id)}`);
+  if (document.$id !== expectedId) {
+    fail(`${path} has unexpected $id ${String(document.$id)}`);
+  }
 }
 
 for (const [path, raw] of rawDocuments) {
-  if (/acow:|silo\./i.test(raw)) fail(`${relative(repoRoot, path)} leaks consumer vocabulary`);
-  const document = documents.get(path)!;
+  if (/acow:|silo\./i.test(raw)) {
+    fail(`${relative(repoRoot, path)} leaks consumer vocabulary`);
+  }
+  const document = documents.get(path) ?? fail(`unresolved schema document: ${path}`);
   if (document.$schema !== "https://json-schema.org/draft/2020-12/schema") {
     fail(`${relative(repoRoot, path)} is not declared as JSON Schema 2020-12`);
   }
   visit(document, (object) => {
-    if (typeof object.$ref !== "string") return;
+    if (typeof object.$ref !== "string") {
+      return;
+    }
     if (/^[a-z][a-z0-9+.-]*:/i.test(object.$ref) || object.$ref.startsWith("/")) {
       fail(`${relative(repoRoot, path)} contains non-relative $ref ${object.$ref}`);
     }
@@ -63,7 +70,9 @@ const publishedPayloads = [...documents.keys()]
   .sort();
 const declaredCoreBlocks = [...CORE_BLOCK_TYPE_NAMES].sort();
 if (JSON.stringify(publishedPayloads) !== JSON.stringify(declaredCoreBlocks)) {
-  fail(`core payload schemas differ from CORE_BLOCK_TYPE_NAMES:\npublished=${publishedPayloads.join(",")}\ndeclared=${declaredCoreBlocks.join(",")}`);
+  fail(
+    `core payload schemas differ from CORE_BLOCK_TYPE_NAMES:\npublished=${publishedPayloads.join(",")}\ndeclared=${declaredCoreBlocks.join(",")}`
+  );
 }
 
 assertValid({ blocks: fixture.registry.blocks }, "registry.schema.json", "shared registry");
@@ -82,7 +91,9 @@ assertInvalid(fixture.rejectedV1, "value.schema.json", "shared legacy envelope")
 function isRecursiveDef(defName: string, defSchema: unknown): boolean {
   let recursive = false;
   visit(defSchema, (object) => {
-    if (object.$ref === `#/$defs/${defName}`) recursive = true;
+    if (object.$ref === `#/$defs/${defName}`) {
+      recursive = true;
+    }
   });
   return recursive;
 }
@@ -92,17 +103,25 @@ function assertCovers(
   value: unknown,
   schemaPath: string,
   document: JsonObject,
-  instancePath: string,
+  instancePath: string
 ): void {
-  if (schema === true || schema === false) return;
+  if (schema === true || schema === false) {
+    return;
+  }
 
   if (typeof schema.$ref === "string") {
-    if (!schema.$ref.startsWith("#")) return;
+    if (!schema.$ref.startsWith("#")) {
+      return;
+    }
     if (schema.$ref.startsWith("#/$defs/")) {
       const defName = schema.$ref.slice("#/$defs/".length);
       const defSchema = asObject(document.$defs)?.[defName];
-      if (defSchema === undefined) fail(`${instancePath}: unresolved ${schema.$ref}`);
-      if (isRecursiveDef(defName, defSchema)) return;
+      if (defSchema === undefined) {
+        fail(`${instancePath}: unresolved ${schema.$ref}`);
+      }
+      if (isRecursiveDef(defName, defSchema)) {
+        return;
+      }
       assertCovers(defSchema as JsonSchema, value, schemaPath, document, instancePath);
       return;
     }
@@ -120,12 +139,20 @@ function assertCovers(
   const properties = asObject(schema.properties);
   const object = asObject(value);
   if (properties) {
-    if (!object) fail(`${instancePath}: representative is not an object`);
+    if (!object) {
+      fail(`${instancePath}: representative is not an object`);
+    }
     for (const key of Object.keys(properties)) {
       if (!(key in object)) {
         fail(`${instancePath}: representative omits documented property ${key}`);
       }
-      assertCovers(properties[key] as JsonSchema, object[key], schemaPath, document, `${instancePath}.${key}`);
+      assertCovers(
+        properties[key] as JsonSchema,
+        object[key],
+        schemaPath,
+        document,
+        `${instancePath}.${key}`
+      );
     }
   }
 
@@ -135,11 +162,15 @@ function assertCovers(
 }
 
 const corePayloadEntry = fixture.values.find((entry) => entry.name === "core-payloads");
-if (!corePayloadEntry) fail("shared fixture is missing the core-payloads value");
+if (!corePayloadEntry) {
+  fail("shared fixture is missing the core-payloads value");
+}
 const corePayloadBlocks = corePayloadEntry.value.blocks;
 const corePayloadTypes = corePayloadBlocks.map((block) => block.type).sort();
 if (JSON.stringify(corePayloadTypes) !== JSON.stringify(declaredCoreBlocks)) {
-  fail(`core-payloads types differ from CORE_BLOCK_TYPE_NAMES:\npayloads=${corePayloadTypes.join(",")}\ndeclared=${declaredCoreBlocks.join(",")}`);
+  fail(
+    `core-payloads types differ from CORE_BLOCK_TYPE_NAMES:\npayloads=${corePayloadTypes.join(",")}\ndeclared=${declaredCoreBlocks.join(",")}`
+  );
 }
 
 for (const block of corePayloadBlocks) {
@@ -154,19 +185,35 @@ for (const block of corePayloadBlocks) {
 assertValid(
   { rows: [{ cells: [{ markdown: "" }] }] },
   "blocks/table.schema.json",
-  "table row without section",
+  "table row without section"
 );
 
 const descriptors = new Map(fixture.registry.blocks.map((block) => [block.type, block]));
 const strategy = fixture.registry.strategy;
 function fixtureCaseAccepted(value: (typeof fixture.validationCases)[number]["value"]): boolean {
-  if (validateDocument(catalog, value, "value.schema.json").length > 0) return false;
-  if (value.blocks.length < strategy.cardinality.minBlocks) return false;
-  if (strategy.cardinality.maxBlocks !== null && value.blocks.length > strategy.cardinality.maxBlocks) return false;
+  if (validateDocument(catalog, value, "value.schema.json").length > 0) {
+    return false;
+  }
+  if (value.blocks.length < strategy.cardinality.minBlocks) {
+    return false;
+  }
+  if (
+    strategy.cardinality.maxBlocks !== null &&
+    value.blocks.length > strategy.cardinality.maxBlocks
+  ) {
+    return false;
+  }
   return value.blocks.every((block) => {
     const descriptor = descriptors.get(block.type);
-    if (!descriptor || !descriptor.supported.includes(block.version)) return false;
-    if (!strategy.allowedTypes.includes(block.type) && !strategy.allowedCategories.includes(descriptor.category)) return false;
+    if (!descriptor || !descriptor.supported.includes(block.version)) {
+      return false;
+    }
+    if (
+      !strategy.allowedTypes.includes(block.type) &&
+      !strategy.allowedCategories.includes(descriptor.category)
+    ) {
+      return false;
+    }
     if (CORE_BLOCK_TYPE_NAMES.includes(block.type as never)) {
       return validateDocument(catalog, block.data, `blocks/${block.type}.schema.json`).length === 0;
     }
@@ -177,10 +224,18 @@ function fixtureCaseAccepted(value: (typeof fixture.validationCases)[number]["va
 for (const testCase of fixture.validationCases) {
   const accepted = fixtureCaseAccepted(testCase.value);
   if (accepted !== testCase.accepted) {
-    fail(`shared validation case ${testCase.name} expected accepted=${testCase.accepted}, got ${accepted}`);
+    fail(
+      `shared validation case ${testCase.name} expected accepted=${testCase.accepted}, got ${accepted}`
+    );
   }
 }
 
-const positiveCount = fixture.values.length + fixture.validationCases.filter((testCase) => testCase.accepted).length;
-const negativeCount = 1 + fixture.validationCases.filter((testCase) => !testCase.accepted).length + declaredCoreBlocks.length;
-console.log(`schema proof passed: ${documents.size} documents, ${declaredCoreBlocks.length} core payloads, ${positiveCount} positive cases, ${negativeCount} negative cases`);
+const positiveCount =
+  fixture.values.length + fixture.validationCases.filter((testCase) => testCase.accepted).length;
+const negativeCount =
+  1 +
+  fixture.validationCases.filter((testCase) => !testCase.accepted).length +
+  declaredCoreBlocks.length;
+console.log(
+  `schema proof passed: ${documents.size} documents, ${declaredCoreBlocks.length} core payloads, ${positiveCount} positive cases, ${negativeCount} negative cases`
+);

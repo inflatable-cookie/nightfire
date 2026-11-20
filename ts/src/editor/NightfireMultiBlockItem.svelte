@@ -10,8 +10,8 @@
     totalBlocks: number;
     editorSchema: string;
     effectiveDef: SchemaDefinition;
-    editorTypeOptions: BlockTypeOption[];
-    groupedOptions: GroupedOptions[] | null;
+    editorTypeOptions: Array<BlockTypeOption>;
+    groupedOptions: Array<GroupedOptions> | null;
     onTypeChange: (index: number, value: string) => void;
     onMove: (from: number, to: number) => void;
     onRemove: (index: number) => void;
