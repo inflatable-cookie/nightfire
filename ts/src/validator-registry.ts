@@ -71,8 +71,8 @@ function readEnvelope(value: unknown): { schema: string; blocks: unknown[] } | n
   }
 
   // A sibling `block` is the legacy v1 envelope. A value carrying both shapes is
-  // hybrid and is trusted under neither.
-  if ("block" in record && record.block != null) {
+  // hybrid and is trusted under neither, even when `block` is null.
+  if (Object.hasOwn(record, "block")) {
     return null;
   }
 

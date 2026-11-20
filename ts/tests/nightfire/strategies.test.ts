@@ -130,6 +130,34 @@ describe("nightfire/strategies", () => {
 		expect(store.findById("slow")).toBeNull();
 	});
 
+	it("clears loading when an in-flight fetch is invalidated", async () => {
+		const strategies = await loadStrategies();
+		let releaseSlow = () => {};
+		const slowGate = new Promise<void>((resolve) => {
+			releaseSlow = resolve;
+		});
+
+		strategies.configureNightfireStrategies({
+			fetchStrategies: async () => {
+				await slowGate;
+				return [{ id: "stale", cardinality: { mode: "single" }, allowedTypes: [], allowedCategories: [], defaultType: "markdown" }];
+			},
+			cacheTtl: 100000,
+		});
+
+		const store = strategies.createNightfireStrategiesContext();
+		const pending = store.ensure();
+		expect(get(store.loading)).toBe(true);
+
+		store.invalidate();
+		expect(get(store.loading)).toBe(false);
+
+		releaseSlow();
+		await expect(pending).resolves.toEqual([]);
+		expect(get(store.loading)).toBe(false);
+		expect(store.findById("stale")).toBeNull();
+	});
+
 	it("returns null when strategy context is missing", async () => {
 		const strategies = await loadStrategies();
 		expect(strategies.useNightfireStrategies()).toBeNull();

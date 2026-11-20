@@ -123,6 +123,7 @@ function resetCache(): void {
   hasLoaded = false;
   fetchPromise = null;
   activeRequest = null;
+  loadingStore.set(false);
 }
 
 /**

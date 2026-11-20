@@ -16,7 +16,7 @@ function asRecord(value: unknown): Record<string, unknown> | null {
   }
 
   const record = value as Record<string, unknown>;
-  return "block" in record && record.block != null ? null : record;
+  return Object.hasOwn(record, "block") ? null : record;
 }
 
 function readBlocks(record: Record<string, unknown>, defaultType: string): NightfireBlock[] {

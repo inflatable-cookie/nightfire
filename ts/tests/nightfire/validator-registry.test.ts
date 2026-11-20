@@ -71,6 +71,14 @@ describe("nightfire/validator-registry", () => {
 		).toEqual({ schema: "", blocks: [] });
 
 		expect(
+			validateNightfireValue({
+				schema: "schema-x",
+				block: null,
+				blocks: [{ type: "markdown", data: {} }],
+			} as any)
+		).toEqual({ schema: "", blocks: [] });
+
+		expect(
 			validateNightfireValue({ blocks: [{ type: "markdown", data: {} }] } as any)
 		).toEqual({ schema: "", blocks: [] });
 
