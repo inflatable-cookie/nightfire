@@ -17,11 +17,16 @@
   `data` member. A locator can no longer resolve unrelated payload metadata
   that happens to carry an `id` and a `data`, and both lookups name the same
   object.
-- The Rust crate resolves media locators by the same two rules, so both
-  languages name one block: top-level blocks answer before nested ones, and a
-  nested payload is a block only with an `id`, a string `type` and a `data`.
-  Shared conformance cases in `fixtures/wire/v1/nightfire-values.json` cover a
-  metadata collision and a duplicate id held by a nested and a top-level block.
+- The Rust crate resolves media locators by the same rules, so both languages
+  name one block: top-level blocks answer before nested ones, a nested payload
+  is a block only with an `id`, a string `type` and a `data`, and nested
+  traversal visits array items in index order and object keys in ascending
+  code-point order. Sorting the keys explicitly on both sides replaces the
+  accident of Rust's sorted map and TypeScript's insertion order, which made a
+  duplicate nested id resolve differently per language. Shared conformance cases
+  in `fixtures/wire/v1/nightfire-values.json` cover a metadata collision whose
+  key sorts before the block, a duplicate id held by a nested and a top-level
+  block, and a duplicate nested id under sibling keys written in reverse order.
 - A non-string media locator `blockId` is a domain `Error`, not a `TypeError`
   from `.trim()`.
 - `normaliseNightfireValue` falls back to the caller's schema when the stored
@@ -60,5 +65,7 @@
   reload cleanup, and `BlockValidator` from `./validation` instead of the
   registry module.
 - Expect a media locator to resolve only a nested payload that carries an `id`,
-  a string `type` and a `data` member: re-key a stored locator that pointed at
-  plain payload metadata.
+  a string `type` and a `data` member, and expect duplicates to resolve by
+  depth-first traversal with array items in index order and object keys in
+  ascending code-point order. Re-key a stored locator that pointed at plain
+  payload metadata or relied on the order nested keys happened to be written.

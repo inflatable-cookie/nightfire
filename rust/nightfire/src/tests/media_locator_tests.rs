@@ -174,14 +174,15 @@ fn resolves_pointer_inside_nested_block_id() {
 
 #[test]
 fn ignores_nested_payload_metadata_that_looks_like_a_block() {
-    // `metadata` carries an `id` and a `data` but no block type, so it is
-    // payload metadata. Only the typed block is addressable.
+    // `annotations` carries an `id` and a `data` but no block type, so it is
+    // payload metadata. Its key sorts before `body`, so the metadata is visited
+    // first: only the block-shape rule keeps it out.
     let value = NightfireValue::single(
         "test:schema",
         block(
             "container_01",
             json!({
-                "metadata": { "id": "x", "data": { "media": "wrong" } },
+                "annotations": { "id": "x", "data": { "media": "wrong" } },
                 "body": {
                     "id": "x",
                     "type": "image",
@@ -198,6 +199,39 @@ fn ignores_nested_payload_metadata_that_looks_like_a_block() {
         .expect("reference should resolve");
 
     assert_eq!(resolved, &json!("right"));
+}
+
+#[test]
+fn visits_nested_sibling_keys_in_code_point_order() {
+    // `z` is written first and `a` sorts first: the `a` block answers, so the
+    // result does not depend on the order the JSON happens to be written in.
+    let value = NightfireValue::single(
+        "test:schema",
+        block(
+            "container_01",
+            json!({
+                "z": {
+                    "id": "dup",
+                    "type": "image",
+                    "version": "initial",
+                    "data": { "media": "insertion-order" }
+                },
+                "a": {
+                    "id": "dup",
+                    "type": "image",
+                    "version": "initial",
+                    "data": { "media": "code-point" }
+                }
+            }),
+        ),
+    );
+
+    let resolved = NightfireMediaLocator::parse("dup#/media")
+        .unwrap()
+        .resolve_in_value(&value)
+        .expect("reference should resolve");
+
+    assert_eq!(resolved, &json!("code-point"));
 }
 
 #[test]

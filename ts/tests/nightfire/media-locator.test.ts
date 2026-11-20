@@ -206,9 +206,9 @@ describe("nightfire/media-locator", () => {
 	});
 
 	it("does not address payload metadata that only looks like a block", () => {
-		// `metadata` carries an `id` and a `data` member but no block type, so it
-		// is payload metadata. The block lookup and the resolver must agree that
-		// the real block is the one with a type.
+		// `annotations` carries an `id` and a `data` but no block type, so it is
+		// payload metadata. Its key sorts before `body`, so the metadata is
+		// visited first: only the block-shape rule keeps it out.
 		const value = {
 			schema: "test:schema",
 			blocks: [
@@ -217,7 +217,7 @@ describe("nightfire/media-locator", () => {
 					type: "item_list",
 					version: "initial",
 					data: {
-						metadata: { id: "x", data: { media: "wrong" } },
+						annotations: { id: "x", data: { media: "wrong" } },
 						body: { id: "x", type: "image", version: "initial", data: { media: "right" } }
 					}
 				}
@@ -228,6 +228,31 @@ describe("nightfire/media-locator", () => {
 		expect(
 			resolveNightfireMediaLocator(value as any, parseNightfireMediaLocator("x#/media"))
 		).toBe("right");
+	});
+
+	it("visits nested sibling keys in code-point order, not insertion order", () => {
+		const value = {
+			schema: "test:schema",
+			blocks: [
+				{
+					id: "container_01",
+					type: "item_list",
+					version: "initial",
+					data: {
+						// `z` is written first, `a` sorts first: both languages must
+						// resolve the `a` block, so the answer does not depend on the
+						// order the JSON happens to be written in.
+						z: { id: "dup", type: "image", version: "initial", data: { media: "insertion-order" } },
+						a: { id: "dup", type: "image", version: "initial", data: { media: "code-point" } }
+					}
+				}
+			]
+		};
+
+		expect(
+			resolveNightfireMediaLocator(value as any, parseNightfireMediaLocator("dup#/media"))
+		).toBe("code-point");
+		expect(findNightfireBlockById(value as any, "dup")?.data).toEqual({ media: "code-point" });
 	});
 
 	it("prefers a top-level block over a nested one with the same id", () => {

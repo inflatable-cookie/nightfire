@@ -109,6 +109,42 @@ function isObjectRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
+function codePoint(character: string): number {
+  return character.codePointAt(0) ?? 0;
+}
+
+/**
+ * Compare two strings by Unicode code point. The Rust resolver compares
+ * `serde_json` map keys as UTF-8 bytes, which orders by code point too, so this
+ * is the same order in both languages.
+ */
+function compareCodePoints(left: string, right: string): number {
+  const a = Array.from(left);
+  const b = Array.from(right);
+  const shared = Math.min(a.length, b.length);
+
+  for (let index = 0; index < shared; index += 1) {
+    const difference = codePoint(a[index]) - codePoint(b[index]);
+    if (difference !== 0) {
+      return difference;
+    }
+  }
+
+  return a.length - b.length;
+}
+
+/**
+ * Sibling keys in ascending code-point order.
+ *
+ * JavaScript visits properties in insertion order, which is a fact about the
+ * JSON text rather than about the document, so a duplicate nested id would
+ * resolve differently from one parse to the next. Sorting makes the traversal
+ * canonical, and matches the Rust resolver.
+ */
+function sortedKeys(record: Record<string, unknown>): string[] {
+  return Object.keys(record).sort(compareCodePoints);
+}
+
 /**
  * A nested payload is a block when it carries the id being looked up, a string
  * `type` and a `data` member. Everything else that happens to have an `id` and
@@ -178,8 +214,8 @@ function findBlockInJson(value: unknown, blockId: string): NightfireBlock | null
     return value as unknown as NightfireBlock;
   }
 
-  for (const child of Object.values(value)) {
-    const found = findBlockInJson(child, blockId);
+  for (const key of sortedKeys(value)) {
+    const found = findBlockInJson(value[key], blockId);
     if (found) {
       return found;
     }
@@ -241,8 +277,8 @@ function findBlockDataInJson(value: unknown, blockId: string): Lookup {
     return record.data;
   }
 
-  for (const child of Object.values(record)) {
-    const found = findBlockDataInJson(child, blockId);
+  for (const key of sortedKeys(record)) {
+    const found = findBlockDataInJson(record[key], blockId);
     if (found !== NOT_FOUND) {
       return found;
     }

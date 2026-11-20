@@ -148,8 +148,15 @@ fn find_block_data_in_json<'a>(value: &'a Value, block_id: &str) -> Option<&'a V
                 return map.get("data");
             }
 
-            map.values()
-                .find_map(|child| find_block_data_in_json(child, block_id))
+            // Sibling keys in ascending code-point order, sorted here rather
+            // than inherited from the map type, so the order is a property of
+            // this rule and not of a `serde_json` feature. The TypeScript
+            // resolver sorts the same way, so a duplicate nested id resolves to
+            // the same block in both languages.
+            let mut keys: Vec<&String> = map.keys().collect();
+            keys.sort();
+            keys.into_iter()
+                .find_map(|key| find_block_data_in_json(&map[key], block_id))
         }
         _ => None,
     }

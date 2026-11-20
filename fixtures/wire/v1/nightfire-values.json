@@ -284,7 +284,7 @@
         "type": "item_list",
         "version": "initial",
         "data": {
-          "metadata": { "id": "meta_x", "data": { "image_id": "metadata-is-not-a-block" } },
+          "annotations": { "id": "meta_x", "data": { "image_id": "metadata-is-not-a-block" } },
           "body": {
             "id": "meta_x",
             "type": "image",
@@ -313,6 +313,25 @@
         "type": "image",
         "version": "initial",
         "data": { "image_id": "top-level-wins" }
+      },
+      {
+        "id": "ordering_06",
+        "type": "item_list",
+        "version": "initial",
+        "data": {
+          "z": {
+            "id": "order_07",
+            "type": "image",
+            "version": "initial",
+            "data": { "image_id": "insertion-order-first" }
+          },
+          "a": {
+            "id": "order_07",
+            "type": "image",
+            "version": "initial",
+            "data": { "image_id": "code-point-first" }
+          }
+        }
       }
     ]
   },
@@ -340,6 +359,14 @@
       "dataPointer": "/image_id",
       "found": true,
       "resolved": "top-level-wins"
+    },
+    {
+      "name": "nested-duplicates-use-code-point-key-order",
+      "locator": "order_07#/image_id",
+      "blockId": "order_07",
+      "dataPointer": "/image_id",
+      "found": true,
+      "resolved": "code-point-first"
     },
     {
       "name": "missing-path",

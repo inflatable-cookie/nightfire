@@ -101,6 +101,10 @@ block's `data`. The TypeScript and Rust implementations agree on every rule:
   payload is a block only when it carries the id, a string `type` and a `data`
   member: another `{ id, data }` object in the payload is metadata, and a
   locator does not address it.
+- Traversal is depth-first and canonical, so two implementations and two parses
+  of one document select the same block: array items in index order, and object
+  keys in ascending Unicode code-point order. A duplicate id therefore resolves
+  to the same payload everywhere, whatever order the JSON was written in.
 
 ## Dependencies
 
