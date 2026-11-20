@@ -20,41 +20,35 @@ export type NightfireEditorBlock = Record<string, unknown> & {
   content?: string;
 };
 
-export type ToEditorBlockOptions = {
-  fallbackType?: string;
-  createId?: () => string;
+export type ToEditorBlocksOptions = {
+  fallbackType: string;
+  /**
+   * Prefix for the id of a block that has none yet. Pass a value minted once
+   * per editor instance, so ids stay unique across editors on one page.
+   */
+  fallbackIdPrefix: string;
 };
 
-function defaultCreateId(): string {
-  const cryptoApi = globalThis.crypto;
-  if (cryptoApi?.randomUUID) {
-    return cryptoApi.randomUUID();
-  }
-
-  return `nightfire-${Math.random().toString(36).slice(2, 10)}`;
-}
-
-/** Poodle requires a stable `id` and a concrete `type` on every block. */
-export function toEditorBlock(
-  block: NightfireEditorBlock,
-  options: ToEditorBlockOptions = {},
-): NightfireEditorBlock & { id: string; type: string } {
-  const fallbackType = options.fallbackType ?? "markdown";
-  const createId = options.createId ?? defaultCreateId;
-  const type = typeof block.type === "string" && block.type.length > 0 ? block.type : fallbackType;
-
-  return {
-    ...block,
-    id: typeof block.id === "string" && block.id.length > 0 ? block.id : createId(),
-    type,
-  };
-}
-
+/**
+ * Poodle requires a stable `id` and a concrete `type` on every block.
+ *
+ * Stored blocks get their ids when the editor takes a value, so the fallback
+ * only covers a block that has none yet. It is positional, not random: a fresh
+ * id on every derivation would remount the block on each keystroke.
+ */
 export function toEditorBlocks(
   blocks: NightfireEditorBlock[],
-  options: ToEditorBlockOptions = {},
+  options: ToEditorBlocksOptions,
 ): Array<NightfireEditorBlock & { id: string; type: string }> {
-  return blocks.map((block) => toEditorBlock(block, options));
+  return blocks.map((block, index) => ({
+    ...block,
+    id:
+      typeof block.id === "string" && block.id.length > 0
+        ? block.id
+        : `${options.fallbackIdPrefix}-${index}`,
+    type:
+      typeof block.type === "string" && block.type.length > 0 ? block.type : options.fallbackType,
+  }));
 }
 
 export function toBlockTypes(

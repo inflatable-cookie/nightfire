@@ -30,26 +30,12 @@
       .trim();
   }
 
-  function formatOptionLabel(input: string): string {
-    const trimmed = input.trim();
-    const withoutQuestionPrefix = trimmed.replace(/^question\s*(?:[-:–—]\s*)?/i, "");
-    return withoutQuestionPrefix.length > 0 ? withoutQuestionPrefix : trimmed;
-  }
-
-  function subcategoryPriority(input: string): number {
-    const normalised = input.toLowerCase().replace(/[^a-z0-9]/g, "");
-    if (normalised === "multiplechoice") return 1;
-    if (normalised === "input") return 2;
-    if (normalised === "interactive") return 3;
-    if (normalised === "draganddrop") return 4;
-    if (normalised === "other") return 5;
-    return 99;
-  }
-
   const items = $derived(
-    typeOptions.map((opt) => ({ value: opt.type, label: formatOptionLabel(opt.label) }))
+    typeOptions.map((opt) => ({ value: opt.type, label: opt.label }))
   );
 
+  // Lays out the groups `groupedOptions` already ordered, without re-sorting:
+  // each group's options come first, then one group per subcategory.
   const options = $derived.by<SelectItems>(() => {
     if (!groupedOptions?.length) return items;
 
@@ -60,7 +46,7 @@
       const directItems: Array<{ value: string; label: string }> = [];
 
       for (const option of group.options) {
-        const item = { value: option.type, label: formatOptionLabel(option.label) };
+        const item = { value: option.type, label: option.label };
         if (option.subcategory) {
           const existing = subgroups.get(option.subcategory) ?? [];
           existing.push(item);
@@ -71,27 +57,15 @@
       }
 
       if (directItems.length) {
-        renderedGroups.push({
-          label: group.label,
-          options: directItems.sort((a, b) => a.label.localeCompare(b.label)),
-        });
+        renderedGroups.push({ label: group.label, options: directItems });
       }
 
-      const nestedGroups = Array.from(subgroups.entries())
-        .sort(([a], [b]) => {
-          const priorityA = subcategoryPriority(a);
-          const priorityB = subcategoryPriority(b);
-          if (priorityA !== priorityB) {
-            return priorityA - priorityB;
-          }
-          return a.localeCompare(b);
-        })
-        .map(([subcategory, subgroupItems]) => ({
+      for (const [subcategory, subgroupItems] of subgroups) {
+        renderedGroups.push({
           label: `${group.label} / ${formatSubgroupLabel(subcategory)}`,
-          options: subgroupItems.sort((a, b) => a.label.localeCompare(b.label)),
-        }));
-
-      renderedGroups.push(...nestedGroups);
+          options: subgroupItems,
+        });
+      }
     }
 
     return renderedGroups.length ? renderedGroups : items;

@@ -3,12 +3,8 @@ import {
   type NightfireBlock,
   type NightfireValue
 } from "../types";
-import {
-  addBlockToList,
-  insertBlockIntoList,
-  moveBlockInList,
-  removeBlockFromList
-} from "./block-list";
+import { addBlockToList, insertBlockIntoList } from "./block-list";
+
 function asBlockObject(value: unknown): NightfireBlock {
   // These helpers edit a block, so absent or malformed input still needs a
   // block to edit. `coerceNightfireBlock` refuses to fabricate one by itself.
@@ -41,23 +37,18 @@ export function replaceBlockAtIndex(blocks: unknown[], index: number, nextBlock:
   return nextBlocks;
 }
 
-export function changeSingleBlockType(
-  _schema: string,
-  currentBlock: unknown,
-  nextType: string,
-  _getLabelForType: (type: string) => string
-): { block: NightfireBlock; warning: string | null } {
+/**
+ * A type change keeps the block's identity and nothing else. `data` and
+ * `version` belonged to the type being left, so they reset rather than carry
+ * over into a type whose schema may reject them.
+ */
+export function changeBlockType(currentBlock: unknown, nextType: string): NightfireBlock {
   const current = asBlockObject(currentBlock);
   return {
-    block: { ...current, type: nextType },
-    warning: null
-  };
-}
-
-export function changeBlockType(currentBlock: unknown, nextType: string): NightfireBlock {
-  return {
-    ...asBlockObject(currentBlock),
-    type: nextType
+    ...(current.id ? { id: current.id } : {}),
+    type: nextType,
+    version: "initial",
+    data: {}
   };
 }
 
@@ -67,12 +58,4 @@ export function addBlock(blocks: unknown[], defaultType: string): unknown[] {
 
 export function insertBlockAfter(blocks: unknown[], index: number, defaultType: string): unknown[] {
   return insertBlockIntoList(blocks, index, defaultType);
-}
-
-export function removeBlock(blocks: unknown[], index: number): unknown[] {
-  return removeBlockFromList(blocks, index);
-}
-
-export function moveBlock(blocks: unknown[], from: number, to: number): unknown[] | null {
-  return moveBlockInList(blocks, from, to);
 }

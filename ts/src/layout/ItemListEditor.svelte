@@ -1,9 +1,11 @@
 <script lang="ts">
   import { TextInput } from "@inflatable-cookie/poodle-svelte";
+  import { createStableId } from "../dom";
   import { getBlockTypeOptionsForSchema, isBlockContentEmpty } from "../editor-registry";
   import { createDefaultBlock } from "../editor/block-list";
   import type { GroupedOptions } from "../editor/grouped-options";
   import { default as NightfireMultiBlockItem } from "../editor/NightfireMultiBlockItem.svelte";
+  import { changeBlockType } from "../editor/value-updates";
   import type { BlockTypeOption, SchemaDefinition } from "../editor-registry";
 
   type RecordValue = Record<string, unknown>;
@@ -23,6 +25,7 @@
 
   let { block, value, onChange = () => {} }: Props = $props();
 
+  const confirmationTitleId = createStableId("nightfire-item-list-confirmation-title");
   let confirmation = $state<number | null>(null);
 
   const editorSchema = $derived(typeof value?.schema === "string" ? value.schema : "");
@@ -82,7 +85,9 @@
   }
 
   function setListTitle(title: string): void {
-    const data = { ...readData(block) };
+    // `items` is always written: an empty block has none yet, and the saved
+    // payload must still carry the list the schema requires.
+    const data: RecordValue = { ...readData(block), items };
     if (title.trim().length > 0) data.title = title;
     else delete data.title;
     emitData(data);
@@ -150,7 +155,7 @@
     const current = children[blockIndex];
     if (!current) return;
     const nextChildren = children.slice();
-    nextChildren[blockIndex] = { ...current, type: nextType };
+    nextChildren[blockIndex] = changeBlockType(current, nextType) as ChildBlock;
     setItemBlocks(itemIndex, nextChildren);
   }
 
@@ -183,15 +188,9 @@
     nextChildren.splice(to, 0, moved);
     setItemBlocks(itemIndex, nextChildren);
   }
-
-  function handleKeyboardAction(event: KeyboardEvent, action: () => void): void {
-    if (event.key !== "Enter" && event.key !== " ") return;
-    event.preventDefault();
-    action();
-  }
 </script>
 
-<div class="underlay-nightfire-field underlay-item-list-editor" data-item-list-editor>
+<div class="underlay-item-list-editor" data-item-list-editor>
   <TextInput
     ariaLabel="Item list title (optional)"
     placeholder="List title (optional)"
@@ -200,13 +199,12 @@
   />
 
   {#if items.length === 0}
-    <div class="underlay-nightfire-field__empty" data-item-list-empty>
+    <div class="underlay-item-list-editor__empty" data-item-list-empty>
       <button
         type="button"
-        class="underlay-nightfire-field__multi-add"
+        class="underlay-item-list-editor__button underlay-item-list-editor__add"
         aria-label="Add item"
         onclick={addItem}
-        onkeydown={(event) => handleKeyboardAction(event, addItem)}
       >
         + Add item
       </button>
@@ -226,27 +224,27 @@
             <div class="underlay-item-list-editor__controls" aria-label={`Item ${index + 1} controls`}>
               <button
                 type="button"
+                class="underlay-item-list-editor__button"
                 aria-label={`Move item ${index + 1} up`}
                 disabled={index === 0}
                 onclick={() => moveItem(index, index - 1)}
-                onkeydown={(event) => handleKeyboardAction(event, () => moveItem(index, index - 1))}
               >
                 Move up
               </button>
               <button
                 type="button"
+                class="underlay-item-list-editor__button"
                 aria-label={`Move item ${index + 1} down`}
                 disabled={index === items.length - 1}
                 onclick={() => moveItem(index, index + 1)}
-                onkeydown={(event) => handleKeyboardAction(event, () => moveItem(index, index + 1))}
               >
                 Move down
               </button>
               <button
                 type="button"
+                class="underlay-item-list-editor__button"
                 aria-label={`Remove item ${index + 1}`}
                 onclick={() => requestRemoveItem(index)}
-                onkeydown={(event) => handleKeyboardAction(event, () => requestRemoveItem(index))}
               >
                 Remove item
               </button>
@@ -271,10 +269,9 @@
             {/each}
             <button
               type="button"
-              class="underlay-nightfire-field__multi-add"
+              class="underlay-item-list-editor__button underlay-item-list-editor__add"
               aria-label={`Add child block to item ${index + 1}`}
               onclick={() => addChildBlock(index)}
-              onkeydown={(event) => handleKeyboardAction(event, () => addChildBlock(index))}
             >
               + Add child block
             </button>
@@ -285,10 +282,9 @@
 
     <button
       type="button"
-      class="underlay-nightfire-field__multi-add"
+      class="underlay-item-list-editor__button underlay-item-list-editor__add"
       aria-label="Add item"
       onclick={addItem}
-      onkeydown={(event) => handleKeyboardAction(event, addItem)}
     >
       + Add item
     </button>
@@ -299,14 +295,18 @@
       class="underlay-item-list-editor__confirmation"
       role="alertdialog"
       aria-modal="false"
-      aria-labelledby="nightfire-item-list-confirmation-title"
+      aria-labelledby={confirmationTitleId}
     >
-      <p id="nightfire-item-list-confirmation-title">
+      <p id={confirmationTitleId}>
         Remove item {confirmation + 1}? It contains content and cannot be undone.
       </p>
       <div>
-        <button type="button" onclick={() => (confirmation = null)}>Cancel</button>
-        <button type="button" onclick={() => removeItem(confirmation!)}>Confirm removal</button>
+        <button type="button" class="underlay-item-list-editor__button" onclick={() => (confirmation = null)}>
+          Cancel
+        </button>
+        <button type="button" class="underlay-item-list-editor__button" onclick={() => removeItem(confirmation!)}>
+          Confirm removal
+        </button>
       </div>
     </div>
   {/if}
@@ -345,6 +345,32 @@
   .underlay-item-list-editor__body {
     display: grid;
     gap: var(--nightfire-space-2);
+  }
+
+  .underlay-item-list-editor__empty {
+    display: flex;
+    justify-content: flex-start;
+  }
+
+  .underlay-item-list-editor__button {
+    font-size: calc(1em * var(--nightfire-font-scale-xxs));
+    padding: var(--nightfire-button-chip-padding-block)
+      var(--nightfire-button-chip-padding-inline);
+    border-radius: var(--nightfire-radius-pill);
+    border: 1px solid var(--nightfire-color-border-subtle);
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+  }
+
+  .underlay-item-list-editor__button:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+
+  .underlay-item-list-editor__add {
+    justify-self: start;
+    border-color: var(--nightfire-color-border-strong);
   }
 
   .underlay-item-list-editor__confirmation {

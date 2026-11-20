@@ -43,6 +43,23 @@ describe("nightfire/item-list editor", () => {
     );
   });
 
+  it("writes items alongside a title typed into an empty block", async () => {
+    const onChange = vi.fn();
+    const view = render(EditorComponent as any, {
+      block: itemListBlock({}),
+      value: { schema: "example:content/list" },
+      onChange,
+    });
+
+    await fireEvent.input(
+      within(view.container).getByRole("textbox", { name: "Item list title (optional)" }),
+      { target: { value: "Heading" } },
+    );
+
+    await waitFor(() => expect(onChange).toHaveBeenCalled());
+    expect(lastBlock(onChange).data).toEqual({ title: "Heading", items: [] });
+  });
+
   it("adds, edits, nests, reorders, and reloads items without dropping unmanaged data", async () => {
     const onChange = vi.fn();
     const initial = itemListBlock({
@@ -57,9 +74,7 @@ describe("nightfire/item-list editor", () => {
       onChange,
     });
 
-    await fireEvent.keyDown(within(view.container).getByRole("button", { name: "Add item" }), {
-      key: "Enter",
-    });
+    await fireEvent.click(within(view.container).getByRole("button", { name: "Add item" }));
     let current = lastBlock(onChange);
     expect(current.data.intro).toEqual({ type: "rich_text", retained: true });
     expect(current.data.variant).toBe("ordered");
@@ -125,10 +140,7 @@ describe("nightfire/item-list editor", () => {
       value: { schema: "example:content/list" },
       onChange,
     });
-    await fireEvent.keyDown(
-      within(view.container).getByRole("button", { name: "Move item 2 up" }),
-      { key: "Enter" },
-    );
+    await fireEvent.click(within(view.container).getByRole("button", { name: "Move item 2 up" }));
     current = lastBlock(onChange);
     expect(current.data.items.map((item: any) => item.title)).toEqual(["Second", "First"]);
     expect(current.data.items[0].body[0].data.text).toBe("Nested body");
@@ -156,22 +168,18 @@ describe("nightfire/item-list editor", () => {
       onChange,
     });
 
-    await fireEvent.keyDown(
-      within(view.container).getByRole("button", { name: "Remove item 2" }),
-      { key: "Enter" },
-    );
+    await fireEvent.click(within(view.container).getByRole("button", { name: "Remove item 2" }));
     expect(onChange).not.toHaveBeenCalled();
     const dialog = within(view.container).getByRole("alertdialog");
     expect(dialog.textContent).toContain("cannot be undone");
+    expect(dialog.querySelector("p")?.id).toBeTruthy();
+    expect(dialog.getAttribute("aria-labelledby")).toBe(dialog.querySelector("p")?.id);
 
     await fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
     expect(onChange).not.toHaveBeenCalled();
     expect(within(view.container).getByRole("button", { name: "Remove item 2" })).toBeTruthy();
 
-    await fireEvent.keyDown(
-      within(view.container).getByRole("button", { name: "Remove item 2" }),
-      { key: "Enter" },
-    );
+    await fireEvent.click(within(view.container).getByRole("button", { name: "Remove item 2" }));
     await fireEvent.click(
       within(view.container).getByRole("button", { name: "Confirm removal" }),
     );

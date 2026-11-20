@@ -4,11 +4,7 @@ import { writePreparedNightfireToFormData } from "../validation";
 
 export type NightfireFieldMode = "single" | "multi";
 
-export function createRequiredInitialValue(
-  schema: string,
-  _mode: NightfireFieldMode,
-  defaultType: string
-): NightfireValue {
+export function createRequiredInitialValue(schema: string, defaultType: string): NightfireValue {
   return {
     schema,
     blocks: [createDefaultBlock(defaultType)]

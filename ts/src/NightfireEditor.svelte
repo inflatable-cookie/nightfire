@@ -1,7 +1,8 @@
 <script lang="ts">
-  import { onMount, tick, untrack } from "svelte";
+  import { tick, untrack } from "svelte";
   import type { MarkdownEditorContext } from "./markup/markdown-editor-context";
   import type { NightfireValue } from "./types";
+  import type { SchemaMismatchInfo } from "./editor";
   // Ensure registrations are loaded before we lookup schema definitions
   import "./editor-registrations";
   import {
@@ -10,10 +11,10 @@
   import {
     isEmptyNightfire
   } from "./utils";
+  import { ensureNightfireBlockIds } from "./block-ids";
   import {
     useNightfireStrategies,
-    type NightfireStrategy,
-    type NightfireBlockOption
+    type NightfireStrategy
   } from "./strategies";
   import {
     buildGroupedOptions,
@@ -32,10 +33,7 @@
     asMultiBlockValue,
     asSingleBlockValue,
     changeBlockType,
-    changeSingleBlockType,
     insertBlockAfter,
-    moveBlock as moveEditorBlock,
-    removeBlock as removeEditorBlock,
     replaceBlockAtIndex
   } from "./editor/value-updates";
   import {
@@ -58,11 +56,6 @@
    * - Handles value normalisation internally.
    */
 
-  export interface SchemaMismatchInfo {
-    actualSchema: string | null;
-    expectedSchema: string;
-  }
-
   interface Props {
     name: string;
     schema: string;
@@ -75,8 +68,8 @@
      *   based on strategy cardinality.
      * - `defaultTypeOverride` lets the host control which block type
      *   is used for new blocks.
-     * - `blockOptions` provides a categorised list of available blocks,
-     *   typically coming from Farmyard via Cattle Grid.
+     * - `blockOptions` provides a flat list of available blocks. Options
+     *   with a `category` are grouped by `buildGroupedOptions`.
      *
      * When these are not provided, the editor falls back to the
      * local registry definitions so it remains usable in student views
@@ -124,21 +117,37 @@
     slashCommands = null
   }: Props = $props();
 
-  // Strategy loading
+  // Strategy loading. The strategy follows the `schema` prop. A response that
+  // arrives after the prop has moved on is dropped, and a failed fetch leaves
+  // the registry defaults in place.
   const strategiesStore = useNightfireStrategies();
   let strategy = $state<NightfireStrategy | null>(null);
-  let strategiesLoading = $state(false);
   let lastSchemaMismatchReported = $state<string | null>(null);
 
-  // Load strategy on mount
-  onMount(() => {
-    if (strategiesStore) {
-      strategiesLoading = true;
-      strategiesStore.ensure().then(() => {
-        strategy = strategiesStore.findById(schema);
-        strategiesLoading = false;
-      });
+  $effect(() => {
+    const requestedSchema = schema;
+    strategy = null;
+    if (!strategiesStore) {
+      return;
     }
+
+    let superseded = false;
+    strategiesStore
+      .ensure()
+      .then(() => {
+        if (!superseded) {
+          strategy = strategiesStore.findById(requestedSchema);
+        }
+      })
+      .catch(() => {
+        if (!superseded) {
+          strategy = null;
+        }
+      });
+
+    return () => {
+      superseded = true;
+    };
   });
 
   // Derive effective overrides from strategy (if no manual overrides provided)
@@ -152,75 +161,41 @@
     blockOptions ?? (strategy?.blockOptions as NightfireBlockOptionInput[] | null) ?? null
   );
 
-  let typeChangeWarning: string | null = $state(null);
   let hasInitialisedRequired = $state(false);
 
-  /**
-   * Editing schema vs storage schema
-   *
-   * - `schema` (prop) is the storage schema on the NightfireValue.
-   * - `editorSchema` is the schema used to look up block editors and
-   *   type options.
-   *
-   * When no explicit schema definition exists, wildcard generic editors remain
-   * available while the stored schema is preserved.
-   */
-
-  // Initialize with correct values IMMEDIATELY (not deferred via $effect)
-  // Use untrack to capture initial values without creating reactive dependencies
-  const initialResolved = untrack(() =>
-    resolveSchemaDefinition(schema, null)
-  );
-  let editorSchema: string = $state(initialResolved.editorSchema);
-  let registryDef: {
-    schema: string;
-    mode: NightfireFieldMode;
-    defaultType: string;
-  } = $state(initialResolved.registryDef);
-
-  // Track the last schema prop to avoid redundant updates
-  let lastSchemaProp = untrack(() => schema);
-
-  // Update when schema prop changes (for subsequent navigations)
-  $effect(() => {
-    // Only update if schema prop actually changed
-    if (schema === lastSchemaProp) {
-      return;
-    }
-    lastSchemaProp = schema;
-
-    const resolved = resolveSchemaDefinition(schema, null);
-    editorSchema = resolved.editorSchema;
-    registryDef = resolved.registryDef;
-  });
+  // The registry entry for `schema` sets the mode and default type unless a
+  // strategy or the caller overrides them. Block editors are looked up with
+  // `schema` directly.
+  const registryDef = $derived(resolveSchemaDefinition(schema));
 
   const effectiveDef = $derived({
-    schema: editorSchema,
+    schema,
     mode: (effectiveModeOverride ?? registryDef.mode) as NightfireFieldMode,
-    defaultType: effectiveDefaultTypeOverride ?? registryDef.defaultType ?? "markdown"
+    defaultType: effectiveDefaultTypeOverride ?? registryDef.defaultType
   });
 
-  // Keep stored value shape aligned with the effective editor mode.
-  // This is important for schemas that don't have a local registry entry
-  // (e.g. an unregistered consumer schema), where we may fall back to markup editors but
-  // still receive single-block payloads from the API.
+  // Keep the stored value shaped as the editor expects. This matters for
+  // schemas without a registry entry, which may still receive single-block
+  // payloads from the API. Every stored block gets its id here, outside any
+  // derived state, so the block list keeps the same ids across keystrokes.
   $effect(() => {
-    const { coerced, schemaMismatch } = normaliseForStrategy(value, schema, effectiveDef.mode);
+    const { coerced, schemaMismatch } = normaliseForStrategy(value, schema);
 
     if (schemaMismatch && schemaMismatch !== lastSchemaMismatchReported) {
       lastSchemaMismatchReported = schemaMismatch;
       onSchemaMismatch?.({ actualSchema: schemaMismatch, expectedSchema: schema });
     }
 
-    if (stableSnapshot(value) !== stableSnapshot(coerced)) {
-      value = coerced;
+    const next = ensureNightfireBlockIds(coerced);
+    if (stableSnapshot(value) !== stableSnapshot(next)) {
+      value = next;
     }
   });
 
   const baseTypeOptions = $derived(
     effectiveBlockOptions && effectiveBlockOptions.length > 0
       ? effectiveBlockOptions
-      : getBlockTypeOptionsForSchema(editorSchema)
+      : getBlockTypeOptionsForSchema(schema)
   );
 
   const editorTypeOptions = $derived(
@@ -264,6 +239,10 @@
       : []
   );
 
+  // Root of this editor's markup. Block focus is searched inside it, so two
+  // editors on one page never reach into each other.
+  let rootElement: HTMLDivElement | null = $state(null);
+
   function stableSnapshot(input: unknown): string {
     try {
       return JSON.stringify(input ?? null);
@@ -283,11 +262,6 @@
     onChange?.(nextValue);
   }
 
-  function getLabelForType(type: string): string {
-    const match = editorTypeOptions.find((opt) => opt.type === type);
-    return match?.label ?? type;
-  }
-
   function handleSingleBlockChange(nextBlock: any) {
     emit(asSingleBlockValue(schema, nextBlock));
   }
@@ -297,9 +271,7 @@
   }
 
   function handleSingleTypeChange(nextType: string) {
-    const transformed = changeSingleBlockType(schema, singleBlock, nextType, getLabelForType);
-    typeChangeWarning = transformed.warning;
-    handleSingleBlockChange(transformed.block);
+    handleSingleBlockChange(changeBlockType(singleBlock, nextType));
   }
 
   function handleTypeChange(index: number, nextType: string) {
@@ -312,40 +284,37 @@
     emit(asMultiBlockValue(schema, addEditorBlock(blocks, defaultType)));
   }
 
-  function removeBlock(index: number) {
-    emit(asMultiBlockValue(schema, removeEditorBlock(blocks, index)));
-  }
-
-  function moveBlock(from: number, to: number) {
-    const nextBlocks = moveEditorBlock(blocks, from, to);
-    if (!nextBlocks) {
-      return;
-    }
-    emit(asMultiBlockValue(schema, nextBlocks));
-  }
-
   function closeSlashPalette() {
     slashState = null;
   }
 
+  function hasCardAncestor(element: HTMLElement, root: HTMLElement): boolean {
+    for (let node = element.parentElement; node && node !== root; node = node.parentElement) {
+      if (node.hasAttribute("data-nightfire-block-card")) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // Focus lands on this editor's own top-level card for the index. An item
+  // list's child cards reuse the same attributes, so nested cards are skipped.
   function focusBlockCard(index: number) {
     void tick().then(() => {
-      const root = document.querySelector(
-        `[data-nightfire-block-card][data-block-index="${index}"]`
-      ) as HTMLElement | null;
-
+      const root = rootElement;
       if (!root) {
         return;
       }
 
-      const focusTarget = root.querySelector<HTMLElement>(
-        [
-          ".CodeMirror textarea",
-          "textarea:not(.underlay-is-hidden)",
-          "input:not([type='hidden'])",
-          "select",
-          "button"
-        ].join(", ")
+      const card = Array.from(
+        root.querySelectorAll<HTMLElement>("[data-nightfire-block-card]")
+      ).find(
+        (candidate) =>
+          candidate.dataset.blockIndex === String(index) && !hasCardAncestor(candidate, root)
+      );
+
+      const focusTarget = card?.querySelector<HTMLElement>(
+        "textarea, input:not([type='hidden']), select, button"
       );
 
       focusTarget?.focus();
@@ -402,12 +371,14 @@
 
     const slashTarget = slashState;
     const currentBlock = blocks[slashState.blockIndex] as {
+      id?: string;
       type?: string;
       version?: string;
       data?: { text?: string };
     } | undefined;
     const currentText = currentBlock?.data?.text ?? "";
     const nextCurrentBlock = {
+      ...(currentBlock?.id ? { id: currentBlock.id } : {}),
       type: currentBlock?.type ?? "markdown",
       version: currentBlock?.version ?? "initial",
       data: {
@@ -429,7 +400,6 @@
     if (!hasInitialisedRequired && required && isEmptyNightfire(value)) {
       value = createRequiredInitialValue(
         schema,
-        effectiveDef.mode,
         effectiveDef.defaultType ?? "markdown"
       );
 
@@ -465,9 +435,9 @@
   });
 </script>
 
-<div class="underlay-nightfire-field">
+<div class="underlay-nightfire-field" bind:this={rootElement}>
   <NightfireFieldBlockShell
-    schema={editorSchema}
+    schema={schema}
     {isMulti}
     definition={effectiveDef}
     {editorTypeOptions}
@@ -495,11 +465,6 @@
   {#if showRequiredError}
     <p class="underlay-nightfire-field__error">This field is required.</p>
   {/if}
-  {#if typeChangeWarning}
-    <p class="underlay-nightfire-field__layout-warning">
-      {typeChangeWarning}
-    </p>
-  {/if}
 </div>
 
 <style>
@@ -512,12 +477,6 @@
   .underlay-nightfire-field__error {
     margin-top: calc(var(--nightfire-space-2) * 0.8);
     font-size: var(--nightfire-font-size-sm);
-    color: var(--nightfire-color-danger);
-  }
-
-  .underlay-nightfire-field__layout-warning {
-    margin-top: var(--nightfire-space-2);
-    font-size: calc(1em * var(--nightfire-font-scale-xs));
     color: var(--nightfire-color-danger);
   }
 </style>
