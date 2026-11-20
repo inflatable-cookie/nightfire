@@ -80,14 +80,17 @@
     return normalize(rows);
   }
 
-  function emit(nextRows: TableRow[], dataUpdates: Record<string, unknown> = {}): void {
+  function emit(
+    nextRows: TableRow[],
+    nextData: Record<string, unknown> = { ...(block?.data ?? {}) },
+  ): void {
+    confirmation = null;
     onChange({
       ...block,
       type: block?.type ?? "table",
       version: block?.version ?? "initial",
       data: {
-        ...(block?.data ?? {}),
-        ...dataUpdates,
+        ...nextData,
         rows: nextRows,
       },
     });

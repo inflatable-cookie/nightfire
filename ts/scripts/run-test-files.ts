@@ -48,5 +48,5 @@ for (const file of files) {
   if (component) args.push("--preload", "./ts/tests/setup/component.ts");
   args.push(file);
   const child = Bun.spawnSync(args, { stdout: "inherit", stderr: "inherit" });
-  if (child.exitCode !== 0) process.exit(child.exitCode);
+  if (child.exitCode !== 0) process.exit(child.exitCode ?? 1);
 }

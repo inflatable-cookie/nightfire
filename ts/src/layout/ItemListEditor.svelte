@@ -81,6 +81,7 @@
   }
 
   function updateItems(nextItems: Item[]): void {
+    confirmation = null;
     emitData({ ...readData(block), items: nextItems });
   }
 
@@ -121,9 +122,9 @@
   }
 
   function removeItem(index: number): void {
+    confirmation = null;
     if (index < 0 || index >= items.length) return;
     updateItems(items.filter((_item, itemIndex) => itemIndex !== index));
-    confirmation = null;
   }
 
   function moveItem(from: number, to: number): void {

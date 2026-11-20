@@ -21,23 +21,31 @@ export function createRichTextImageRequest(): (() => Promise<RichTextImageInput 
   if (!source) return null;
 
   return async () => {
-    const picked = await source.pick({ multiple: false, filterKind: MediaKind.Image });
-    const first = picked?.find(
-      (reference) =>
-        reference !== null &&
-        typeof reference === "object" &&
-        typeof reference.media_id === "string" &&
-        reference.media_id.trim().length > 0
-    );
-    if (!first) return null;
+    try {
+      const picked = await source.pick({ multiple: false, filterKind: MediaKind.Image });
+      const first = Array.isArray(picked)
+        ? picked.find(
+            (reference) =>
+              reference !== null &&
+              typeof reference === "object" &&
+              typeof reference.media_id === "string" &&
+              reference.media_id.trim().length > 0
+          )
+        : undefined;
+      if (!first) return null;
 
-    const resolved = source.resolve(first);
-    if (!resolved) return null;
+      const resolved = source.resolve(first);
+      if (!resolved || typeof resolved.url !== "string" || resolved.url.trim().length === 0) {
+        return null;
+      }
 
-    return {
-      src: resolved.url,
-      alt: "",
-      title: resolved.title ?? null
-    };
+      return {
+        src: resolved.url,
+        alt: "",
+        title: typeof resolved.title === "string" ? resolved.title : null
+      };
+    } catch {
+      return null;
+    }
   };
 }

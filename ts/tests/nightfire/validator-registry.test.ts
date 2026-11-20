@@ -7,6 +7,7 @@ import {
 	validateNightfireValue,
 	writePreparedNightfireToFormData,
 } from "../../src/validator-registry";
+import type { BlockValidator } from "../../src/validation";
 import { clearBlockVersions, registerBlockVersions } from "../../src/block-versions";
 
 describe("nightfire/validator-registry", () => {
@@ -16,8 +17,13 @@ describe("nightfire/validator-registry", () => {
 	});
 
 	it("applies a schema-scoped validator over the wildcard, and the wildcard elsewhere", () => {
-		// Each validator marks the block's data, so the output shows which one ran.
-		const wildcard = mock((block: any) => ({ ...block, data: { ...block.data, origin: "wildcard" } }));
+		// `./validation` re-exports the validator type; the annotation proves the
+		// published name resolves to the registry's function shape.
+		const typed: BlockValidator = (block: any) => ({
+			...block,
+			data: { ...block.data, origin: "wildcard" },
+		});
+		const wildcard = mock(typed);
 		const scoped = mock((block: any) => ({ ...block, data: { ...block.data, origin: "scoped" } }));
 		registerBlockValidator(null, "markdown", wildcard);
 		registerBlockValidator("schema-1", "markdown", scoped);

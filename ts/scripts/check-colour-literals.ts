@@ -13,12 +13,15 @@
 // guards colours only.
 
 // Hex colours and functional colour notations. A `rgb()`/`hsl()`/`oklch()` call
-// is a colour written; a `color-mix()` is only one when it mixes a literal, so
-// it is inspected separately below.
+// is a colour written. A `color-mix()` needs no rule of its own: its arguments
+// stay in the value, so a literal mixed into it is found by the hex and name
+// checks below.
 const COLOUR_FUNCTION = /\b(?:rgb|rgba|hsl|hsla|hwb|lab|lch|oklab|oklch|color)\([^)]*\)/i;
-const COLOUR_MIX = /\bcolor-mix\(([^)]*)\)/gi;
 const HEX_COLOUR = /#[0-9a-f]{3,8}\b/i;
-const WORD = /[A-Za-z]+/g;
+// A bare word is a candidate colour name only when it is not part of a hyphenated
+// identifier (`red-pulse`) or a function call (`tan(45deg)`), so the lookarounds
+// exclude a neighbouring hyphen, word character or opening parenthesis.
+const WORD = /(?<![\w-])[A-Za-z]+(?![\w(-])/g;
 
 // A token reference names a value declared in `styles.css`; its own name is not
 // a colour, so `--nightfire-color-red` must not read as `red`. Only the custom
@@ -98,15 +101,6 @@ function colourLiteralIn(rawValue: string): string | null {
 
   const functional = COLOUR_FUNCTION.exec(value);
   if (functional) return sliceOf(rawValue, functional).trim();
-
-  // `color-mix()` derives a colour from its arguments, so it is a literal only
-  // when one of the mixed colours is. `color-mix(in srgb, var(--token) 40%,
-  // transparent)` references a token and passes; `color-mix(in srgb, #fff 40%,
-  // transparent)` does not.
-  for (const mix of value.matchAll(COLOUR_MIX)) {
-    const literal = colourLiteralIn(mix[1]!);
-    if (literal) return literal;
-  }
 
   const hex = HEX_COLOUR.exec(value);
   if (hex) return sliceOf(rawValue, hex);

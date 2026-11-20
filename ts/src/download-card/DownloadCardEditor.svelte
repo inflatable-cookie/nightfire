@@ -55,7 +55,17 @@
   }
 
   function resolvedName(mediaId: string): string | null {
-    return mediaSource?.resolve({ media_id: mediaId })?.filename ?? null;
+    try {
+      const resolved = mediaSource?.resolve({ media_id: mediaId }) ?? null;
+      if (!resolved || typeof resolved.url !== "string" || resolved.url.trim().length === 0) {
+        return null;
+      }
+      return typeof resolved.filename === "string" && resolved.filename.length > 0
+        ? resolved.filename
+        : null;
+    } catch {
+      return null;
+    }
   }
 
   function emit(updates: { description?: string; files?: CardFile[] }) {
@@ -148,7 +158,7 @@
 
   {#if files.length > 0}
     <ul class="underlay-download-card-editor__files">
-      {#each files as file, index (file.media_id)}
+      {#each files as file, index (`${file.media_id}:${index}`)}
         <li class="underlay-download-card-editor__file">
           <div class="underlay-download-card-editor__file-info">
             <span class="underlay-download-card-editor__file-name">

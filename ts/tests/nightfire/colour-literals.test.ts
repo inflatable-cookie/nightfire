@@ -1,13 +1,13 @@
 import { describe, expect, it } from "bun:test";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { checkRepository, colourLiterals, styleBlocks } from "../../scripts/check-colour-literals";
+import { colourLiterals, styleBlocks } from "../../scripts/check-colour-literals";
 
 // Component styles reference a token and never hold a colour. This test asserts
-// the guard bites on a planted literal, the shipped tree passes it (the per-file
-// sweep lives in checkRepository), the components name the tokens they rely on,
-// renderers stay token-free, and the token count in `styles.css` agrees with the
-// styling contract.
+// the guard bites on a planted literal, the components name the tokens they rely
+// on, renderers stay token-free, and every declared token is consumed and counted
+// in the styling contract. The shipped tree's sweep is `effigy check:colour-literals`,
+// which `health` runs, so it is not repeated here.
 
 const STYLESHEET = "ts/src/styles.css";
 const PALETTE = "ts/src/SlashCommandPalette.svelte";
@@ -86,10 +86,6 @@ describe("nightfire/colour literals", () => {
     expect(colourLiterals(clean, "clean.svelte")).toEqual([]);
   });
 
-  it("passes over every shipped component style block", async () => {
-    expect(await checkRepository()).toEqual([]);
-  });
-
   it("makes the palette light chrome that names the text and surface tokens", () => {
     expect(paletteStyles).toContain("var(--nightfire-color-surface)");
     expect(paletteStyles).toContain("var(--nightfire-color-text)");
@@ -114,7 +110,6 @@ describe("nightfire/colour literals", () => {
 
   it("declares one value per token, all consumed, and the styling contract agrees", () => {
     const declared = declaredTokens(stylesheet);
-    expect(declared.length).toBe(25);
     expect(new Set(declared).size).toBe(declared.length);
 
     const sources = readdirSync("ts/src", { recursive: true, encoding: "utf8" })

@@ -26,6 +26,17 @@ for (const name of forbidden) {
   }
 }
 
+// The Rust lock is held to the same boundary. A crate is forbidden when its name
+// is an npm forbidden package's unscoped name (`vite`, `zod`, …) or names an
+// Underlay or product crate.
+const forbiddenCrateNames = new Set(forbidden.map((name) => name.split("/").pop()!));
+const cargoLock = await Bun.file("Cargo.lock").text();
+for (const [, crate] of cargoLock.matchAll(/^name = "([^"]+)"$/gm)) {
+  if (forbiddenCrateNames.has(crate!) || /underlay|acowtancy|froyo|bovine|dairy/i.test(crate!)) {
+    throw new Error(`forbidden transitive dependency in Cargo.lock: ${crate}`);
+  }
+}
+
 async function sourceFiles(root: string): Promise<string[]> {
   const entries = await readdir(root, { withFileTypes: true });
   const files: string[] = [];
@@ -68,11 +79,47 @@ function namedBindingsAreTypeOnly(clause: string): boolean {
   return parts.length > 0 && parts.every((part) => /^type\s/.test(part));
 }
 
+// Blank every comment before imports are read, so an example in a doc comment is
+// never taken for an import. The walk tracks string and template literals, so a
+// `//` inside a URL is not a comment. Comment characters become spaces, which
+// keeps line numbers and the rest of the source as written.
+function stripComments(source: string): string {
+  let out = "";
+  let index = 0;
+  while (index < source.length) {
+    const char = source[index]!;
+    const next = source[index + 1];
+    if (char === "/" && next === "/") {
+      const end = source.indexOf("\n", index);
+      const stop = end === -1 ? source.length : end;
+      out += " ".repeat(stop - index);
+      index = stop;
+    } else if (char === "/" && next === "*") {
+      const end = source.indexOf("*/", index + 2);
+      const stop = end === -1 ? source.length : end + 2;
+      out += source.slice(index, stop).replace(/[^\n]/g, " ");
+      index = stop;
+    } else if (char === '"' || char === "'" || char === "`") {
+      let stop = index + 1;
+      while (stop < source.length && source[stop] !== char) {
+        stop += source[stop] === "\\" ? 2 : 1;
+      }
+      out += source.slice(index, stop + 1);
+      index = stop + 1;
+    } else {
+      out += char;
+      index += 1;
+    }
+  }
+  return out;
+}
+
 function importedRefs(path: string, source: string): ImportRef[] {
   const scripts = path.endsWith(".svelte")
     ? Array.from(source.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g), (match) => match[1]!)
     : [source];
-  return scripts.flatMap((script) => {
+  return scripts.flatMap((raw) => {
+    const script = stripComments(raw);
     const refs: ImportRef[] = [];
     for (const match of script.matchAll(
       /(?:import|export)(\s+type)?\s+([^"'`;]*?)\s+from\s+["']([^"']+)["']/g,
@@ -213,13 +260,19 @@ if (blockEditorModules.length === 0) {
   throw new Error("boundary proof found no block editor module to guard; the tree is not in the expected shape");
 }
 
-for (const entrypoint of ["ts/src/core.ts", "ts/src/validation.ts"]) {
+for (const entrypoint of ["ts/src/core.ts", "ts/src/validation.ts", "ts/src/index.ts"]) {
   for (const path of await sourceGraph(entrypoint)) {
     const source = await Bun.file(path).text();
     if (hasSvelteRuntimeEdge(path, source)) {
       throw new Error(`${entrypoint} has a Svelte runtime edge through ${path}`);
     }
   }
+}
+
+// The root export `.` is the Svelte-free barrel. Strategies carry the Svelte
+// context and store runtime, so they stay on their own `./strategies` subpath.
+if ((await sourceGraph("ts/src/index.ts")).includes(normalize("ts/src/strategies.ts"))) {
+  throw new Error("root export . reaches ./strategies; keep strategies on their own subpath");
 }
 
 const rendererGraph = await sourceGraph("ts/src/renderer.ts");
@@ -253,25 +306,29 @@ for (const path of [...rendererGraph, ...renderCatalogGraph]) {
 
 // Learner-facing renderer graphs must not load Poodle at runtime. Type-only
 // imports pass; a reachable `import` of `@inflatable-cookie/poodle-svelte` fails.
+// Every block's `render.ts` is derived from the tree, so a new block's renderer is
+// guarded without editing this proof.
+const blockRenderModules = allSourceFiles
+  .map((path) => normalize(path))
+  .filter((path) => /^ts\/src\/(?:[^/]+\/)+render\.ts$/.test(path))
+  .sort();
+if (blockRenderModules.length === 0) {
+  throw new Error("boundary proof found no block render module to guard; the tree is not in the expected shape");
+}
 const rendererEntrypoints = [
   "ts/src/renderer.ts",
   "ts/src/render-registrations.ts",
   "ts/src/rich-text.ts",
   "ts/src/core-blocks.ts",
-  "ts/src/markup/render.ts",
-  "ts/src/layout/render.ts",
-  "ts/src/rich-text/render.ts",
-  "ts/src/download-card/render.ts",
-  "ts/src/image/render.ts",
-  "ts/src/video/render.ts",
+  ...blockRenderModules,
 ];
 for (const entrypoint of rendererEntrypoints) {
   await assertRendererGraphPoodleFree(entrypoint);
 }
 
 const core = await bundle("ts/src/core.ts");
-const validation = await bundle("ts/src/validator-registry.ts");
-const renderer = await bundle("ts/src/NightfireRenderer.svelte", true);
+const validation = await bundle("ts/src/validation.ts");
+const renderer = await bundle("ts/src/renderer.ts", true);
 const renderCatalog = await bundle("ts/src/render-registrations.ts", true);
 // Each shipped block editor is a marker, so the bundle proof grows with the
 // tree instead of naming three blocks by hand.

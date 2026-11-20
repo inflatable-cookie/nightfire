@@ -61,6 +61,22 @@ const SUPPORTED_KEYWORDS = new Set([
   "additionalProperties",
 ]);
 
+const SCHEMA_TYPES = new Set(["array", "boolean", "integer", "null", "number", "object", "string"]);
+
+// `type` names one type or a non-empty array of them. An unknown name fails when
+// the document loads, so no document can pass by naming a type this validator
+// does not check.
+function schemaTypes(type: unknown, path: string): string[] {
+  const names: unknown[] = typeof type === "string" ? [type] : Array.isArray(type) ? type : [];
+  if (names.length === 0) fail(`${path}: type must be a type name or a non-empty array of type names`);
+  for (const name of names) {
+    if (typeof name !== "string" || !SCHEMA_TYPES.has(name)) {
+      fail(`${path}: unsupported schema type ${JSON.stringify(name)}`);
+    }
+  }
+  return names as string[];
+}
+
 export function assertSupportedSchema(schema: JsonSchema, path: string): void {
   if (typeof schema === "boolean") return;
   for (const keyword of Object.keys(schema)) {
@@ -71,6 +87,7 @@ export function assertSupportedSchema(schema: JsonSchema, path: string): void {
       );
     }
   }
+  if (schema.type !== undefined) schemaTypes(schema.type, path);
 
   const definitions = schema.$defs;
   if (definitions !== undefined) {
@@ -204,12 +221,15 @@ export function validate(
   if (schema === true) return [];
   if (schema === false) return [`${instancePath}: rejected by false schema`];
 
+  // JSON Schema 2020-12: `$ref` sits beside sibling keywords and both apply, so
+  // the sibling checks below run after the referenced schema rather than instead
+  // of it.
+  const errors: string[] = [];
   if (typeof schema.$ref === "string") {
     const resolved = resolveReference(catalog, schema.$ref, schemaPath);
-    return validate(catalog, value, resolved.schema, resolved.path, instancePath);
+    errors.push(...validate(catalog, value, resolved.schema, resolved.path, instancePath));
   }
 
-  const errors: string[] = [];
   const allOf = Array.isArray(schema.allOf) ? schema.allOf : [];
   for (const child of allOf) {
     errors.push(...validate(catalog, value, child as JsonSchema, schemaPath, instancePath));
@@ -232,9 +252,12 @@ export function validate(
     errors.push(`${instancePath}: value does not match const`);
   }
 
-  if (typeof schema.type === "string" && !matchesType(value, schema.type)) {
-    errors.push(`${instancePath}: expected ${schema.type}`);
-    return errors;
+  if (schema.type !== undefined) {
+    const types = schemaTypes(schema.type, schemaPath);
+    if (!types.some((type) => matchesType(value, type))) {
+      errors.push(`${instancePath}: expected ${types.join(" or ")}`);
+      return errors;
+    }
   }
 
   if (typeof value === "string" && typeof schema.minLength === "number" && value.length < schema.minLength) {

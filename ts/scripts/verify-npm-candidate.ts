@@ -80,6 +80,24 @@ export function verifyNpmCandidate(args: {
   return manifest;
 }
 
+export const VERIFY_FLAGS = ["--root", "--dir", "--manifest", "--tag-version", "--source-commit"] as const;
+
+// An unknown or repeated flag is a typo, not an option to ignore: `--tag-verison`
+// silently dropped would skip the tag check the workflow asked for. A flag's value
+// is the token after it, and `cliValue` refuses a value that is missing or a flag.
+export function assertKnownFlags(args: string[], known: readonly string[] = VERIFY_FLAGS): void {
+  const seen = new Set<string>();
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index]!;
+    if (!known.includes(arg)) {
+      throw new Error(`unknown argument ${arg}; expected one of ${known.join(", ")}`);
+    }
+    if (seen.has(arg)) throw new Error(`${arg} is given more than once`);
+    seen.add(arg);
+    index += 1;
+  }
+}
+
 // A flag without a value is a broken invocation, not an absent flag: silently
 // dropping it would skip the tag or commit check the workflow asked for.
 export function cliValue(args: string[], flag: string): string | undefined {
@@ -94,6 +112,7 @@ export function cliValue(args: string[], flag: string): string | undefined {
 
 if (import.meta.main) {
   const argv = process.argv.slice(2);
+  assertKnownFlags(argv);
   const root = resolve(cliValue(argv, "--root") ?? process.cwd());
   const archiveDir = resolve(cliValue(argv, "--dir") ?? join(root, "release-artifacts"));
   const manifestPath = resolve(
