@@ -46,7 +46,7 @@ check = "cd {repo} && bun x svelte-check --tsconfig ts/tsconfig.json --fail-on-w
 # hand-wrapped prose owned by docs/knowledge/contracts/writing-style.md, and the
 # wire fixtures and schemas are the committed conformance boundary, so a code
 # formatter does not reflow them.
-"check:lint" = "cd {repo} && bun x oxlint"
+"check:lint" = "cd {repo} && bun x oxlint --type-aware"
 "check:fmt" = "cd {repo} && bun x oxfmt --check 'ts/**/*.ts' 'ts/**/*.svelte' 'ts/**/*.css' 'ts/**/*.json' package.json .oxfmtrc.json knip.json oxlint.config.ts"
 "check:dead-code" = "cd {repo} && bun x knip"
 "check:exports" = "cd {repo} && bun ts/scripts/check-exports.ts"

@@ -22,15 +22,30 @@ function tableBlock(rows?: Array<unknown>): {
   };
 }
 
-function lastBlock(onChange: ReturnType<typeof mock>): any {
-  return onChange.mock.calls.at(-1)![0];
+type TableBlockShape = {
+  id?: string;
+  data: {
+    caption?: string;
+    rows: Array<{
+      section?: string;
+      row_extension?: unknown;
+      cells: Array<Record<string, any>>;
+    }>;
+  };
+};
+
+function lastBlock(onChange: ReturnType<typeof mock>): TableBlockShape {
+  return onChange.mock.calls.at(-1)![0] as TableBlockShape;
 }
 
-function expectRectangular(rows: Array<any>, width: number) {
+function expectRectangular(
+  rows: Array<{ cells: Array<{ colspan?: number; rowspan?: number }> }>,
+  width: number
+) {
   const occupied = new Set<string>();
   rows.forEach((row, rowIndex) => {
     let column = 0;
-    row.cells.forEach((cell: any) => {
+    row.cells.forEach((cell) => {
       while (occupied.has(`${rowIndex}:${column}`)) {
         column += 1;
       }
@@ -98,11 +113,11 @@ describe("nightfire/table editor", () => {
     );
 
     await fireEvent.keyDown(document.activeElement as HTMLElement, { key: "H" });
-    const input = within(view.container).getByRole("textbox", {
+    const input = within(view.container).getByRole<HTMLTextAreaElement>("textbox", {
       name: "Edit Row 1, column 2"
-    }) as HTMLTextAreaElement;
+    });
     expect(document.activeElement).toBe(input);
-    expect(lastBlock(onChange).data.rows[0].cells[1].markdown).toBe("H");
+    expect(lastBlock(onChange).data.rows[0]!.cells[1]!.markdown).toBe("H");
 
     await fireEvent.keyDown(input, { key: "Tab" });
     expect((document.activeElement as HTMLElement).dataset.tableCell).toBe("1-0");
@@ -121,7 +136,7 @@ describe("nightfire/table editor", () => {
     last.focus();
     await fireEvent.keyDown(last, { key: "Tab" });
     expect(lastBlock(onChange).data.rows).toHaveLength(3);
-    expect(lastBlock(onChange).data.rows[2].cells).toHaveLength(2);
+    expect(lastBlock(onChange).data.rows[2]!.cells).toHaveLength(2);
     expect(lastBlock(onChange).data.rows[2]).not.toHaveProperty("section");
   });
 
@@ -176,9 +191,9 @@ describe("nightfire/table editor", () => {
     await fireEvent.click(within(view.container).getByRole("button", { name: "Bottom edge" }));
     const afterBorder = lastBlock(onChange);
     expect(afterBorder.id).toBe("nf_table");
-    expect(afterBorder.data.rows[0].section).toBe("retained-section");
-    expect(afterBorder.data.rows[0].row_extension).toEqual({ retained: true });
-    expect(afterBorder.data.rows[0].cells[0]).toMatchObject({
+    expect(afterBorder.data.rows[0]!.section).toBe("retained-section");
+    expect(afterBorder.data.rows[0]!.row_extension).toEqual({ retained: true });
+    expect(afterBorder.data.rows[0]!.cells[0]).toMatchObject({
       markdown: "A",
       colspan: 2,
       cell_extension: "retained",
@@ -189,10 +204,10 @@ describe("nightfire/table editor", () => {
       within(view.container).getByRole("button", { name: "Insert column right" })
     );
     const afterColumn = lastBlock(onChange);
-    expect(afterColumn.data.rows[0].section).toBe("retained-section");
-    expect(afterColumn.data.rows[0].cells[0].cell_extension).toBe("retained");
-    expect(afterColumn.data.rows[0].cells).toHaveLength(2);
-    expect(afterColumn.data.rows[0].cells[0].colspan).toBe(3);
+    expect(afterColumn.data.rows[0]!.section).toBe("retained-section");
+    expect(afterColumn.data.rows[0]!.cells[0]!.cell_extension).toBe("retained");
+    expect(afterColumn.data.rows[0]!.cells).toHaveLength(2);
+    expect(afterColumn.data.rows[0]!.cells[0]!.colspan).toBe(3);
   });
 
   it("writes row headers, alignment, and borders for the focused cell", async () => {
@@ -211,18 +226,20 @@ describe("nightfire/table editor", () => {
     await fireEvent.focus(target);
 
     await fireEvent.click(within(view.container).getByRole("button", { name: "Mark header row" }));
-    expect(lastBlock(onChange).data.rows[1].cells.every((cell: any) => cell.is_header)).toBe(true);
+    expect(lastBlock(onChange).data.rows[1]!.cells.every((cell) => Boolean(cell.is_header))).toBe(
+      true
+    );
 
     const horizontal = within(view.container).getByLabelText("Horizontal alignment");
     await fireEvent.change(horizontal, { target: { value: "center" } });
-    expect(lastBlock(onChange).data.rows[1].cells[0].horizontal_align).toBe("center");
+    expect(lastBlock(onChange).data.rows[1]!.cells[0]!.horizontal_align).toBe("center");
 
     const vertical = within(view.container).getByLabelText("Vertical alignment");
     await fireEvent.change(vertical, { target: { value: "middle" } });
-    expect(lastBlock(onChange).data.rows[1].cells[0].vertical_align).toBe("middle");
+    expect(lastBlock(onChange).data.rows[1]!.cells[0]!.vertical_align).toBe("middle");
 
     await fireEvent.click(within(view.container).getByRole("button", { name: "Left edge" }));
-    expect(lastBlock(onChange).data.rows[1].cells[0].borders).toEqual({ left: true });
+    expect(lastBlock(onChange).data.rows[1]!.cells[0]!.borders).toEqual({ left: true });
   });
 
   it("removes empty structure immediately and confirms content-bearing removal in-page", async () => {
@@ -256,7 +273,7 @@ describe("nightfire/table editor", () => {
 
     await fireEvent.click(within(dialog).getByRole("button", { name: "Confirm removal" }));
     expect(lastBlock(onChange).data.rows).toHaveLength(1);
-    expect(lastBlock(onChange).data.rows[0].cells[0].markdown).toBe("");
+    expect(lastBlock(onChange).data.rows[0]!.cells[0]!.markdown).toBe("");
   });
 
   it("extends a rectangular selection by keyboard, merges it, and preserves row sections", async () => {
@@ -281,11 +298,11 @@ describe("nightfire/table editor", () => {
     });
 
     const merged = lastBlock(onChange);
-    expect(merged.data.rows.map((row: any) => row.section)).toEqual(["head", "body"]);
-    expect(merged.data.rows[0].cells).toEqual([
+    expect(merged.data.rows.map((row) => row.section)).toEqual(["head", "body"]);
+    expect(merged.data.rows[0]!.cells).toEqual([
       expect.objectContaining({ markdown: "", colspan: 2, rowspan: 2 })
     ]);
-    expect(merged.data.rows[1].cells).toEqual([]);
+    expect(merged.data.rows[1]!.cells).toEqual([]);
     expectRectangular(merged.data.rows, 2);
   });
 
@@ -309,7 +326,7 @@ describe("nightfire/table editor", () => {
     expect(mergedCell.getAttribute("aria-colspan")).toBe("2");
     expect(mergedCell.getAttribute("aria-rowspan")).toBe("2");
     await fireEvent.click(within(view.container).getByRole("button", { name: "Top edge" }));
-    expect(lastBlock(onChange).data.rows[0].cells[0]).toMatchObject({
+    expect(lastBlock(onChange).data.rows[0]!.cells[0]).toMatchObject({
       colspan: 2,
       rowspan: 2,
       borders: { top: true }
@@ -322,22 +339,22 @@ describe("nightfire/table editor", () => {
     });
 
     const split = lastBlock(onChange);
-    expect(split.data.rows.map((row: any) => row.section)).toEqual(["head", "body"]);
-    expect(split.data.rows[0].cells).toHaveLength(3);
-    expect(split.data.rows[1].cells).toHaveLength(3);
-    expect(split.data.rows[0].cells[0]).toMatchObject({ markdown: "Kept", is_header: true });
-    expect(split.data.rows[0].cells.map((cell: any) => cell.markdown)).toEqual([
+    expect(split.data.rows.map((row) => row.section)).toEqual(["head", "body"]);
+    expect(split.data.rows[0]!.cells).toHaveLength(3);
+    expect(split.data.rows[1]!.cells).toHaveLength(3);
+    expect(split.data.rows[0]!.cells[0]).toMatchObject({ markdown: "Kept", is_header: true });
+    expect(split.data.rows[0]!.cells.map((cell) => cell.markdown as string)).toEqual([
       "Kept",
       "",
       "Right"
     ]);
-    expect(split.data.rows[1].cells.map((cell: any) => cell.markdown)).toEqual([
+    expect(split.data.rows[1]!.cells.map((cell) => cell.markdown as string)).toEqual([
       "",
       "",
       "Below right"
     ]);
-    expect(split.data.rows[0].cells[0]).not.toHaveProperty("colspan");
-    expect(split.data.rows[0].cells[0]).not.toHaveProperty("rowspan");
+    expect(split.data.rows[0]!.cells[0]).not.toHaveProperty("colspan");
+    expect(split.data.rows[0]!.cells[0]).not.toHaveProperty("rowspan");
     expectRectangular(split.data.rows, 3);
   });
 
@@ -371,7 +388,7 @@ describe("nightfire/table editor", () => {
       shiftKey: true
     });
     await fireEvent.click(within(view.container).getByRole("button", { name: "Confirm merge" }));
-    expect(lastBlock(onChange).data.rows[0].cells).toEqual([
+    expect(lastBlock(onChange).data.rows[0]!.cells).toEqual([
       expect.objectContaining({ markdown: "Keep", colspan: 2 })
     ]);
     expectRectangular(lastBlock(onChange).data.rows, 2);
@@ -388,9 +405,9 @@ describe("nightfire/table editor", () => {
       }
     });
 
-    const captionInput = within(view.container).getByPlaceholderText(
+    const captionInput = within(view.container).getByPlaceholderText<HTMLInputElement>(
       "Table caption (optional)"
-    ) as HTMLInputElement;
+    );
     await fireEvent.input(captionInput, { target: { value: "Updated caption" } });
     expect(lastBlock(onChange).data.caption).toBe("Updated caption");
 

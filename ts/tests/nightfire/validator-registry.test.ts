@@ -17,6 +17,11 @@ const typedWildcardValidator: BlockValidator = (block: any) => ({
   data: { ...block.data, origin: "wildcard" }
 });
 
+const typedScopedValidator: BlockValidator = (block: any) => ({
+  ...block,
+  data: { ...block.data, origin: "scoped" }
+});
+
 describe("nightfire/validator-registry", () => {
   afterEach(() => {
     clearBlockValidators();
@@ -25,7 +30,7 @@ describe("nightfire/validator-registry", () => {
 
   it("applies a schema-scoped validator over the wildcard, and the wildcard elsewhere", () => {
     const wildcard = mock(typedWildcardValidator);
-    const scoped = mock((block: any) => ({ ...block, data: { ...block.data, origin: "scoped" } }));
+    const scoped = mock(typedScopedValidator);
     registerBlockValidator(null, "markdown", wildcard);
     registerBlockValidator("schema-1", "markdown", scoped);
 

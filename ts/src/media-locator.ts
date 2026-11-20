@@ -57,8 +57,8 @@ function resolveJsonPointer(value: unknown, pointer: string): unknown {
       }
 
       // Own properties only: `#/constructor` and `#/toString` resolve to nothing.
-      return Object.hasOwn(current, segment)
-        ? (current as Record<string, unknown>)[segment]
+      return isObjectRecord(current) && Object.hasOwn(current, segment)
+        ? current[segment]
         : undefined;
     }, value);
 }
@@ -152,7 +152,10 @@ function sortedKeys(record: Record<string, unknown>): Array<string> {
  * Both the block lookup and the data lookup use this one rule, so they always
  * name the same object.
  */
-function isNestedBlockRecord(value: Record<string, unknown>, blockId: string): boolean {
+function isNestedBlockRecord(
+  value: Record<string, unknown>,
+  blockId: string
+): value is Record<string, unknown> & NightfireBlock {
   return value.id === blockId && typeof value.type === "string" && Object.hasOwn(value, "data");
 }
 
@@ -201,7 +204,7 @@ function findBlockInJson(value: unknown, blockId: string): NightfireBlock | null
   }
 
   if (isNestedBlockRecord(value, blockId)) {
-    return value as unknown as NightfireBlock;
+    return value;
   }
 
   for (const key of sortedKeys(value)) {
@@ -258,17 +261,16 @@ function findBlockDataInJson(value: unknown, blockId: string): Lookup {
     return NOT_FOUND;
   }
 
-  if (value === null || typeof value !== "object") {
+  if (!isObjectRecord(value)) {
     return NOT_FOUND;
   }
 
-  const record = value as Record<string, unknown>;
-  if (isNestedBlockRecord(record, blockId)) {
-    return record.data;
+  if (isNestedBlockRecord(value, blockId)) {
+    return value.data;
   }
 
-  for (const key of sortedKeys(record)) {
-    const found = findBlockDataInJson(record[key], blockId);
+  for (const key of sortedKeys(value)) {
+    const found = findBlockDataInJson(value[key], blockId);
     if (found !== NOT_FOUND) {
       return found;
     }

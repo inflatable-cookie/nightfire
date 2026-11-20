@@ -34,7 +34,7 @@ describe("nightfire/SlashCommandPalette.svelte", () => {
       onSelect: selected
     });
 
-    const input = screen.getByLabelText("Filter commands") as HTMLInputElement;
+    const input = screen.getByLabelText<HTMLInputElement>("Filter commands");
     await fireEvent.input(input, { target: { value: "atta" } });
     expect(queryChanges).toHaveBeenCalledWith("atta");
 

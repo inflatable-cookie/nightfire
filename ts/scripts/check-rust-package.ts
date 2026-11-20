@@ -15,21 +15,32 @@ function run(command: Array<string>, cwd: string): void {
   }
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
 const root = process.cwd();
-const manifest = await Bun.file(join(root, "package.json")).json();
+const manifestRaw: unknown = await Bun.file(join(root, "package.json")).json();
+if (!isRecord(manifestRaw) || typeof manifestRaw.version !== "string") {
+  throw new Error("package.json must declare a string version");
+}
+const version = manifestRaw.version;
 const workspaceManifest = join(root, "Cargo.toml");
 const destination = await mkdtemp(join(tmpdir(), "nightfire-crate-"));
 
 try {
   // Oxide owns where a Cargo command writes, so the archive location comes from
   // Cargo's own metadata rather than a target directory this proof picks.
-  const metadata = JSON.parse(
+  const metadataRaw: unknown = JSON.parse(
     captureRustTool(workspaceManifest, ["cargo", "metadata", "--no-deps", "--format-version", "1"])
-  ) as { target_directory: string };
+  );
+  if (!isRecord(metadataRaw) || typeof metadataRaw.target_directory !== "string") {
+    throw new Error("cargo metadata must include a string target_directory");
+  }
 
   runRustTool(workspaceManifest, ["cargo", "package", "-p", "nightfire", "--locked"]);
 
-  const crate = join(metadata.target_directory, "package", `nightfire-${manifest.version}.crate`);
+  const crate = join(metadataRaw.target_directory, "package", `nightfire-${version}.crate`);
   if (!(await Bun.file(crate).exists())) {
     throw new Error(`no crate archive at ${crate}`);
   }
@@ -37,7 +48,7 @@ try {
   await mkdir(unpacked);
   run(["tar", "-xzf", crate, "-C", unpacked], root);
 
-  const packageRoot = join(unpacked, `nightfire-${manifest.version}`);
+  const packageRoot = join(unpacked, `nightfire-${version}`);
   const canonicalFixture = await Bun.file(
     join(root, "fixtures/wire/v1/nightfire-values.json")
   ).text();
@@ -53,7 +64,7 @@ try {
   await prepareDisposableWorkspace(packageRoot);
   runRustTool(join(packageRoot, "Cargo.toml"), ["cargo", "test", "--locked"], packageRoot);
   console.log(
-    `Cargo package proof passed: unpacked nightfire ${manifest.version} tests consume the root fixture`
+    `Cargo package proof passed: unpacked nightfire ${version} tests consume the root fixture`
   );
 } finally {
   await rm(destination, { recursive: true, force: true });

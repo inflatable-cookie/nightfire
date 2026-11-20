@@ -35,10 +35,9 @@ const titledBlock = {
 };
 
 function urlInput(container: HTMLElement): HTMLTextAreaElement {
-  const field = within(container).getByPlaceholderText(
+  return within(container).getByPlaceholderText<HTMLTextAreaElement>(
     "Paste a URL or embed code..."
-  ) as HTMLTextAreaElement;
-  return field;
+  );
 }
 
 describe("nightfire/video block", () => {
@@ -65,10 +64,12 @@ describe("nightfire/video block", () => {
   });
 
   it("matches the committed video fixture HTML", () => {
-    const fixture = JSON.parse(readFileSync("fixtures/wire/v1/nightfire-values.json", "utf8"));
+    const fixture = JSON.parse(readFileSync("fixtures/wire/v1/nightfire-values.json", "utf8")) as {
+      values: Array<{ name: string; value: { blocks: Array<{ type: string }> } }>;
+    };
     const block = fixture.values
-      .find((entry: { name: string }) => entry.name === "core-payloads")
-      .value.blocks.find((entry: { type: string }) => entry.type === "video");
+      .find((entry) => entry.name === "core-payloads")!
+      .value.blocks.find((entry) => entry.type === "video");
     const view = render(RendererComponent as any, { block });
     const root = view.container.querySelector('[data-nightfire-block="video"]') as HTMLElement;
     expect(root).toBeTruthy();
@@ -236,7 +237,10 @@ describe("nightfire/video block", () => {
     await fireEvent.input(urlInput(view.container), { target: { value: YOUTUBE_URL } });
     await waitFor(() => expect(calls.length).toBeGreaterThan(0));
     const external = { provider: "vimeo", id: "12345", originalUrl: "https://vimeo.com/12345" };
-    (view.component as any).setBlock({ type: "video", data: { embed: external } });
+    (view.component as { setBlock: (next: unknown) => void }).setBlock({
+      type: "video",
+      data: { embed: external }
+    });
     flushSync();
     expect(urlInput(view.container).value).toBe(external.originalUrl);
     await fireEvent.input(within(view.container).getByPlaceholderText("Caption (optional)"), {
@@ -251,7 +255,7 @@ describe("nightfire/video block", () => {
       initial: { type: "video", data: {} },
       onChange: (next: unknown) => {
         calls.push(next);
-        (view.component as any).setBlock(cloneThroughWire(next));
+        (view.component as { setBlock: (next: unknown) => void }).setBlock(cloneThroughWire(next));
       }
     });
 
@@ -267,7 +271,9 @@ describe("nightfire/video block", () => {
     await waitFor(() =>
       expect(view.container.textContent).toContain("Could not parse embed source")
     );
-    (view.component as any).setBlock(cloneThroughWire(calls.at(-1)));
+    (view.component as { setBlock: (next: unknown) => void }).setBlock(
+      cloneThroughWire(calls.at(-1))
+    );
     flushSync();
     expect(urlInput(view.container).value).toBe("not a url");
   });
@@ -414,9 +420,9 @@ describe("nightfire/video block", () => {
       parseDebounce: 0
     });
 
-    const captionInput = within(view.container).getByPlaceholderText(
+    const captionInput = within(view.container).getByPlaceholderText<HTMLInputElement>(
       "Caption (optional)"
-    ) as HTMLInputElement;
+    );
     await fireEvent.input(captionInput, { target: { value: "A new caption" } });
 
     await waitFor(() => expect(calls.length).toBeGreaterThan(0));

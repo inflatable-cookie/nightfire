@@ -3,14 +3,17 @@ import type { NightfireBlock, NightfireValue } from "./types";
 import { isBlockContentEmpty } from "./editor-registry";
 import type { BlockTypeOption, SchemaDefinition } from "./editor-registry";
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
 function asRecord(value: unknown): Record<string, unknown> | null {
   // v1 `{ block }` is not accepted. Dual-shape conversion is gone.
-  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+  if (!isRecord(value)) {
     return null;
   }
 
-  const record = value as Record<string, unknown>;
-  return Object.hasOwn(record, "block") ? null : record;
+  return Object.hasOwn(value, "block") ? null : value;
 }
 
 function readBlocks(record: Record<string, unknown>, defaultType: string): Array<NightfireBlock> {

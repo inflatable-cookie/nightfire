@@ -163,9 +163,9 @@ async function authorTable(): Promise<unknown> {
   );
   merged.focus();
   await fireEvent.keyDown(merged, { key: "4" });
-  const input = within(view.container).getByRole("textbox", {
+  const input = within(view.container).getByRole<HTMLTextAreaElement>("textbox", {
     name: "Edit Row 1, column 1"
-  }) as HTMLTextAreaElement;
+  });
   await fireEvent.input(input, { target: { value: "42" } });
   await fireEvent.keyDown(input, { key: "Escape" });
 

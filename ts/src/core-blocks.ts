@@ -34,4 +34,9 @@ export const CORE_BLOCK_TYPES = {
 
 export type CoreBlockType = keyof typeof CORE_BLOCK_TYPES;
 
-export const CORE_BLOCK_TYPE_NAMES = Object.keys(CORE_BLOCK_TYPES) as Array<CoreBlockType>;
+function isCoreBlockType(key: string): key is CoreBlockType {
+  return Object.hasOwn(CORE_BLOCK_TYPES, key);
+}
+
+export const CORE_BLOCK_TYPE_NAMES: Array<CoreBlockType> =
+  Object.keys(CORE_BLOCK_TYPES).filter(isCoreBlockType);

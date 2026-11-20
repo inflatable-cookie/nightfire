@@ -20,8 +20,17 @@ function itemListBlock(data: Record<string, unknown> = {}) {
   };
 }
 
-function lastBlock(onChange: ReturnType<typeof mock>) {
-  return onChange.mock.calls.at(-1)![0];
+type ItemListBlockShape = {
+  data: {
+    title?: string;
+    items: Array<{ title?: string; body: Array<{ type?: string; data: { text?: string } }> }>;
+    intro?: unknown;
+    variant?: unknown;
+  };
+};
+
+function lastBlock(onChange: ReturnType<typeof mock>): ItemListBlockShape {
+  return onChange.mock.calls.at(-1)![0] as ItemListBlockShape;
 }
 
 describe("nightfire/item-list editor", () => {
@@ -120,7 +129,7 @@ describe("nightfire/item-list editor", () => {
       within(view.container).getByRole("button", { name: "Add child block to item 2" })
     );
     current = lastBlock(onChange);
-    expect(current.data.items[1].body[0].type).toBe("markdown");
+    expect(current.data.items[1]!.body[0]!.type).toBe("markdown");
 
     view = render(EditorComponent as any, {
       block: current,
@@ -141,8 +150,8 @@ describe("nightfire/item-list editor", () => {
     });
     await fireEvent.click(within(view.container).getByRole("button", { name: "Move item 2 up" }));
     current = lastBlock(onChange);
-    expect(current.data.items.map((item: any) => item.title)).toEqual(["Second", "First"]);
-    expect(current.data.items[0].body[0].data.text).toBe("Nested body");
+    expect(current.data.items.map((item) => item.title)).toEqual(["Second", "First"]);
+    expect(current.data.items[0]!.body[0]!.data.text).toBe("Nested body");
     expect(current.data.intro).toEqual({ type: "rich_text", retained: true });
     expect(current.data.variant).toBe("ordered");
 

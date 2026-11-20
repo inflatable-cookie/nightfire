@@ -48,7 +48,7 @@ describe("table grid model", () => {
     ]);
     expect(row[0]!.cells![0]!.rowspan).toBe(3);
     expect(row[2]!.section).toBe("body");
-    expect(source[0]!.cells![0]).toMatchObject({ rowspan: 2 });
+    expect(source[0]!.cells[0]).toMatchObject({ rowspan: 2 });
   });
   it("deletes span origins and covered lines without losing retained content", () => {
     for (const index of [0, 1]) {
@@ -92,7 +92,7 @@ describe("table grid model", () => {
       ["keep", ""],
       ["", ""]
     ]);
-    rows[1]!.cells![1]!.markdown = "discard";
+    rows[1]!.cells[1]!.markdown = "discard";
     expect(mergeHasDiscardedContent(entriesForSelection(layoutRows(rows), bounds)!, bounds)).toBe(
       true
     );

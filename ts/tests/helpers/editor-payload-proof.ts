@@ -54,8 +54,9 @@ function assertStoredKeysCovered(
       }
       fail(`${path}: editor stored an array; core-payloads representative does not`);
     }
+    const templates: Array<unknown> = representative;
     stored.forEach((entry, index) => {
-      const template = representative[Math.min(index, representative.length - 1)];
+      const template = templates[Math.min(index, templates.length - 1)];
       assertStoredKeysCovered(entry, template, `${path}[${index}]`, skipSubtrees);
     });
   }

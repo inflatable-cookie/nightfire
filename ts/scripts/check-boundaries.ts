@@ -12,9 +12,17 @@ const forbidden = [
   "smol-toml"
 ];
 
-const manifest = await Bun.file("package.json").json();
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+const manifest: unknown = await Bun.file("package.json").json();
+if (!isRecord(manifest)) {
+  throw new Error("package.json must be a JSON object");
+}
 for (const section of ["dependencies", "devDependencies", "peerDependencies"]) {
-  for (const name of Object.keys(manifest[section] ?? {})) {
+  const deps = manifest[section];
+  for (const name of Object.keys(isRecord(deps) ? deps : {})) {
     if (forbidden.includes(name)) {
       throw new Error(`forbidden ${section} dependency: ${name}`);
     }
@@ -26,29 +34,25 @@ for (const section of ["dependencies", "devDependencies", "peerDependencies"]) {
 // boundary a forbidden package must never enter. The manifest scan above
 // already refuses a forbidden package declared directly in any section,
 // devDependencies included.
-type LockedPackage = [
-  string,
-  string,
-  { dependencies?: Record<string, string>; optionalDependencies?: Record<string, string> }?
-];
-const lock = Bun.JSONC.parse(await Bun.file("bun.lock").text()) as {
-  workspaces?: Record<string, { dependencies?: Record<string, string> }>;
-  packages?: Record<string, LockedPackage>;
-};
-const lockedPackages = lock.packages ?? {};
+const lockRaw: unknown = Bun.JSONC.parse(await Bun.file("bun.lock").text());
+const lock = isRecord(lockRaw) ? lockRaw : {};
+const lockedPackages = isRecord(lock.packages) ? lock.packages : {};
+const workspaces = isRecord(lock.workspaces) ? lock.workspaces : {};
+const rootWorkspace = isRecord(workspaces[""]) ? workspaces[""] : {};
+const rootDependencies = isRecord(rootWorkspace.dependencies) ? rootWorkspace.dependencies : {};
 const runtimePackages = new Set<string>();
-const lockPending = Object.keys(lock.workspaces?.[""]?.dependencies ?? {});
+const lockPending = Object.keys(rootDependencies);
 while (lockPending.length > 0) {
   const name = lockPending.pop();
   if (!name || runtimePackages.has(name)) {
     continue;
   }
   runtimePackages.add(name);
-  const meta = lockedPackages[name]?.[2] ?? {};
-  lockPending.push(
-    ...Object.keys(meta.dependencies ?? {}),
-    ...Object.keys(meta.optionalDependencies ?? {})
-  );
+  const entry = lockedPackages[name];
+  const meta = Array.isArray(entry) && isRecord(entry[2]) ? entry[2] : {};
+  const entryDeps = isRecord(meta.dependencies) ? meta.dependencies : {};
+  const entryOptionalDeps = isRecord(meta.optionalDependencies) ? meta.optionalDependencies : {};
+  lockPending.push(...Object.keys(entryDeps), ...Object.keys(entryOptionalDeps));
 }
 for (const name of forbidden) {
   if (runtimePackages.has(name)) {

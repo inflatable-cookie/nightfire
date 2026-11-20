@@ -186,7 +186,7 @@ async function ensure(): Promise<Array<NightfireStrategy>> {
       settle();
       return result;
     })
-    .catch((error) => {
+    .catch((error: unknown) => {
       if (!settle()) {
         return get(strategiesStore);
       }

@@ -1,13 +1,16 @@
 ### Added
 
-- `oxlint` with the Cloudflare shared rule set, `oxfmt`, and `knip` as
-  devDependencies, wired as `effigy check:lint`, `effigy check:fmt` and
-  `effigy check:dead-code` inside `validate`.
-- `oxlint.config.ts` overrides, each commented with the fact it encodes: Svelte
-  compiler runes are not globals, proof scripts print their result, `any` at the
-  public component and registry boundary is the API contract, block data is open
-  JSON, and type-aware rules stay off because `check:types` and `check` already
-  own type facts.
+- `oxlint` with the Cloudflare shared rule set (`--type-aware`), `oxfmt`, and
+  `knip` as devDependencies, wired as `effigy check:lint`, `effigy check:fmt`
+  and `effigy check:dead-code` inside `validate`.
+- `oxlint.config.ts` keeps `typeAware: true` enabled and documents each narrow
+  override: Svelte compiler runes are not globals, proof scripts print their
+  result, `any` at the public component and registry boundary is the API
+  contract, block data is open JSON, and `typescript/no-unsafe-type-assertion` is
+  relaxed in `ts/tests/**/*.ts` for malformed boundary fixtures and JSDOM casts.
+- `ts/scripts/tsconfig.json` and `ts/tests/tsconfig.json` extend
+  `ts/tsconfig.tooling.json` so type-aware linting resolves Bun types for
+  scripts and tests without leaking them into `ts/src`.
 - `knip.json` with the Effigy-driven proof scripts and the test suites as
   entries, and an `.oxfmtrc.json` that matches the repository's existing
   two-space, no-trailing-comma style.

@@ -111,12 +111,12 @@ export function clearBlockEmptyCheckers(): void {
  * has meaningful content. When no checker is registered the block is
  * assumed to be non-empty (conservative default).
  */
-export function isBlockContentEmpty(block: any): boolean {
+export function isBlockContentEmpty(block: unknown): boolean {
   if (!block || typeof block !== "object") {
     return true;
   }
-  const type = block.type as string | undefined;
-  if (!type) {
+  const type = "type" in block ? block.type : undefined;
+  if (typeof type !== "string" || type.length === 0) {
     return true;
   }
   const checker = blockEmptyCheckers.get(type);

@@ -43,7 +43,14 @@ const pureTypeScript = [
   "./validator-registry"
 ];
 
-const manifest = await Bun.file("package.json").json();
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+const manifest: unknown = await Bun.file("package.json").json();
+if (!isRecord(manifest) || !isRecord(manifest.exports)) {
+  throw new Error("package.json must declare an exports object");
+}
 const actual = Object.keys(manifest.exports).sort();
 if (JSON.stringify(actual) !== JSON.stringify(expected)) {
   throw new Error(
@@ -51,9 +58,9 @@ if (JSON.stringify(actual) !== JSON.stringify(expected)) {
   );
 }
 
-for (const [subpath, target] of Object.entries<string>(manifest.exports)) {
-  if (!existsSync(target)) {
-    throw new Error(`missing export target ${subpath}: ${target}`);
+for (const [subpath, target] of Object.entries(manifest.exports)) {
+  if (typeof target !== "string" || !existsSync(target)) {
+    throw new Error(`missing export target ${subpath}: ${String(target)}`);
   }
 }
 

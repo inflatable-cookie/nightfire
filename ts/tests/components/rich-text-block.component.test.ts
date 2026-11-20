@@ -86,10 +86,12 @@ describe("nightfire/rich-text block", () => {
   });
 
   it("matches the committed rich-text fixture HTML", () => {
-    const fixture = JSON.parse(readFileSync("fixtures/wire/v1/nightfire-values.json", "utf8"));
+    const fixture = JSON.parse(readFileSync("fixtures/wire/v1/nightfire-values.json", "utf8")) as {
+      values: Array<{ name: string; value: { blocks: Array<{ type: string }> } }>;
+    };
     const block = fixture.values
-      .find((entry: { name: string }) => entry.name === "core-payloads")
-      .value.blocks.find((entry: { type: string }) => entry.type === "rich_text");
+      .find((entry) => entry.name === "core-payloads")!
+      .value.blocks.find((entry) => entry.type === "rich_text");
     const view = render(RendererComponent as any, { block });
     const root = view.container.querySelector('[data-nightfire-block="rich_text"]');
     expect(root).toBeTruthy();

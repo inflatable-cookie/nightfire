@@ -1,6 +1,12 @@
 import { lstat, realpath } from "node:fs/promises";
 
-const manifest = await Bun.file("package.json").json();
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+const manifest: unknown = await Bun.file("package.json").json();
+const npmVersion =
+  isRecord(manifest) && typeof manifest.version === "string" ? manifest.version : null;
 const workspace = await Bun.file("Cargo.toml").text();
 const crate = await Bun.file("rust/nightfire/Cargo.toml").text();
 
@@ -8,8 +14,8 @@ const cargoVersion = workspace.match(/^version = "([^"]+)"$/m)?.[1];
 if (!cargoVersion) {
   throw new Error("root Cargo workspace version is missing");
 }
-if (manifest.version !== cargoVersion) {
-  throw new Error(`version mismatch: npm ${manifest.version}, Cargo ${cargoVersion}`);
+if (npmVersion !== cargoVersion) {
+  throw new Error(`version mismatch: npm ${String(npmVersion)}, Cargo ${cargoVersion}`);
 }
 if (!/^name = "nightfire"$/m.test(crate) || !/^version\.workspace = true$/m.test(crate)) {
   throw new Error("Rust crate must be package nightfire and inherit the workspace version");

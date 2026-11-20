@@ -20,7 +20,7 @@ const mockGetContext = mock((key: symbol) => {
   return contextMap.get(key);
 });
 
-mock.module("svelte", () => ({
+void mock.module("svelte", () => ({
   setContext: mockSetContext,
   getContext: mockGetContext
 }));
@@ -62,7 +62,7 @@ describe("nightfire/strategies", () => {
     const strategies = await loadStrategies();
     const store = strategies.createNightfireStrategiesContext();
 
-    await expect(store.ensure()).resolves.toEqual([]);
+    expect(await store.ensure()).toEqual([]);
     expect(get(store.error)).toContain("not configured");
     expect(strategies.useNightfireStrategies()).toBe(store);
   });
@@ -114,8 +114,8 @@ describe("nightfire/strategies", () => {
     });
 
     const store = strategies.createNightfireStrategiesContext();
-    await expect(store.ensure()).resolves.toEqual([]);
-    await expect(store.ensure()).resolves.toEqual([]);
+    expect(await store.ensure()).toEqual([]);
+    expect(await store.ensure()).toEqual([]);
     expect(calls).toBe(1);
 
     store.invalidate();
@@ -162,10 +162,10 @@ describe("nightfire/strategies", () => {
     const store = strategies.createNightfireStrategiesContext();
     const slow = store.ensure();
     const fast = store.refresh();
-    await expect(fast).resolves.toEqual([expect.objectContaining({ id: "fast" })]);
+    expect(await fast).toEqual([expect.objectContaining({ id: "fast" })]);
 
     releaseSlow();
-    await expect(slow).resolves.toEqual([expect.objectContaining({ id: "fast" })]);
+    expect(await slow).toEqual([expect.objectContaining({ id: "fast" })]);
 
     expect(store.findById("fast")?.id).toBe("fast");
     expect(store.findById("slow")).toBeNull();
@@ -202,7 +202,7 @@ describe("nightfire/strategies", () => {
     expect(get(store.loading)).toBe(false);
 
     releaseSlow();
-    await expect(pending).resolves.toEqual([]);
+    expect(await pending).toEqual([]);
     expect(get(store.loading)).toBe(false);
     expect(store.findById("stale")).toBeNull();
   });
@@ -278,7 +278,7 @@ describe("nightfire/strategies", () => {
     expect(get(store.error)).toBeNull();
     expect(store.findById("old")).toBeNull();
 
-    await expect(store.ensure()).resolves.toEqual([]);
+    expect(await store.ensure()).toEqual([]);
     expect(get(store.error)).toBe("new config failed");
   });
 
@@ -342,7 +342,7 @@ describe("nightfire/strategies", () => {
     });
 
     const store = strategies.createNightfireStrategiesContext();
-    await expect(store.ensure()).resolves.toEqual([]);
+    expect(await store.ensure()).toEqual([]);
     expect(get(store.error)).toBe("Failed to load strategies");
 
     const loaded = await store.ensure();
@@ -375,10 +375,10 @@ describe("nightfire/strategies", () => {
     });
 
     const store = strategies.createNightfireStrategiesContext();
-    await expect(store.ensure()).resolves.toEqual([]);
+    expect(await store.ensure()).toEqual([]);
     expect(get(store.error)).toBe("explicit boom");
 
-    await expect(store.ensure()).resolves.toEqual([
+    expect(await store.ensure()).toEqual([
       {
         id: "s-default-ttl",
         cardinality: { mode: "single" },

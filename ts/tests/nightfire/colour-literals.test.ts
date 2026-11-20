@@ -37,7 +37,7 @@ function hexToRgb(value: string): [number, number, number] | null {
     return null;
   }
   const hex = match[1]!;
-  const full = hex.length === 3 ? [...hex].map((digit) => digit + digit).join("") : hex;
+  const full = hex.length === 3 ? Array.from(hex, (digit) => digit + digit).join("") : hex;
   return [0, 2, 4].map((offset) => Number.parseInt(full.slice(offset, offset + 2), 16)) as [
     number,
     number,

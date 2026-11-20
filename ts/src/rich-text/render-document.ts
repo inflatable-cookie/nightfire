@@ -102,13 +102,20 @@ function childrenOf(node: NodeJSON, context: RenderContext): string {
   return node.content.map((child) => renderNode(child, context)).join("");
 }
 
+function isMarkJson(value: unknown): value is MarkJSON {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
 function applyMarks(marks: unknown, html: string): string {
   if (html === "" || !Array.isArray(marks)) {
     return html;
   }
+  const markList: Array<unknown> = marks;
   let wrapped = html;
-  for (const mark of marks) {
-    wrapped = wrapMark(mark as MarkJSON, wrapped);
+  for (const mark of markList) {
+    if (isMarkJson(mark)) {
+      wrapped = wrapMark(mark, wrapped);
+    }
   }
   return wrapped;
 }
@@ -133,7 +140,7 @@ function renderUnadmittedNode(node: NodeJSON, context: RenderContext): string {
   // An unknown container is not an inline leaf: keep its children, even an empty
   // list, rather than replacing it with a fallback label. Only a node with no
   // content array is a leaf.
-  if (!renderer) {
+  if (!renderer || context.schema === null) {
     if (Array.isArray(node.content)) {
       return children;
     }
@@ -149,7 +156,7 @@ function renderUnadmittedNode(node: NodeJSON, context: RenderContext): string {
   let html: string;
   try {
     const output = renderer({
-      schema: context.schema as string,
+      schema: context.schema,
       node: inlineNode,
       childrenHtml: children,
       escapeText: escapeHtml,

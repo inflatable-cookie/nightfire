@@ -7,12 +7,12 @@ export default defineConfig({
   ...cloudflare,
   options: {
     ...cloudflare.options,
-    // Type facts already gate through `check:types` (strict tsc over the
-    // published and tooling tsconfigs) and `check` (svelte-check with
-    // --fail-on-warnings). Keeping oxlint syntactic stops the lint gate from
-    // re-litigating assertions in test doubles and Svelte component casts,
-    // which the type-aware rule set reports by the hundred here.
-    typeAware: false
+    // Keep type-aware linting enabled per the ts-toolchain baseline.
+    // Published source resolves against `ts/tsconfig.json` (no Bun types);
+    // `ts/scripts/tsconfig.json` and `ts/tests/tsconfig.json` extend
+    // `ts/tsconfig.tooling.json` so tooling/test files resolve Bun types
+    // without leaking them into `ts/src`.
+    typeAware: true
   },
   overrides: [
     ...(cloudflare.overrides ?? []),
@@ -45,6 +45,14 @@ export default defineConfig({
         "ts/tests/components/VideoEditorHarness.svelte"
       ],
       rules: { "typescript/no-explicit-any": "off" }
+    },
+    {
+      // Test files construct intentionally malformed boundary inputs, test
+      // doubles, and JSDOM `querySelector` element casts. `@cloudflare/oxlint-config`
+      // already relaxes `no-explicit-any` and `no-unsafe-{assignment,member-access,argument}`
+      // for test files; `no-unsafe-type-assertion` is the matching cast rule.
+      files: ["ts/tests/**/*.ts"],
+      rules: { "typescript/no-unsafe-type-assertion": "off" }
     },
     {
       // Nightfire block data is open JSON by contract: `Record<string, unknown>`

@@ -5,12 +5,15 @@ import {
   asObject,
   fail,
   loadPublishedSchemas,
+  requireJsonSchema,
   resolveReference,
   schemaAt,
   validateDocument,
   visit
 } from "./schema-documents";
 import type { JsonObject, JsonSchema } from "./schema-documents";
+
+const CORE_BLOCK_TYPE_SET: ReadonlySet<string> = new Set(CORE_BLOCK_TYPE_NAMES);
 
 const catalog = await loadPublishedSchemas();
 const { repoRoot, schemaRoot, documents, rawDocuments } = catalog;
@@ -81,7 +84,7 @@ assertValid(fixture.registry.strategy, "strategy.schema.json", "shared strategy"
 for (const entry of fixture.values) {
   assertValid(entry.value, "value.schema.json", `shared positive value ${entry.name}`);
   for (const block of entry.value.blocks) {
-    if (CORE_BLOCK_TYPE_NAMES.includes(block.type as never)) {
+    if (CORE_BLOCK_TYPE_SET.has(block.type)) {
       assertValid(block.data, `blocks/${block.type}.schema.json`, `shared ${block.type} payload`);
     }
   }
@@ -122,7 +125,13 @@ function assertCovers(
       if (isRecursiveDef(defName, defSchema)) {
         return;
       }
-      assertCovers(defSchema as JsonSchema, value, schemaPath, document, instancePath);
+      assertCovers(
+        requireJsonSchema(defSchema, `${instancePath} (${schema.$ref})`),
+        value,
+        schemaPath,
+        document,
+        instancePath
+      );
       return;
     }
     const resolved = resolveReference(catalog, schema.$ref, schemaPath);
@@ -131,9 +140,9 @@ function assertCovers(
     return;
   }
 
-  const allOf = Array.isArray(schema.allOf) ? schema.allOf : [];
+  const allOf: Array<unknown> = Array.isArray(schema.allOf) ? schema.allOf : [];
   for (const child of allOf) {
-    assertCovers(child as JsonSchema, value, schemaPath, document, instancePath);
+    assertCovers(requireJsonSchema(child, instancePath), value, schemaPath, document, instancePath);
   }
 
   const properties = asObject(schema.properties);
@@ -147,7 +156,7 @@ function assertCovers(
         fail(`${instancePath}: representative omits documented property ${key}`);
       }
       assertCovers(
-        properties[key] as JsonSchema,
+        requireJsonSchema(properties[key], `${instancePath}.${key}`),
         object[key],
         schemaPath,
         document,
@@ -157,7 +166,13 @@ function assertCovers(
   }
 
   if (schema.items !== undefined && Array.isArray(value) && value.length > 0) {
-    assertCovers(schema.items as JsonSchema, value[0], schemaPath, document, `${instancePath}[0]`);
+    assertCovers(
+      requireJsonSchema(schema.items, `${instancePath}[0]`),
+      value[0],
+      schemaPath,
+      document,
+      `${instancePath}[0]`
+    );
   }
 }
 
@@ -214,7 +229,7 @@ function fixtureCaseAccepted(value: (typeof fixture.validationCases)[number]["va
     ) {
       return false;
     }
-    if (CORE_BLOCK_TYPE_NAMES.includes(block.type as never)) {
+    if (CORE_BLOCK_TYPE_SET.has(block.type)) {
       return validateDocument(catalog, block.data, `blocks/${block.type}.schema.json`).length === 0;
     }
     return true;

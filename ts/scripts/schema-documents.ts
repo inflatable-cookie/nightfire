@@ -79,12 +79,29 @@ function schemaTypes(type: unknown, path: string): Array<string> {
   if (names.length === 0) {
     fail(`${path}: type must be a type name or a non-empty array of type names`);
   }
+  const result: Array<string> = [];
   for (const name of names) {
     if (typeof name !== "string" || !SCHEMA_TYPES.has(name)) {
       fail(`${path}: unsupported schema type ${JSON.stringify(name)}`);
     }
+    result.push(name);
   }
-  return names as Array<string>;
+  return result;
+}
+
+export function isJsonObject(value: unknown): value is JsonObject {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+export function isJsonSchema(value: unknown): value is JsonSchema {
+  return typeof value === "boolean" || isJsonObject(value);
+}
+
+export function requireJsonSchema(value: unknown, path: string): JsonSchema {
+  if (!isJsonSchema(value)) {
+    fail(`${path}: expected a JSON Schema object or boolean`);
+  }
+  return value;
 }
 
 export function assertSupportedSchema(schema: JsonSchema, path: string): void {
@@ -107,7 +124,10 @@ export function assertSupportedSchema(schema: JsonSchema, path: string): void {
   if (definitions !== undefined) {
     const map = asObject(definitions) ?? fail(`${path}: $defs must be an object of schemas`);
     for (const [name, definition] of Object.entries(map)) {
-      assertSupportedSchema(definition as JsonSchema, `${path}#/$defs/${name}`);
+      assertSupportedSchema(
+        requireJsonSchema(definition, `${path}#/$defs/${name}`),
+        `${path}#/$defs/${name}`
+      );
     }
   }
 
@@ -119,35 +139,40 @@ export function assertSupportedSchema(schema: JsonSchema, path: string): void {
     if (!Array.isArray(entries)) {
       fail(`${path}: ${keyword} must be an array of schemas`);
     }
-    entries.forEach((entry, index) => {
-      assertSupportedSchema(entry as JsonSchema, `${path}#/${keyword}/${index}`);
+    const items: Array<unknown> = entries;
+    items.forEach((entry, index) => {
+      assertSupportedSchema(
+        requireJsonSchema(entry, `${path}#/${keyword}/${index}`),
+        `${path}#/${keyword}/${index}`
+      );
     });
   }
 
   if (schema.items !== undefined) {
-    assertSupportedSchema(schema.items as JsonSchema, `${path}#/items`);
+    assertSupportedSchema(requireJsonSchema(schema.items, `${path}#/items`), `${path}#/items`);
   }
 
   if (schema.properties !== undefined) {
     const map =
       asObject(schema.properties) ?? fail(`${path}: properties must be an object of schemas`);
     for (const [name, entry] of Object.entries(map)) {
-      assertSupportedSchema(entry as JsonSchema, `${path}#/properties/${name}`);
+      assertSupportedSchema(
+        requireJsonSchema(entry, `${path}#/properties/${name}`),
+        `${path}#/properties/${name}`
+      );
     }
   }
 
   if (schema.additionalProperties !== undefined) {
     assertSupportedSchema(
-      schema.additionalProperties as JsonSchema,
+      requireJsonSchema(schema.additionalProperties, `${path}#/additionalProperties`),
       `${path}#/additionalProperties`
     );
   }
 }
 
 export function asObject(value: unknown): JsonObject | null {
-  return value !== null && typeof value === "object" && !Array.isArray(value)
-    ? (value as JsonObject)
-    : null;
+  return isJsonObject(value) ? value : null;
 }
 
 export async function loadPublishedSchemas(): Promise<SchemaCatalog> {
@@ -163,8 +188,8 @@ export async function loadPublishedSchemas(): Promise<SchemaCatalog> {
     const path = resolve(schemaRoot, entry);
     const raw = await Bun.file(path).text();
     rawDocuments.set(path, raw);
-    const document = JSON.parse(raw) as JsonObject;
-    if (document === null || typeof document !== "object" || Array.isArray(document)) {
+    const document: unknown = JSON.parse(raw);
+    if (!isJsonObject(document)) {
       fail(`${entry}: a published schema document must be a JSON object`);
     }
     assertSupportedSchema(document, entry);
@@ -230,10 +255,10 @@ export function resolveReference(
   }
   const document = catalog.documents.get(path) ?? fail(`unresolved schema reference: ${ref}`);
   const schema = resolvePointer(document, fragmentPart === undefined ? "" : `#${fragmentPart}`);
-  if (typeof schema !== "boolean" && !asObject(schema)) {
+  if (!isJsonSchema(schema)) {
     fail(`schema reference does not resolve to a schema: ${ref}`);
   }
-  return { schema: schema as JsonSchema, path };
+  return { schema, path };
 }
 
 function matchesType(value: unknown, type: string): boolean {
@@ -280,17 +305,20 @@ export function validate(
     errors.push(...validate(catalog, value, resolved.schema, resolved.path, instancePath));
   }
 
-  const allOf = Array.isArray(schema.allOf) ? schema.allOf : [];
+  const allOf: Array<unknown> = Array.isArray(schema.allOf) ? schema.allOf : [];
   for (const child of allOf) {
-    errors.push(...validate(catalog, value, child as JsonSchema, schemaPath, instancePath));
+    errors.push(
+      ...validate(catalog, value, requireJsonSchema(child, schemaPath), schemaPath, instancePath)
+    );
   }
 
-  const anyOf = Array.isArray(schema.anyOf) ? schema.anyOf : [];
+  const anyOf: Array<unknown> = Array.isArray(schema.anyOf) ? schema.anyOf : [];
   if (
     anyOf.length > 0 &&
     !anyOf.some(
       (child) =>
-        validate(catalog, value, child as JsonSchema, schemaPath, instancePath).length === 0
+        validate(catalog, value, requireJsonSchema(child, schemaPath), schemaPath, instancePath)
+          .length === 0
     )
   ) {
     errors.push(`${instancePath}: does not match any allowed shape`);
@@ -335,15 +363,10 @@ export function validate(
       }
     }
     if (schema.items !== undefined) {
+      const itemSchema = requireJsonSchema(schema.items, schemaPath);
       value.forEach((entry, index) => {
         errors.push(
-          ...validate(
-            catalog,
-            entry,
-            schema.items as JsonSchema,
-            schemaPath,
-            `${instancePath}[${index}]`
-          )
+          ...validate(catalog, entry, itemSchema, schemaPath, `${instancePath}[${index}]`)
         );
       });
     }
@@ -364,19 +387,19 @@ export function validate(
           ...validate(
             catalog,
             entry,
-            properties[key] as JsonSchema,
+            requireJsonSchema(properties[key], schemaPath),
             schemaPath,
             `${instancePath}.${key}`
           )
         );
       } else if (schema.additionalProperties === false) {
         errors.push(`${instancePath}: unknown property ${key}`);
-      } else if (asObject(schema.additionalProperties)) {
+      } else if (isJsonObject(schema.additionalProperties)) {
         errors.push(
           ...validate(
             catalog,
             entry,
-            schema.additionalProperties as JsonSchema,
+            schema.additionalProperties,
             schemaPath,
             `${instancePath}.${key}`
           )
