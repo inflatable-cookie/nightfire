@@ -95,4 +95,36 @@ describe("nightfire/slash-commands", () => {
       selectionEnd: 9
     })).toBeNull();
   });
+
+  it("keeps the default label when a custom command passes a blank one", () => {
+    const commands = buildNightfireSlashCommands(
+      [{ type: "markdown", label: "Markdown" }],
+      { commands: [{ type: "markdown", label: "   " }] }
+    );
+
+    expect(commands).toEqual([
+      expect.objectContaining({ type: "markdown", label: "Markdown" })
+    ]);
+  });
+
+  it("clamps a caret past the end of the value", () => {
+    const match = findNightfireSlashMatch({
+      value: "Intro /down",
+      selectionStart: 40,
+      selectionEnd: 40
+    });
+
+    expect(match).toEqual({ start: 6, end: 11, query: "down" });
+    expect(removeNightfireSlashText("Intro /down", match!)).toBe("Intro ");
+  });
+
+  it("clamps a negative caret to the start of the value", () => {
+    expect(
+      findNightfireSlashMatch({
+        value: "/download",
+        selectionStart: -4,
+        selectionEnd: -4
+      })
+    ).toBeNull();
+  });
 });

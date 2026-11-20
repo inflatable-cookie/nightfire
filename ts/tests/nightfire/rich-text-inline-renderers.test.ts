@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from "bun:test";
 import {
+  clearRichTextInlineNodeRenderers,
   getRichTextInlineNodeRenderer,
   registerRichTextInlineNodeRenderer,
   renderRichTextHtml,
@@ -212,6 +213,16 @@ describe("nightfire/rich-text inline node renderers", () => {
     const rendered = renderRichTextHtml(document, { schema: SCHEMA_A });
     expect(rendered).toContain('data-nightfire-inline-fallback="unregistered"');
     expect(rendered).not.toContain("second");
+  });
+
+  it("clears every registration at once", () => {
+    registerRichTextInlineNodeRenderer(SCHEMA_A, "math_inline", () => "<span>a</span>");
+    registerRichTextInlineNodeRenderer(SCHEMA_B, "math_inline", () => "<span>b</span>");
+
+    clearRichTextInlineNodeRenderers();
+
+    expect(getRichTextInlineNodeRenderer(SCHEMA_A, "math_inline")).toBeNull();
+    expect(getRichTextInlineNodeRenderer(SCHEMA_B, "math_inline")).toBeNull();
   });
 
   it("sanitizes hostile registered output, attributes and URLs", () => {

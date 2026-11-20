@@ -31,14 +31,19 @@ after consumer migration begins.
   | `./types`, `./utils`, `./block-versions` | Narrow type and normalisation modules |
   | `./editor-registry`, `./render-registry`, `./validator-registry` | Registry mechanics with registration, unregistration and clear seams |
   | `./editor`, `./editor-registrations` | Editor surfaces and their registration effect |
-  | `./renderer`, `./render-registrations`, `./rich-text`, `./markdown` | Render surfaces and their registration effect |
+  | `./renderer`, `./render-registrations`, `./rich-text` | Render surfaces and their registration effect |
+  | `./markdown` | Mixed markdown barrel: the markdown editor surface and the safe preview renderer |
   | `./strategies`, `./media-source`, `./styles.css`, `./package.json` | Strategies loading, media resolution seam, editor appearance, manifest |
 
 - Keep `.` light and Svelte-free. A root import may not reach `./strategies` or
   a `.svelte` module: `strategies` imports Svelte stores at runtime and is a
   browser-only subpath.
-- Export `renderSafeMarkdownPreview` from `./markdown`, the surface that already
-  owns markdown rendering.
+- `./markdown` is a mixed barrel, not a render-only entry point. It exports
+  `MarkdownEditor`, `MarkdownEditorSurface` and `MarkdownRenderer` next to
+  `renderSafeMarkdownPreview`, so importing it loads editor modules: Underlay
+  imports `MarkdownEditorSurface` from it and praxis imports
+  `renderSafeMarkdownPreview`. A consumer that must render without loading an
+  editor takes `./rich-text` or `./renderer`.
 - Do not export `block-ids` and `media-locator` as extra subpaths: `./core`,
   `./validation` and `.` already answer them.
 - `./rich-text` is the stored rich-text path: the sanitized document renderer
@@ -51,7 +56,8 @@ after consumer migration begins.
 - Keep `core` and `validation` free of Svelte runtime imports.
 - Allow registry modules to import Svelte types only.
 - Keep renderer imports free of editor modules, registration effects, and
-  runtime Poodle imports. Type-only Poodle imports pass.
+  runtime Poodle imports. Type-only Poodle imports pass. `./markdown` is not a
+  renderer entry point for this rule, because it carries the markdown editor.
 - Keep `@inflatable-cookie/poodle-svelte` an optional peer of editor entry
   points only. Declare it as a patch range within one Poodle minor
   (`>=0.4.4 <0.5` today), not an exact version: below `1.0` a Poodle minor is
@@ -91,7 +97,14 @@ block's `data`. The TypeScript and Rust implementations agree on every rule:
 - An array segment is `0` or a digit string without a leading zero.
 - A segment resolves only an own property, so `#/constructor` resolves nothing.
 - Resolution finds the block by ID among top-level blocks and then inside
-  another block's data, so a nested `item_list` body resolves too.
+  another block's data, so a nested `item_list` body resolves too. A nested
+  payload is a block only when it carries the id, a string `type` and a `data`
+  member: another `{ id, data }` object in the payload is metadata, and a
+  locator does not address it.
+- Traversal is depth-first and canonical, so two implementations and two parses
+  of one document select the same block: array items in index order, and object
+  keys in ascending Unicode code-point order. A duplicate id therefore resolves
+  to the same payload everywhere, whatever order the JSON was written in.
 
 ## Dependencies
 

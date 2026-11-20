@@ -21,4 +21,5 @@ export {
 } from "./validator-registry";
 
 export type { NightfireValue };
+export type { BlockValidator } from "./validator-registry";
 export type { NightfireMediaLocator } from "./media-locator";

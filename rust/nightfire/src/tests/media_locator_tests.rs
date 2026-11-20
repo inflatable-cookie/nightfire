@@ -173,6 +173,96 @@ fn resolves_pointer_inside_nested_block_id() {
 }
 
 #[test]
+fn ignores_nested_payload_metadata_that_looks_like_a_block() {
+    // `annotations` carries an `id` and a `data` but no block type, so it is
+    // payload metadata. Its key sorts before `body`, so the metadata is visited
+    // first: only the block-shape rule keeps it out.
+    let value = NightfireValue::single(
+        "test:schema",
+        block(
+            "container_01",
+            json!({
+                "annotations": { "id": "x", "data": { "media": "wrong" } },
+                "body": {
+                    "id": "x",
+                    "type": "image",
+                    "version": "initial",
+                    "data": { "media": "right" }
+                }
+            }),
+        ),
+    );
+
+    let resolved = NightfireMediaLocator::parse("x#/media")
+        .unwrap()
+        .resolve_in_value(&value)
+        .expect("reference should resolve");
+
+    assert_eq!(resolved, &json!("right"));
+}
+
+#[test]
+fn visits_nested_sibling_keys_in_code_point_order() {
+    // `z` is written first and `a` sorts first: the `a` block answers, so the
+    // result does not depend on the order the JSON happens to be written in.
+    let value = NightfireValue::single(
+        "test:schema",
+        block(
+            "container_01",
+            json!({
+                "z": {
+                    "id": "dup",
+                    "type": "image",
+                    "version": "initial",
+                    "data": { "media": "insertion-order" }
+                },
+                "a": {
+                    "id": "dup",
+                    "type": "image",
+                    "version": "initial",
+                    "data": { "media": "code-point" }
+                }
+            }),
+        ),
+    );
+
+    let resolved = NightfireMediaLocator::parse("dup#/media")
+        .unwrap()
+        .resolve_in_value(&value)
+        .expect("reference should resolve");
+
+    assert_eq!(resolved, &json!("code-point"));
+}
+
+#[test]
+fn prefers_a_top_level_block_over_a_nested_one_with_the_same_id() {
+    let value = NightfireValue::multi(
+        "test:schema",
+        vec![
+            block(
+                "list_01",
+                json!({
+                    "items": [{
+                        "id": "dup",
+                        "type": "image",
+                        "version": "initial",
+                        "data": { "image_id": "nested" }
+                    }]
+                }),
+            ),
+            block("dup", json!({ "image_id": "top" })),
+        ],
+    );
+
+    let resolved = NightfireMediaLocator::parse("dup#/image_id")
+        .unwrap()
+        .resolve_in_value(&value)
+        .expect("reference should resolve");
+
+    assert_eq!(resolved, &json!("top"));
+}
+
+#[test]
 fn returns_none_when_block_or_path_does_not_exist() {
     let value = NightfireValue::single(
         "test:schema",

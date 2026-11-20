@@ -278,6 +278,60 @@
             { "image_id": "media-2" }
           ]
         }
+      },
+      {
+        "id": "container_03",
+        "type": "item_list",
+        "version": "initial",
+        "data": {
+          "annotations": { "id": "meta_x", "data": { "image_id": "metadata-is-not-a-block" } },
+          "body": {
+            "id": "meta_x",
+            "type": "image",
+            "version": "initial",
+            "data": { "image_id": "nested-block" }
+          }
+        }
+      },
+      {
+        "id": "shadow_04",
+        "type": "item_list",
+        "version": "initial",
+        "data": {
+          "items": [
+            {
+              "id": "dup_05",
+              "type": "image",
+              "version": "initial",
+              "data": { "image_id": "nested-loses" }
+            }
+          ]
+        }
+      },
+      {
+        "id": "dup_05",
+        "type": "image",
+        "version": "initial",
+        "data": { "image_id": "top-level-wins" }
+      },
+      {
+        "id": "ordering_06",
+        "type": "item_list",
+        "version": "initial",
+        "data": {
+          "z": {
+            "id": "order_07",
+            "type": "image",
+            "version": "initial",
+            "data": { "image_id": "insertion-order-first" }
+          },
+          "a": {
+            "id": "order_07",
+            "type": "image",
+            "version": "initial",
+            "data": { "image_id": "code-point-first" }
+          }
+        }
       }
     ]
   },
@@ -289,6 +343,30 @@
       "dataPointer": "/pages/1/image_id",
       "found": true,
       "resolved": "media-2"
+    },
+    {
+      "name": "nested-block-beats-metadata",
+      "locator": "meta_x#/image_id",
+      "blockId": "meta_x",
+      "dataPointer": "/image_id",
+      "found": true,
+      "resolved": "nested-block"
+    },
+    {
+      "name": "top-level-beats-nested-duplicate",
+      "locator": "dup_05#/image_id",
+      "blockId": "dup_05",
+      "dataPointer": "/image_id",
+      "found": true,
+      "resolved": "top-level-wins"
+    },
+    {
+      "name": "nested-duplicates-use-code-point-key-order",
+      "locator": "order_07#/image_id",
+      "blockId": "order_07",
+      "dataPointer": "/image_id",
+      "found": true,
+      "resolved": "code-point-first"
     },
     {
       "name": "missing-path",

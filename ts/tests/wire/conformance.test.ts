@@ -1,7 +1,8 @@
-import { describe, expect, it } from "bun:test";
+import { afterEach, describe, expect, it } from "bun:test";
 import fixture from "../../../fixtures/wire/v1/nightfire-values.json";
 import { generateNightfireBlockId } from "../../src/block-ids";
 import {
+  clearBlockVersions,
   getBlockVersions,
   registerBlockVersions
 } from "../../src/block-versions";
@@ -18,6 +19,7 @@ import {
 import type { NightfireStrategy } from "../../src/strategies";
 import { normaliseNightfireValue } from "../../src/utils";
 import {
+  clearBlockValidators,
   prepareNightfireForSave,
   registerBlockValidator,
   validateNightfireValue
@@ -42,6 +44,11 @@ function registerSharedBlocks(): void {
 }
 
 describe("Nightfire Rust/TypeScript wire conformance v1", () => {
+  afterEach(() => {
+    clearBlockVersions();
+    clearBlockValidators();
+  });
+
   it("round-trips every versioned v2 envelope", () => {
     for (const entry of fixture.values) {
       expect(normaliseNightfireValue(entry.value, entry.value.schema)).toEqual(entry.value);

@@ -1,7 +1,8 @@
-import { beforeEach, describe, expect, it } from "bun:test";
+import { afterEach, describe, expect, it } from "bun:test";
 import { CORE_BLOCK_TYPES, CORE_BLOCK_TYPE_NAMES } from "../../src/core-blocks";
 import {
 	clearBlockEditors,
+	clearBlockEmptyCheckers,
 	clearSchemas,
 	getBlockEditor,
 	getBlockTypeLabel,
@@ -21,9 +22,10 @@ const EditorB = Symbol("EditorB");
 const WildcardEditor = Symbol("WildcardEditor");
 
 describe("nightfire/editor-registry", () => {
-	beforeEach(() => {
+	afterEach(() => {
 		clearSchemas();
 		clearBlockEditors();
+		clearBlockEmptyCheckers();
 	});
 
 	it("registers and resolves schema definitions", () => {

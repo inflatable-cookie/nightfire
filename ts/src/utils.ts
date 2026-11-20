@@ -44,8 +44,14 @@ export function normaliseNightfireValue(
   const record = asRecord(value);
 
   if (record) {
+    // A blank schema is no schema: the caller's schema is the only home left.
+    const recordSchema =
+      typeof record.schema === "string" && record.schema.trim().length > 0
+        ? record.schema
+        : schema;
+
     return {
-      schema: typeof record.schema === "string" ? record.schema : schema,
+      schema: recordSchema,
       blocks: readBlocks(record, defaultType)
     };
   }

@@ -153,5 +153,15 @@ describe("normaliseNightfireValue", () => {
 				blocks: [],
 			});
 		});
+
+		it("falls back to the caller schema when the stored one is blank", () => {
+			for (const storedSchema of ["", "   ", 7]) {
+				const result = normaliseNightfireValue(
+					{ schema: storedSchema, blocks: [] } as any,
+					testSchema
+				);
+				expect(result.schema, String(storedSchema)).toBe(testSchema);
+			}
+		});
 	});
 });

@@ -18,7 +18,9 @@ export interface CoreBlockCapabilities {
   emptyChecker: boolean;
 }
 
-export const CORE_BLOCK_TYPES: Readonly<Record<string, CoreBlockCapabilities>> = {
+// `satisfies` keeps the literal keys: `CoreBlockType` is the exact union of the
+// declared names, not `string`. A widening annotation would erase that.
+export const CORE_BLOCK_TYPES = {
   markdown: { renderer: true, editor: true, emptyChecker: true },
   rich_text: { renderer: true, editor: true, emptyChecker: true },
   // The download card's reference field is `media_id`; an image block should
@@ -28,7 +30,7 @@ export const CORE_BLOCK_TYPES: Readonly<Record<string, CoreBlockCapabilities>> =
   item_list: { renderer: true, editor: true, emptyChecker: true },
   image: { renderer: true, editor: true, emptyChecker: true },
   video: { renderer: true, editor: true, emptyChecker: true },
-};
+} as const satisfies Readonly<Record<string, CoreBlockCapabilities>>;
 
 export type CoreBlockType = keyof typeof CORE_BLOCK_TYPES;
 

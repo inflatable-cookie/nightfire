@@ -7,6 +7,7 @@ import {
 	validateNightfireValue,
 	writePreparedNightfireToFormData,
 } from "../../src/validator-registry";
+import type { BlockValidator } from "../../src/validation";
 import { clearBlockVersions, registerBlockVersions } from "../../src/block-versions";
 
 describe("nightfire/validator-registry", () => {
@@ -16,8 +17,13 @@ describe("nightfire/validator-registry", () => {
 	});
 
 	it("applies a schema-scoped validator over the wildcard, and the wildcard elsewhere", () => {
-		// Each validator marks the block's data, so the output shows which one ran.
-		const wildcard = mock((block: any) => ({ ...block, data: { ...block.data, origin: "wildcard" } }));
+		// `./validation` re-exports the validator type; the annotation proves the
+		// published name resolves to the registry's function shape.
+		const typed: BlockValidator = (block: any) => ({
+			...block,
+			data: { ...block.data, origin: "wildcard" },
+		});
+		const wildcard = mock(typed);
 		const scoped = mock((block: any) => ({ ...block, data: { ...block.data, origin: "scoped" } }));
 		registerBlockValidator(null, "markdown", wildcard);
 		registerBlockValidator("schema-1", "markdown", scoped);
@@ -104,6 +110,122 @@ describe("nightfire/validator-registry", () => {
 		expect(
 			validateNightfireValue({ schema: "schema-n", blocks: [{ type: "markdown", data: {} }] } as any)
 		).toEqual({ schema: "schema-n", blocks: [] });
+	});
+
+	it("re-resolves the version a validator answers with", () => {
+		registerBlockVersions("callout", { current: "2", supported: ["1", "2"] });
+
+		// Retyping to a registered type resolves against that type's versions.
+		registerBlockValidator("schema-retype", "markdown", (block: any) => ({
+			...block,
+			type: "callout",
+			version: "1",
+		}));
+		expect(
+			validateNightfireValue({
+				schema: "schema-retype",
+				blocks: [{ type: "markdown", data: {} }],
+			} as any)
+		).toEqual({
+			schema: "schema-retype",
+			blocks: [{ id: undefined, type: "callout", version: "2", data: {} }],
+		});
+
+		// A version the type does not support cannot be smuggled past validation.
+		registerBlockValidator("schema-version", "markdown", (block: any) => ({
+			...block,
+			version: "9",
+		}));
+		expect(
+			validateNightfireValue({
+				schema: "schema-version",
+				blocks: [{ type: "markdown", data: {} }],
+			} as any)
+		).toEqual({ schema: "schema-version", blocks: [] });
+
+		// A retyped block whose new type is unregistered also fails closed.
+		registerBlockValidator("schema-unknown-type", "markdown", (block: any) => ({
+			...block,
+			type: "unregistered",
+			version: "2",
+		}));
+		expect(
+			validateNightfireValue({
+				schema: "schema-unknown-type",
+				blocks: [{ type: "markdown", data: {} }],
+			} as any)
+		).toEqual({ schema: "schema-unknown-type", blocks: [] });
+	});
+
+	it("rejects a validator answer whose version is not a string", () => {
+		for (const version of [42, null, undefined, {}, true]) {
+			registerBlockValidator("schema-bad-version", "markdown", (block: any) => ({
+				...block,
+				version,
+			}));
+
+			// Coercion would rewrite this to `initial` and save a version the
+			// validator never asked for. An explicit bad version fails closed.
+			expect(
+				validateNightfireValue({
+					schema: "schema-bad-version",
+					blocks: [{ type: "markdown", data: {} }],
+				} as any),
+				String(version)
+			).toEqual({ schema: "schema-bad-version", blocks: [] });
+		}
+	});
+
+	it("still coerces a validator answer that omits the version", () => {
+		registerBlockValidator("schema-no-version", "markdown", () => ({
+			type: "markdown",
+			data: { text: "kept" },
+		}));
+
+		expect(
+			validateNightfireValue({
+				schema: "schema-no-version",
+				blocks: [{ type: "markdown", data: {} }],
+			} as any)
+		).toEqual({
+			schema: "schema-no-version",
+			blocks: [
+				{ id: undefined, type: "markdown", version: "initial", data: { text: "kept" } },
+			],
+		});
+	});
+
+	it("fails a block closed when a validator throws", () => {
+		registerBlockValidator("schema-t", "markdown", () => {
+			throw new Error("validator exploded");
+		});
+
+		expect(
+			validateNightfireValue({
+				schema: "schema-t",
+				blocks: [
+					{ type: "markdown", data: {} },
+					{ type: "other", data: {} },
+				],
+			} as any)
+		).toEqual({
+			schema: "schema-t",
+			blocks: [{ id: undefined, type: "other", version: "initial", data: {} }],
+		});
+	});
+
+	it("rejects an envelope whose blocks member is not an array", () => {
+		for (const blocks of ["bad", null, {}, 3]) {
+			expect(
+				validateNightfireValue({ schema: "schema-x", blocks } as any),
+				String(blocks)
+			).toEqual({ schema: "", blocks: [] });
+		}
+
+		expect(validateNightfireValue({ schema: "schema-x" } as any)).toEqual({
+			schema: "",
+			blocks: [],
+		});
 	});
 
 	it("drops blocks that are not objects and keeps a valid one", () => {

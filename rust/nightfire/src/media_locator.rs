@@ -16,7 +16,7 @@
 
 use serde_json::Value;
 
-use crate::{BlockData, NightfireValue};
+use crate::NightfireValue;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NightfireMediaLocator {
@@ -114,18 +114,17 @@ fn is_well_formed_pointer(pointer: &str) -> bool {
 }
 
 fn find_block_data_in_value<'a>(value: &'a NightfireValue, block_id: &str) -> Option<&'a Value> {
-    value
-        .blocks
-        .iter()
-        .find_map(|block| find_block_data_in_block(block, block_id))
-}
-
-fn find_block_data_in_block<'a>(block: &'a BlockData, block_id: &str) -> Option<&'a Value> {
-    if block.id == block_id {
+    // Top-level blocks answer first, then nested ones: a nested block never
+    // shadows a top-level block that carries the same id. The TypeScript
+    // resolver has the same two passes.
+    if let Some(block) = value.blocks.iter().find(|block| block.id == block_id) {
         return Some(&block.data);
     }
 
-    find_block_data_in_json(&block.data, block_id)
+    value
+        .blocks
+        .iter()
+        .find_map(|block| find_block_data_in_json(&block.data, block_id))
 }
 
 fn find_block_data_in_json<'a>(value: &'a Value, block_id: &str) -> Option<&'a Value> {
@@ -134,19 +133,30 @@ fn find_block_data_in_json<'a>(value: &'a Value, block_id: &str) -> Option<&'a V
             .iter()
             .find_map(|item| find_block_data_in_json(item, block_id)),
         Value::Object(map) => {
-            let id_matches = map
+            // A nested payload is a block only when it carries the id, a string
+            // `type` and a `data`. Another object with an `id` and a `data` is
+            // payload metadata, and a locator does not address it. The
+            // TypeScript resolver uses the same rule, so both name one block.
+            let is_block = map
                 .get("id")
                 .and_then(Value::as_str)
-                .is_some_and(|id| id == block_id);
+                .is_some_and(|id| id == block_id)
+                && map.get("type").is_some_and(Value::is_string)
+                && map.contains_key("data");
 
-            if id_matches {
-                if let Some(data) = map.get("data") {
-                    return Some(data);
-                }
+            if is_block {
+                return map.get("data");
             }
 
-            map.values()
-                .find_map(|child| find_block_data_in_json(child, block_id))
+            // Sibling keys in ascending code-point order, sorted here rather
+            // than inherited from the map type, so the order is a property of
+            // this rule and not of a `serde_json` feature. The TypeScript
+            // resolver sorts the same way, so a duplicate nested id resolves to
+            // the same block in both languages.
+            let mut keys: Vec<&String> = map.keys().collect();
+            keys.sort();
+            keys.into_iter()
+                .find_map(|key| find_block_data_in_json(&map[key], block_id))
         }
         _ => None,
     }

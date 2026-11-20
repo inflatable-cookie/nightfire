@@ -10,6 +10,7 @@
 //   } from "@inflatable-cookie/nightfire/rich-text";
 
 export {
+  clearRichTextInlineNodeRenderers,
   getRichTextInlineNodeRenderer,
   isAdmittedBuiltinRichTextNodeType,
   registerRichTextInlineNodeRenderer,

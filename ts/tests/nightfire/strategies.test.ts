@@ -168,6 +168,83 @@ describe("nightfire/strategies", () => {
 		expect(strategies.useNightfireStrategies()).toBeNull();
 	});
 
+	it("refuses to configure under SSR", async () => {
+		const strategies = await loadStrategies();
+		restoreWindow?.();
+		restoreWindow = undefined;
+		expect(typeof window).toBe("undefined");
+
+		expect(() =>
+			strategies.configureNightfireStrategies({ fetchStrategies: async () => [] })
+		).toThrow(/SSR/);
+	});
+
+	it("treats cacheTtl 0 as never cached", async () => {
+		const strategies = await loadStrategies();
+		let calls = 0;
+		strategies.configureNightfireStrategies({
+			fetchStrategies: async () => {
+				calls += 1;
+				return [{ id: `z-${calls}`, cardinality: { mode: "single" }, allowedTypes: [], allowedCategories: [], defaultType: "markdown" }];
+			},
+			cacheTtl: 0,
+		});
+
+		const store = strategies.createNightfireStrategiesContext();
+		expect((await store.ensure())[0]?.id).toBe("z-1");
+		expect((await store.ensure())[0]?.id).toBe("z-2");
+		expect(calls).toBe(2);
+	});
+
+	it("clears the previous strategies and error when reconfigured", async () => {
+		const strategies = await loadStrategies();
+		strategies.configureNightfireStrategies({
+			fetchStrategies: async () => [
+				{ id: "old", cardinality: { mode: "single" }, allowedTypes: [], allowedCategories: [], defaultType: "markdown" },
+			],
+			cacheTtl: 100000,
+		});
+
+		const store = strategies.createNightfireStrategiesContext();
+		expect((await store.ensure())[0]?.id).toBe("old");
+
+		strategies.configureNightfireStrategies({
+			fetchStrategies: async () => {
+				throw new Error("new config failed");
+			},
+			cacheTtl: 100000,
+		});
+
+		// The new config must not inherit the previous list or its error state.
+		expect(get(store.strategies)).toEqual([]);
+		expect(get(store.error)).toBeNull();
+		expect(store.findById("old")).toBeNull();
+
+		await expect(store.ensure()).resolves.toEqual([]);
+		expect(get(store.error)).toBe("new config failed");
+	});
+
+	it("keeps ensure() and the strategy store consistent when a stale refetch fails", async () => {
+		const strategies = await loadStrategies();
+		let calls = 0;
+		strategies.configureNightfireStrategies({
+			fetchStrategies: async () => {
+				calls += 1;
+				if (calls === 2) throw new Error("refetch failed");
+				return [{ id: "kept", cardinality: { mode: "single" }, allowedTypes: [], allowedCategories: [], defaultType: "markdown" }];
+			},
+			cacheTtl: 0,
+		});
+
+		const store = strategies.createNightfireStrategiesContext();
+		expect((await store.ensure())[0]?.id).toBe("kept");
+
+		const afterFailure = await store.ensure();
+		expect(get(store.error)).toBe("refetch failed");
+		expect(afterFailure).toEqual(get(store.strategies));
+		expect(afterFailure[0]?.id).toBe("kept");
+	});
+
 	it("returns null when context lookup succeeds but value is undefined", async () => {
 		const strategies = await loadStrategies();
 		mockGetContext.mockImplementationOnce(() => undefined);
