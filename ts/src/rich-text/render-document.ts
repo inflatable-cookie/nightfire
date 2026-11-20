@@ -14,11 +14,20 @@
 
 import {
   getRichTextInlineNodeRenderer,
+  isAdmittedBuiltinRichTextNodeType,
   type RichTextInlineNode
 } from "./inline-node-registry";
 
 const ADMITTED_HEADING_LEVELS = new Set([1, 2, 3, 4, 5, 6]);
 const ADMITTED_URL_PROTOCOLS = new Set(["http:", "https:", "mailto:"]);
+// Raster types only. `image/svg+xml` can carry script, so it is never admitted
+// as a data URL, whatever the sanitizer later strips.
+const ADMITTED_DATA_IMAGE_URL = /^data:image\/(?:png|jpeg|gif|webp|avif)[;,]/i;
+// HTML's own limits: colspan is clamped to 1000 and rowspan to 65534 by the
+// specification, so a larger stored value cannot mean anything.
+const MAX_COLSPAN = 1000;
+const MAX_ROWSPAN = 65534;
+const REL_FOR_NEW_CONTEXT = ["noopener", "noreferrer"];
 
 type MarkJSON = {
   type?: unknown;
@@ -58,7 +67,7 @@ function isAdmittedLinkHref(href: string): boolean {
 function isAdmittedImageUrl(src: string): boolean {
   const protocol = urlProtocolOf(src);
   if (protocol === "data:") {
-    return /^data:image\//i.test(src) && !/[\r\n]/.test(src);
+    return ADMITTED_DATA_IMAGE_URL.test(src) && !/[\r\n]/.test(src);
   }
   return ADMITTED_URL_PROTOCOLS.has(protocol);
 }
@@ -117,10 +126,11 @@ function renderUnadmittedNode(node: NodeJSON, context: RenderContext): string {
   const children = childrenOf(node, context);
   const renderer = getRichTextInlineNodeRenderer(context.schema, type);
 
-  // An unknown container is not an inline leaf: keep its children rather than
-  // replacing useful content with a fallback label.
+  // An unknown container is not an inline leaf: keep its children, even an empty
+  // list, rather than replacing it with a fallback label. Only a node with no
+  // content array is a leaf.
   if (!renderer) {
-    if (children !== "") return children;
+    if (Array.isArray(node.content)) return children;
     return applyMarks(node.marks, inlineLeafFallback(node, "unregistered"));
   }
 
@@ -168,12 +178,33 @@ function wrapMark(mark: MarkJSON, inner: string): string {
       if (!href || !isAdmittedLinkHref(href)) return inner;
       const title = attr("title", attrs.title);
       const target = attr("target", attrs.target);
-      const rel = attr("rel", attrs.rel);
+      const rel = linkRel(attrs.target, attrs.rel);
       return `<a href="${escapeAttr(href)}"${title}${target}${rel}>${inner}</a>`;
     }
     default:
       return inner;
   }
+}
+
+// A link that opens a new browsing context must not hand the new page a
+// reference to this one. Stored tokens are kept and the two required ones added.
+function linkRel(target: unknown, rel: unknown): string {
+  const tokens = typeof rel === "string" ? rel.split(/\s+/).filter(Boolean) : [];
+  if (target === "_blank") {
+    for (const token of REL_FOR_NEW_CONTEXT) {
+      if (!tokens.includes(token)) tokens.push(token);
+    }
+  }
+  return tokens.length > 0 ? attr("rel", tokens.join(" ")) : "";
+}
+
+// A span is an integer within the HTML limit. Anything else (NaN, Infinity,
+// fractions, 0, 1 or negatives) means the default of one, so no unparseable
+// value reaches an attribute.
+function boundedSpan(value: unknown, max: number): number | null {
+  return typeof value === "number" && Number.isInteger(value) && value > 1 && value <= max
+    ? value
+    : null;
 }
 
 function renderText(node: NodeJSON): string {
@@ -193,12 +224,10 @@ function renderTable(node: NodeJSON, context: RenderContext): string {
 function cellTag(kind: "th" | "td", node: NodeJSON, context: RenderContext): string {
   const attrs = attrsOf(node);
   const parts: string[] = [];
-  if (typeof attrs.colspan === "number" && attrs.colspan > 1) {
-    parts.push(` colspan="${attrs.colspan}"`);
-  }
-  if (typeof attrs.rowspan === "number" && attrs.rowspan > 1) {
-    parts.push(` rowspan="${attrs.rowspan}"`);
-  }
+  const colspan = boundedSpan(attrs.colspan, MAX_COLSPAN);
+  if (colspan !== null) parts.push(` colspan="${colspan}"`);
+  const rowspan = boundedSpan(attrs.rowspan, MAX_ROWSPAN);
+  if (rowspan !== null) parts.push(` rowspan="${rowspan}"`);
   if (typeof attrs.align === "string" && attrs.align.length > 0) {
     parts.push(attr("align", attrs.align));
   }
@@ -208,7 +237,10 @@ function cellTag(kind: "th" | "td", node: NodeJSON, context: RenderContext): str
 function renderNode(value: unknown, context: RenderContext): string {
   if (!value || typeof value !== "object" || Array.isArray(value)) return "";
   const node = value as NodeJSON;
-  if (typeof node.type !== "string") return "";
+  if (typeof node.type !== "string" || node.type.length === 0) return "";
+  if (!isAdmittedBuiltinRichTextNodeType(node.type)) {
+    return renderUnadmittedNode(node, context);
+  }
 
   switch (node.type) {
     case "doc":
@@ -225,8 +257,10 @@ function renderNode(value: unknown, context: RenderContext): string {
       return `<ul>${childrenOf(node, context)}</ul>`;
     case "orderedList": {
       const attrs = attrsOf(node);
+      // Only positive safe integers above the default of 1 serialize; zero,
+      // negatives, and non-integers (NaN, Infinity, fractions) are dropped.
       const start =
-        typeof attrs.start === "number" && attrs.start !== 1
+        typeof attrs.start === "number" && Number.isSafeInteger(attrs.start) && attrs.start > 1
           ? ` start="${attrs.start}"`
           : "";
       const type = attr("type", attrs.type);
@@ -265,7 +299,9 @@ function renderNode(value: unknown, context: RenderContext): string {
     case "tableCell":
       return cellTag("td", node, context);
     default:
-      return renderUnadmittedNode(node, context);
+      // Unreachable: the admitted-type check above routes every other type to
+      // renderUnadmittedNode, and this switch covers the admitted set.
+      return "";
   }
 }
 

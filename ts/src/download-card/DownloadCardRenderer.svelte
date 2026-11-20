@@ -44,8 +44,25 @@
     )
   );
 
+  // A throwing source, a resolution without a URL, or a URL that is not a plain
+  // web or relative address is the same as an unknown reference: the row stays
+  // inert, with its title and description still shown.
   function resolveReference(mediaId: string): ResolvedMedia | null {
-    return getMediaSource()?.resolve({ media_id: mediaId }) ?? null;
+    try {
+      const resolved = getMediaSource()?.resolve({ media_id: mediaId }) ?? null;
+      if (!resolved || typeof resolved.url !== "string" || resolved.url.length === 0) return null;
+      return isSafeDownloadUrl(resolved.url) ? resolved : null;
+    } catch {
+      return null;
+    }
+  }
+
+  // Relative URLs carry no scheme and are admitted. A scheme must be a web or
+  // blob scheme, so `javascript:`, `data:` and anything else is refused.
+  function isSafeDownloadUrl(url: string): boolean {
+    const scheme = /^([a-z][a-z0-9+.-]*):/i.exec(url.trim());
+    if (!scheme) return true;
+    return ["http", "https", "blob"].includes(scheme[1]!.toLowerCase());
   }
 
   function fileTitle(file: { title?: unknown }): string {

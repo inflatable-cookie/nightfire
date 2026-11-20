@@ -9,6 +9,7 @@
   // `data-nightfire-block` hook, no scoped styles.
   import { getBlockRenderer } from "../render-registry";
   import type { BlockRendererComponent } from "../render-registry";
+  import MarkdownRenderer from "../markup/MarkdownRenderer.svelte";
 
   type ChildBlock = { type: string; data?: unknown; version?: string };
 
@@ -25,10 +26,12 @@
 
   interface Props {
     block: ItemListBlock;
-    schema?: string;
+    schema?: string | null;
+    // Forwarded to child renderers, as NightfireRenderer forwards it to blocks.
+    value?: unknown;
   }
 
-  let { block, schema }: Props = $props();
+  let { block, schema = null, value = null }: Props = $props();
 
   const title = $derived(typeof block?.data?.title === "string" ? block.data.title : "");
   const variant = $derived(typeof block?.data?.variant === "string" ? block.data.variant : "");
@@ -50,8 +53,13 @@
     );
   }
 
+  // Matches NightfireRenderer: a markdown child falls back to the markdown renderer
+  // when the registry has none for the schema.
   function rendererFor(child: ChildBlock): BlockRendererComponent | null {
-    return getBlockRenderer(schema, child.type);
+    return (
+      getBlockRenderer(schema, child.type) ??
+      (child.type === "markdown" ? (MarkdownRenderer as BlockRendererComponent) : null)
+    );
   }
 
   // A variant selects presentation only. Ordered variants render as an ordered list;
@@ -72,9 +80,9 @@
             <p data-item-list-item-title>{item.title}</p>
           {/if}
           {#each childBlocks(item?.body) as child, childIndex (childIndex)}
-            {#if rendererFor(child)}
-              {@const Child = rendererFor(child)}
-              <Child block={child} {schema} />
+            {@const Child = rendererFor(child)}
+            {#if Child}
+              <Child block={child} {schema} {value} />
             {/if}
           {/each}
         </li>

@@ -55,11 +55,14 @@
 
   // The block's title is the embed frame's accessible name: it travels as the
   // iframe's title attribute, which the embed sanitizer admits, so a hostile
-  // title cannot break out of the attribute.
+  // title cannot break out of the attribute. A frame that already carries a title
+  // keeps it, so the markup never gets a duplicate attribute. The replacement is a
+  // callback, so a `$&` or `$1` in the title is written literally.
   function withAccessibleName(markup: string, title: string): string {
     if (!title) return markup;
+    if (/<iframe\b[^>]*\stitle\s*=/i.test(markup)) return markup;
     const escaped = title.replaceAll("&", "&amp;").replaceAll('"', "&quot;");
-    return markup.replace(/<iframe(?=[\s>])/i, `<iframe title="${escaped}"`);
+    return markup.replace(/<iframe(?=[\s>])/i, () => `<iframe title="${escaped}"`);
   }
 
   const embed = $derived(asEmbed(block?.data?.embed));
@@ -76,11 +79,14 @@
   const safeHtml = $derived(
     embed ? sanitizeEmbedHtml(withAccessibleName(renderEmbed(embed) ?? "", title)) : ""
   );
+  // Whitespace-only markup, including what the sanitizer strips an `originalEmbed`
+  // down to, is not an embed. It renders inert rather than as a ready empty frame.
+  const hasEmbed = $derived(safeHtml.trim().length > 0);
 </script>
 
 {#if embed}
-  <figure data-nightfire-block="video" data-embed-state={safeHtml ? "ready" : "inert"}>
-    {#if safeHtml}
+  <figure data-nightfire-block="video" data-embed-state={hasEmbed ? "ready" : "inert"}>
+    {#if hasEmbed}
       {@html safeHtml}
     {/if}
     {#if caption}

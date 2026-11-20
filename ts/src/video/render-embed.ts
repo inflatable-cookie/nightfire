@@ -14,6 +14,9 @@ export type RenderableEmbed = {
  * Turn a stored embed into iframe markup. A pasted `originalEmbed` wins;
  * otherwise the provider allow-list is youtube, vimeo, and audioboom.
  * Anything else yields null and the renderer stays inert.
+ *
+ * The id is a path segment of the provider URL, so it is percent-encoded. A
+ * crafted id cannot end the `src` value or add attributes to the iframe.
  */
 export function renderEmbed(
   embed: Pick<RenderableEmbed, "provider" | "id" | "originalEmbed">
@@ -22,13 +25,14 @@ export function renderEmbed(
     return embed.originalEmbed;
   }
 
+  const id = encodeURIComponent(embed.id);
   switch (embed.provider) {
     case "youtube":
-      return `<iframe src="https://www.youtube.com/embed/${embed.id}" loading="lazy" allowfullscreen></iframe>`;
+      return `<iframe src="https://www.youtube.com/embed/${id}" loading="lazy" allowfullscreen></iframe>`;
     case "vimeo":
-      return `<iframe src="https://player.vimeo.com/video/${embed.id}" loading="lazy" allowfullscreen></iframe>`;
+      return `<iframe src="https://player.vimeo.com/video/${id}" loading="lazy" allowfullscreen></iframe>`;
     case "audioboom":
-      return `<iframe src="https://embeds.audioboom.com/posts/${embed.id}/embed/v5" loading="lazy"></iframe>`;
+      return `<iframe src="https://embeds.audioboom.com/posts/${id}/embed/v5" loading="lazy"></iframe>`;
     default:
       return null;
   }

@@ -1,10 +1,9 @@
 <script lang="ts">
-  import { marked } from "marked";
-  import { sanitizeHtml } from "../html.js";
+  import { renderSafeMarkdownHtml } from "./safe-markdown";
 
   type MarkdownBlock = {
     data?: {
-      text?: string;
+      text?: unknown;
     };
   };
 
@@ -15,8 +14,7 @@
   let { block }: Props = $props();
 
   const text = $derived(typeof block?.data?.text === "string" ? block.data.text : "");
-  const html = $derived(text.trim() ? (marked.parse(text, { async: false }) as string) : "");
-  const safeHtml = $derived(sanitizeHtml(html));
+  const safeHtml = $derived(renderSafeMarkdownHtml(text));
 </script>
 
 {#if safeHtml}
