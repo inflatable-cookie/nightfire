@@ -13,7 +13,8 @@
   // styles, no class of our own, no token — and no style attribute at all.
   // Sizing is a preset hint the consumer's stylesheet interprets; an unknown
   // or absent preset degrades to natural size.
-  import { getMediaSource, type ResolvedMedia } from "../media-source";
+  import { getMediaSource } from '../media-source';
+import type { ResolvedMedia } from '../media-source';
 
   /** Closed sizing presets. Absent means natural size. */
   const SIZING_PRESETS = new Set(["small", "medium", "large", "full"]);

@@ -7,7 +7,7 @@ const fixtureDocument = {
     {
       type: "heading",
       attrs: { level: 2 },
-      content: [{ type: "text", text: "Title" }],
+      content: [{ type: "text", text: "Title" }]
     },
     {
       type: "paragraph",
@@ -15,11 +15,11 @@ const fixtureDocument = {
         {
           type: "text",
           text: "Hello",
-          marks: [{ type: "bold" }],
-        },
-      ],
-    },
-  ],
+          marks: [{ type: "bold" }]
+        }
+      ]
+    }
+  ]
 };
 
 const vocabularyDocument = {
@@ -40,18 +40,18 @@ const vocabularyDocument = {
         {
           type: "text",
           text: "link",
-          marks: [{ type: "link", attrs: { href: "https://x.test" } }],
-        },
-      ],
+          marks: [{ type: "link", attrs: { href: "https://x.test" } }]
+        }
+      ]
     },
     {
       type: "bulletList",
       content: [
         {
           type: "listItem",
-          content: [{ type: "paragraph", content: [{ type: "text", text: "One" }] }],
-        },
-      ],
+          content: [{ type: "paragraph", content: [{ type: "text", text: "One" }] }]
+        }
+      ]
     },
     {
       type: "orderedList",
@@ -59,18 +59,18 @@ const vocabularyDocument = {
       content: [
         {
           type: "listItem",
-          content: [{ type: "paragraph", content: [{ type: "text", text: "Three" }] }],
-        },
-      ],
+          content: [{ type: "paragraph", content: [{ type: "text", text: "Three" }] }]
+        }
+      ]
     },
     {
       type: "blockquote",
-      content: [{ type: "paragraph", content: [{ type: "text", text: "Quote" }] }],
+      content: [{ type: "paragraph", content: [{ type: "text", text: "Quote" }] }]
     },
     {
       type: "codeBlock",
       attrs: { language: "js" },
-      content: [{ type: "text", text: "const x = 1;" }],
+      content: [{ type: "text", text: "const x = 1;" }]
     },
     { type: "horizontalRule" },
     {
@@ -78,12 +78,12 @@ const vocabularyDocument = {
       content: [
         { type: "text", text: "line" },
         { type: "hardBreak" },
-        { type: "text", text: "break" },
-      ],
+        { type: "text", text: "break" }
+      ]
     },
     {
       type: "image",
-      attrs: { src: "https://x.test/a.png", alt: "Logo", title: "Mark" },
+      attrs: { src: "https://x.test/a.png", alt: "Logo", title: "Mark" }
     },
     {
       type: "table",
@@ -93,18 +93,18 @@ const vocabularyDocument = {
           content: [
             {
               type: "tableHeader",
-              content: [{ type: "paragraph", content: [{ type: "text", text: "H" }] }],
+              content: [{ type: "paragraph", content: [{ type: "text", text: "H" }] }]
             },
             {
               type: "tableCell",
               attrs: { colspan: 2 },
-              content: [{ type: "paragraph", content: [{ type: "text", text: "C" }] }],
-            },
-          ],
-        },
-      ],
-    },
-  ],
+              content: [{ type: "paragraph", content: [{ type: "text", text: "C" }] }]
+            }
+          ]
+        }
+      ]
+    }
+  ]
 };
 
 describe("nightfire/rich-text document HTML", () => {
@@ -130,7 +130,7 @@ describe("nightfire/rich-text document HTML", () => {
     expect(html).toContain("line<br>break");
     expect(html).toContain('<img src="https://x.test/a.png" alt="Logo" title="Mark">');
     expect(html).toContain(
-      "<table><tbody><tr><th><p>H</p></th><td colspan=\"2\"><p>C</p></td></tr></tbody></table>"
+      '<table><tbody><tr><th><p>H</p></th><td colspan="2"><p>C</p></td></tr></tbody></table>'
     );
   });
 
@@ -145,15 +145,15 @@ describe("nightfire/rich-text document HTML", () => {
             {
               type: "text",
               text: "click",
-              marks: [{ type: "link", attrs: { href: "javascript:alert(1)" } }],
-            },
-          ],
+              marks: [{ type: "link", attrs: { href: "javascript:alert(1)" } }]
+            }
+          ]
         },
         {
           type: "image",
-          attrs: { src: "javascript:alert(1)", alt: "x" },
-        },
-      ],
+          attrs: { src: "javascript:alert(1)", alt: "x" }
+        }
+      ]
     });
     expect(html).toContain("&lt;script&gt;evil()&lt;/script&gt;");
     expect(html).toContain("click");

@@ -3,10 +3,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import {
-  CANDIDATE_SCHEMA,
-  sha256File,
-} from "../../scripts/npm-publication";
+import { CANDIDATE_SCHEMA, sha256File } from "../../scripts/npm-publication";
 import { assertKnownFlags, verifyNpmCandidate } from "../../scripts/verify-npm-candidate";
 
 // Publish mode verifies the archive set before any npm mutation. Each case builds
@@ -29,9 +26,9 @@ function withFixture(run: (root: string, archive: string) => void): void {
       JSON.stringify({
         npmPublication: {
           candidateManifestName: "candidate.json",
-          packages: [{ name: NAME, path: "." }],
-        },
-      }),
+          packages: [{ name: NAME, path: "." }]
+        }
+      })
     );
     run(root, archive);
   } finally {
@@ -42,10 +39,15 @@ function withFixture(run: (root: string, archive: string) => void): void {
 function packTarball(root: string, archive: string): string {
   const staging = join(root, "staging");
   mkdirSync(join(staging, "package"), { recursive: true });
-  writeFileSync(join(staging, "package", "package.json"), JSON.stringify({ name: NAME, version: VERSION }));
+  writeFileSync(
+    join(staging, "package", "package.json"),
+    JSON.stringify({ name: NAME, version: VERSION })
+  );
   const tarball = join(archive, TARBALL);
   const packed = Bun.spawnSync(["tar", "-czf", tarball, "-C", staging, "package"]);
-  if (packed.exitCode !== 0) throw new Error(`tar failed: ${packed.stderr.toString()}`);
+  if (packed.exitCode !== 0) {
+    throw new Error(`tar failed: ${packed.stderr.toString()}`);
+  }
   return tarball;
 }
 
@@ -59,8 +61,8 @@ function writeCandidate(archive: string, overrides: Record<string, unknown> = {}
       sourceCommit: COMMIT,
       version: VERSION,
       packages: [{ name: NAME, path: ".", tarball: TARBALL, version: VERSION, sha256 }],
-      ...overrides,
-    }),
+      ...overrides
+    })
   );
   return path;
 }
@@ -71,7 +73,7 @@ function verify(root: string, archive: string, manifestPath: string, tagVersion 
     manifestPath,
     archiveDir: archive,
     tagVersion,
-    sourceCommit: COMMIT,
+    sourceCommit: COMMIT
   });
 }
 
@@ -89,7 +91,7 @@ describe("tooling/verify-npm-candidate", () => {
       packTarball(root, archive);
       const manifest = writeCandidate(archive);
       expect(() => verify(root, archive, manifest, "0.6.1")).toThrow(
-        /candidate version 0.6.0 does not match tag 0.6.1/,
+        /candidate version 0.6.0 does not match tag 0.6.1/
       );
     });
   });
@@ -98,10 +100,12 @@ describe("tooling/verify-npm-candidate", () => {
     withFixture((root, archive) => {
       packTarball(root, archive);
       const manifest = writeCandidate(archive, {
-        packages: [{ name: NAME, path: ".", tarball: TARBALL, version: VERSION, sha256: "0".repeat(64) }],
+        packages: [
+          { name: NAME, path: ".", tarball: TARBALL, version: VERSION, sha256: "0".repeat(64) }
+        ]
       });
       expect(() => verify(root, archive, manifest)).toThrow(
-        /hash [0-9a-f]{64} does not match manifest 0{64}/,
+        /hash [0-9a-f]{64} does not match manifest 0{64}/
       );
     });
   });
@@ -112,22 +116,24 @@ describe("tooling/verify-npm-candidate", () => {
       const manifest = writeCandidate(archive);
       writeFileSync(join(archive, "stray.tgz"), "not a candidate");
       expect(() => verify(root, archive, manifest)).toThrow(
-        /candidate archive set carries unexpected tarballs: stray.tgz/,
+        /candidate archive set carries unexpected tarballs: stray.tgz/
       );
     });
   });
 
   it("refuses an unknown or repeated CLI flag instead of ignoring it", () => {
     expect(() => assertKnownFlags(["--tag-verison", "0.6.0"])).toThrow(
-      /unknown argument --tag-verison/,
+      /unknown argument --tag-verison/
     );
     expect(() => assertKnownFlags(["--tag-version", "0.6.0", "stray"])).toThrow(
-      /unknown argument stray/,
+      /unknown argument stray/
+    );
+    expect(() => assertKnownFlags(["--tag-version", "0.6.0", "--tag-version", "0.6.1"])).toThrow(
+      /--tag-version is given more than once/
     );
     expect(() =>
-      assertKnownFlags(["--tag-version", "0.6.0", "--tag-version", "0.6.1"]),
-    ).toThrow(/--tag-version is given more than once/);
-    expect(() => assertKnownFlags(["--tag-version", "0.6.0", "--source-commit", COMMIT])).not.toThrow();
+      assertKnownFlags(["--tag-version", "0.6.0", "--source-commit", COMMIT])
+    ).not.toThrow();
   });
 
   it("fails the verify CLI on a misspelled flag before it reads anything", () => {
@@ -136,9 +142,9 @@ describe("tooling/verify-npm-candidate", () => {
         process.execPath,
         join(REPO_ROOT, "ts/scripts/verify-npm-candidate.ts"),
         "--tag-verison",
-        VERSION,
+        VERSION
       ],
-      { cwd: REPO_ROOT, stdout: "pipe", stderr: "pipe" },
+      { cwd: REPO_ROOT, stdout: "pipe", stderr: "pipe" }
     );
     expect(result.exitCode).toBe(1);
     expect(result.stderr.toString()).toContain("unknown argument --tag-verison");

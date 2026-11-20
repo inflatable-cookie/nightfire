@@ -5,33 +5,33 @@ import "../../src/render-registrations";
 import "../../src/editor-registrations";
 import { getBlockRenderer } from "../../src/render-registry";
 import { getBlockEditor, isBlockContentEmpty } from "../../src/editor-registry";
-import {
-  registerMediaSource,
-  unregisterMediaSource,
-  type MediaSource,
-} from "../../src/media-source";
+import { registerMediaSource, unregisterMediaSource } from "../../src/media-source";
+import type { MediaSource } from "../../src/media-source";
 
 const RendererComponent = getBlockRenderer(undefined, "download_card");
 const EditorComponent = getBlockEditor(undefined, "download_card");
 
-const resolvedByRef: Record<string, { url: string; filename: string; size?: number; mime?: string }> = {
+const resolvedByRef: Record<
+  string,
+  { url: string; filename: string; size?: number; mime?: string }
+> = {
   "m-1": {
     url: "https://files.example/trail-map.pdf",
     filename: "trail-map.pdf",
     size: 2 * 1024 * 1024,
-    mime: "application/pdf",
+    mime: "application/pdf"
   },
   "m-2": {
     url: "https://files.example/checklist.docx",
-    filename: "checklist.docx",
-  },
+    filename: "checklist.docx"
+  }
 };
 
 function stubSource(overrides: Partial<MediaSource> = {}): MediaSource {
   return {
     pick: async () => null,
     resolve: (reference) => resolvedByRef[reference.media_id] ?? null,
-    ...overrides,
+    ...overrides
   };
 }
 
@@ -42,9 +42,9 @@ const twoFileBlock = {
     description: "Field guides",
     files: [
       { media_id: "m-1", title: "Trail map", description: "Print before the walk" },
-      { media_id: "m-2" },
-    ],
-  },
+      { media_id: "m-2" }
+    ]
+  }
 };
 
 afterEach(() => {
@@ -53,13 +53,25 @@ afterEach(() => {
 
 describe("nightfire/download-card block", () => {
   it("recovers from a rejected picker and keeps the block id", async () => {
-    registerMediaSource(stubSource({ pick: async () => { throw new Error("unavailable"); } }));
+    registerMediaSource(
+      stubSource({
+        pick: async () => {
+          throw new Error("unavailable");
+        }
+      })
+    );
     const onChange = mock();
-    const view = render(EditorComponent as any, { block: { id: "block-1", type: "download_card", data: {} }, onChange });
+    const view = render(EditorComponent as any, {
+      block: { id: "block-1", type: "download_card", data: {} },
+      onChange
+    });
     const button = within(view.container).getByRole("button", { name: "Choose files" });
     await fireEvent.click(button);
     await waitFor(() => expect(button.hasAttribute("disabled")).toBe(false));
-    await fireEvent.input(within(view.container).getByPlaceholderText("Card description (optional)"), { target: { value: "text" } });
+    await fireEvent.input(
+      within(view.container).getByPlaceholderText("Card description (optional)"),
+      { target: { value: "text" } }
+    );
     expect(onChange.mock.calls.at(-1)![0].id).toBe("block-1");
   });
 
@@ -70,9 +82,15 @@ describe("nightfire/download-card block", () => {
 
   it("answers emptiness from the file references alone", () => {
     expect(isBlockContentEmpty({ type: "download_card", data: {} })).toBe(true);
-    expect(isBlockContentEmpty({ type: "download_card", data: { description: "x", files: [] } })).toBe(true);
-    expect(isBlockContentEmpty({ type: "download_card", data: { files: [{ media_id: "  " }] } })).toBe(true);
-    expect(isBlockContentEmpty({ type: "download_card", data: { files: [{ media_id: "m-1" }] } })).toBe(false);
+    expect(
+      isBlockContentEmpty({ type: "download_card", data: { description: "x", files: [] } })
+    ).toBe(true);
+    expect(
+      isBlockContentEmpty({ type: "download_card", data: { files: [{ media_id: "  " }] } })
+    ).toBe(true);
+    expect(
+      isBlockContentEmpty({ type: "download_card", data: { files: [{ media_id: "m-1" }] } })
+    ).toBe(false);
   });
 
   it("renders resolved rows through the registered media source", () => {
@@ -100,7 +118,9 @@ describe("nightfire/download-card block", () => {
     expect(link.getAttribute("href")).toBe("https://files.example/trail-map.pdf");
     expect(link.getAttribute("download")).toBe("trail-map.pdf");
     expect(link.textContent).toBe("trail-map.pdf");
-    expect(first.querySelector("[data-download-card-file-type]")!.textContent).toBe("application/pdf");
+    expect(first.querySelector("[data-download-card-file-type]")!.textContent).toBe(
+      "application/pdf"
+    );
     expect(first.querySelector("[data-download-card-file-size]")!.textContent).toBe("2 MB");
     expect(first.querySelector("[data-download-card-file-description]")!.textContent).toBe(
       "Print before the walk"
@@ -144,15 +164,14 @@ describe("nightfire/download-card block", () => {
   it("marks only the unresolved row inert when the source does not know a reference", () => {
     registerMediaSource({
       pick: async () => null,
-      resolve: (reference) =>
-        reference.media_id === "m-1" ? resolvedByRef["m-1"]! : null,
+      resolve: (reference) => (reference.media_id === "m-1" ? resolvedByRef["m-1"]! : null)
     });
 
     const view = render(RendererComponent as any, { block: twoFileBlock });
     const rows = view.container.querySelectorAll("[data-download-card-file]");
     expect(rows).toHaveLength(2);
-    expect(rows[0].getAttribute("data-media-state")).toBe("resolved");
-    expect(rows[1].getAttribute("data-media-state")).toBe("inert");
+    expect(rows[0]!.getAttribute("data-media-state")).toBe("resolved");
+    expect(rows[1]!.getAttribute("data-media-state")).toBe("inert");
     expect(view.container.querySelectorAll("a")).toHaveLength(1);
   });
 
@@ -163,10 +182,10 @@ describe("nightfire/download-card block", () => {
       { description: "x", files: [] },
       {},
       { files: [{ description: "no ref" }] },
-      { files: [{ title: "no ref" }] },
+      { files: [{ title: "no ref" }] }
     ]) {
       const view = render(RendererComponent as any, {
-        block: { type: "download_card", version: "initial", data },
+        block: { type: "download_card", version: "initial", data }
       });
       expect(view.container.querySelector('[data-nightfire-block="download_card"]')).toBeNull();
     }
@@ -179,7 +198,7 @@ describe("nightfire/download-card block", () => {
     const onChange = mock();
     const view = render(EditorComponent as any, {
       block: { type: "download_card", version: "initial", data: {} },
-      onChange,
+      onChange
     });
 
     await fireEvent.click(
@@ -226,19 +245,21 @@ describe("nightfire/download-card block", () => {
       description: "Field guides",
       files: [
         { media_id: "m-1", title: "Trail map", description: "Print before the walk" },
-        { media_id: "m-2" },
-      ],
+        { media_id: "m-2" }
+      ]
     });
   });
 
   it("changes nothing when the picker is cancelled and skips duplicates", async () => {
-    const pick = mock(async (): Promise<Array<{ media_id: string }> | null> => [{ media_id: "m-1" }]);
+    const pick = mock(async (): Promise<Array<{ media_id: string }> | null> => [
+      { media_id: "m-1" }
+    ]);
     registerMediaSource(stubSource({ pick }));
 
     const onChange = mock();
     const view = render(EditorComponent as any, {
       block: { type: "download_card", version: "initial", data: { files: [{ media_id: "m-1" }] } },
-      onChange,
+      onChange
     });
 
     const pickButton = await waitFor(() =>
@@ -259,12 +280,14 @@ describe("nightfire/download-card block", () => {
 
   it("survives the scenario oracle: pick, save, reload, then unregister", async () => {
     // 1. Pick two files, describe the card and one file.
-    registerMediaSource(stubSource({ pick: async () => [{ media_id: "m-1" }, { media_id: "m-2" }] }));
+    registerMediaSource(
+      stubSource({ pick: async () => [{ media_id: "m-1" }, { media_id: "m-2" }] })
+    );
 
     const onChange = mock();
     let editorView = render(EditorComponent as any, {
       block: { type: "download_card", version: "initial", data: {} },
-      onChange,
+      onChange
     });
     await fireEvent.click(
       await waitFor(() =>
@@ -276,7 +299,7 @@ describe("nightfire/download-card block", () => {
     // The parent feeds each emitted block back before the next interaction.
     editorView = render(EditorComponent as any, {
       block: onChange.mock.calls.at(-1)![0],
-      onChange,
+      onChange
     });
     await fireEvent.input(
       editorView.container.querySelector('input[placeholder="Card description (optional)"]')!,
@@ -286,7 +309,7 @@ describe("nightfire/download-card block", () => {
 
     editorView = render(EditorComponent as any, {
       block: onChange.mock.calls.at(-1)![0],
-      onChange,
+      onChange
     });
     await fireEvent.input(
       editorView.container.querySelector('input[placeholder="File title (optional)"]')!,
@@ -296,7 +319,7 @@ describe("nightfire/download-card block", () => {
 
     editorView = render(EditorComponent as any, {
       block: onChange.mock.calls.at(-1)![0],
-      onChange,
+      onChange
     });
     await fireEvent.input(
       editorView.container.querySelector('input[placeholder="File description (optional)"]')!,
@@ -354,7 +377,7 @@ describe("nightfire/download-card block", () => {
     const cleared = clearChange.mock.calls.at(-1)![0];
     expect(cleared.data.files[0]).toEqual({
       media_id: "m-1",
-      description: "Print before the walk",
+      description: "Print before the walk"
     });
     expect(cleared.data.files[1]).toEqual({ media_id: "m-2" });
 
@@ -362,8 +385,8 @@ describe("nightfire/download-card block", () => {
     const clearedRender = render(RendererComponent as any, { block: cleared });
     const clearedRows = clearedRender.container.querySelectorAll("[data-download-card-file]");
     expect(clearedRows).toHaveLength(2);
-    expect(clearedRows[0].querySelector("[data-download-card-file-title]")).toBeNull();
-    expect(clearedRows[0].querySelector("a")!.textContent).toBe("trail-map.pdf");
+    expect(clearedRows[0]!.querySelector("[data-download-card-file-title]")).toBeNull();
+    expect(clearedRows[0]!.querySelector("a")!.textContent).toBe("trail-map.pdf");
   });
 
   it("falls back to media_id when resolve() throws or omits a URL in DownloadCardEditor", () => {
@@ -371,12 +394,12 @@ describe("nightfire/download-card block", () => {
       stubSource({
         resolve: () => {
           throw new Error("resolve failed");
-        },
+        }
       })
     );
     const throwingView = render(EditorComponent as any, {
       block: { type: "download_card", version: "initial", data: { files: [{ media_id: "m-1" }] } },
-      onChange: mock(),
+      onChange: mock()
     });
     expect(
       throwingView.container.querySelector(".underlay-download-card-editor__file-name")!.textContent
@@ -384,12 +407,12 @@ describe("nightfire/download-card block", () => {
 
     registerMediaSource(
       stubSource({
-        resolve: () => ({ url: "", filename: "ignored.pdf" }),
+        resolve: () => ({ url: "", filename: "ignored.pdf" })
       })
     );
     const blankUrlView = render(EditorComponent as any, {
       block: { type: "download_card", version: "initial", data: { files: [{ media_id: "m-2" }] } },
-      onChange: mock(),
+      onChange: mock()
     });
     expect(
       blankUrlView.container.querySelector(".underlay-download-card-editor__file-name")!.textContent
@@ -406,11 +429,11 @@ describe("nightfire/download-card block", () => {
         data: {
           files: [
             { media_id: "m-1", title: "First copy" },
-            { media_id: "m-1", title: "Second copy" },
-          ],
-        },
+            { media_id: "m-1", title: "Second copy" }
+          ]
+        }
       },
-      onChange,
+      onChange
     });
 
     const rows = view.container.querySelectorAll(".underlay-download-card-editor__file");
@@ -419,7 +442,7 @@ describe("nightfire/download-card block", () => {
     await fireEvent.click(removeButtons[0]!);
     expect(onChange).toHaveBeenCalledTimes(1);
     expect(onChange.mock.calls[0]![0].data.files).toEqual([
-      { media_id: "m-1", title: "Second copy" },
+      { media_id: "m-1", title: "Second copy" }
     ]);
   });
 });

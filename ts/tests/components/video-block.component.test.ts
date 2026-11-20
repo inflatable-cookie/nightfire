@@ -13,6 +13,14 @@ import { getBlockEditor, isBlockContentEmpty } from "../../src/editor-registry";
 const RendererComponent = getBlockRenderer(undefined, "video");
 const EditorComponent = getBlockEditor(undefined, "video");
 
+// The parent in these cases persists and reloads the payload, so the clone is
+// the JSON wire round-trip the block must survive on its own. structuredClone
+// refuses the Svelte state proxy the payload carries here.
+function cloneThroughWire<T>(value: T): T {
+  // oxlint-disable-next-line unicorn/prefer-structured-clone -- the wire round-trip is the point of the case
+  return JSON.parse(JSON.stringify(value)) as T;
+}
+
 const YOUTUBE_ID = "dQw4w9WgXcQ";
 const YOUTUBE_URL = `https://www.youtube.com/watch?v=${YOUTUBE_ID}`;
 
@@ -22,15 +30,14 @@ const titledBlock = {
   data: {
     embed: { provider: "youtube", id: YOUTUBE_ID, originalUrl: YOUTUBE_URL },
     title: "Example film",
-    caption: "Seen from the ridge",
-  },
+    caption: "Seen from the ridge"
+  }
 };
 
 function urlInput(container: HTMLElement): HTMLTextAreaElement {
-  const field = within(container).getByPlaceholderText(
+  return within(container).getByPlaceholderText<HTMLTextAreaElement>(
     "Paste a URL or embed code..."
-  ) as HTMLTextAreaElement;
-  return field;
+  );
 }
 
 describe("nightfire/video block", () => {
@@ -41,28 +48,28 @@ describe("nightfire/video block", () => {
 
   it("answers emptiness from the embed address alone", () => {
     expect(isBlockContentEmpty({ type: "video", data: {} })).toBe(true);
-    expect(
-      isBlockContentEmpty({ type: "video", data: { title: "x", caption: "y" } })
-    ).toBe(true);
-    expect(
-      isBlockContentEmpty({ type: "video", data: { embed: { provider: "", id: "" } } })
-    ).toBe(true);
-    expect(
-      isBlockContentEmpty({ type: "video", data: { embed: { provider: "youtube" } } })
-    ).toBe(true);
+    expect(isBlockContentEmpty({ type: "video", data: { title: "x", caption: "y" } })).toBe(true);
+    expect(isBlockContentEmpty({ type: "video", data: { embed: { provider: "", id: "" } } })).toBe(
+      true
+    );
+    expect(isBlockContentEmpty({ type: "video", data: { embed: { provider: "youtube" } } })).toBe(
+      true
+    );
     expect(
       isBlockContentEmpty({
         type: "video",
-        data: { embed: { provider: "youtube", id: YOUTUBE_ID } },
+        data: { embed: { provider: "youtube", id: YOUTUBE_ID } }
       })
     ).toBe(false);
   });
 
   it("matches the committed video fixture HTML", () => {
-    const fixture = JSON.parse(readFileSync("fixtures/wire/v1/nightfire-values.json", "utf8"));
+    const fixture = JSON.parse(readFileSync("fixtures/wire/v1/nightfire-values.json", "utf8")) as {
+      values: Array<{ name: string; value: { blocks: Array<{ type: string }> } }>;
+    };
     const block = fixture.values
-      .find((entry: { name: string }) => entry.name === "core-payloads")
-      .value.blocks.find((entry: { type: string }) => entry.type === "video");
+      .find((entry) => entry.name === "core-payloads")!
+      .value.blocks.find((entry) => entry.type === "video");
     const view = render(RendererComponent as any, { block });
     const root = view.container.querySelector('[data-nightfire-block="video"]') as HTMLElement;
     expect(root).toBeTruthy();
@@ -98,10 +105,10 @@ describe("nightfire/video block", () => {
       { title: "x" },
       { embed: null },
       { embed: { provider: "", id: "" } },
-      { embed: { provider: "youtube" } },
+      { embed: { provider: "youtube" } }
     ]) {
       const view = render(RendererComponent as any, {
-        block: { type: "video", version: "initial", data },
+        block: { type: "video", version: "initial", data }
       });
       expect(view.container.querySelector('[data-nightfire-block="video"]')).toBeNull();
     }
@@ -116,9 +123,9 @@ describe("nightfire/video block", () => {
         version: "initial",
         data: {
           embed: { provider: "generic", id: "https://example.com/foo" },
-          caption: "kept",
-        },
-      },
+          caption: "kept"
+        }
+      }
     });
     const root = view.container.querySelector('[data-nightfire-block="video"]');
     expect(root).toBeTruthy();
@@ -136,12 +143,12 @@ describe("nightfire/video block", () => {
           embed: {
             provider: "generic",
             id: "hostile",
-            originalEmbed: `<iframe src="https://www.youtube.com/embed/${YOUTUBE_ID}" onload="evil()" width="560"></iframe><script>evil()</script>`,
+            originalEmbed: `<iframe src="https://www.youtube.com/embed/${YOUTUBE_ID}" onload="evil()" width="560"></iframe><script>evil()</script>`
           },
           title: `"><script>evil()</script>`,
-          caption: "kept",
-        },
-      },
+          caption: "kept"
+        }
+      }
     });
     const root = view.container.querySelector('[data-nightfire-block="video"]');
     expect(root).toBeTruthy();
@@ -181,14 +188,14 @@ describe("nightfire/video block", () => {
   });
 
   it("pastes a supported URL, shows the provider, and stores the parsed embed", async () => {
-    const onChange = (...args: unknown[]) => {
+    const onChange = (...args: Array<unknown>) => {
       calls.push(args[0]);
     };
-    const calls: unknown[] = [];
+    const calls: Array<unknown> = [];
     const view = render(EditorComponent as any, {
       block: { type: "video", version: "initial", data: {} },
       onChange,
-      parseDebounce: 0,
+      parseDebounce: 0
     });
 
     await fireEvent.input(urlInput(view.container), { target: { value: YOUTUBE_URL } });
@@ -201,48 +208,55 @@ describe("nightfire/video block", () => {
     expect(saved.data.embed.originalUrl).toBe(YOUTUBE_URL);
 
     // The author sees the parsed provider before saving.
-    await waitFor(() =>
-      expect(view.container.textContent).toContain("Embed detected")
-    );
+    await waitFor(() => expect(view.container.textContent).toContain("Embed detected"));
     expect(view.container.textContent).toContain("youtube");
   });
 
   it("keeps the id and does not restore a cleared embed when editing the title", async () => {
-    const calls: any[] = [];
+    const calls: Array<any> = [];
     const view = render(EditorComponent as any, {
       block: { ...titledBlock, id: "video-1" },
       onChange: (next: unknown) => calls.push(next),
-      parseDebounce: 0,
+      parseDebounce: 0
     });
     await fireEvent.input(urlInput(view.container), { target: { value: "" } });
-    const title = within(view.container).getByPlaceholderText("Title (optional, used as the embed's accessible name)");
+    const title = within(view.container).getByPlaceholderText(
+      "Title (optional, used as the embed's accessible name)"
+    );
     await fireEvent.input(title, { target: { value: "Changed" } });
     expect(calls.at(-1).id).toBe("video-1");
     expect(calls.at(-1).data.embed).toBeUndefined();
   });
 
   it("updates the input and subsequent edits when the parent replaces the embed", async () => {
-    const calls: any[] = [];
-    const view = render(VideoEditorHarness, { initial: { type: "video", data: {} }, onChange: (next: unknown) => calls.push(next) });
+    const calls: Array<any> = [];
+    const view = render(VideoEditorHarness, {
+      initial: { type: "video", data: {} },
+      onChange: (next: unknown) => calls.push(next)
+    });
     await fireEvent.input(urlInput(view.container), { target: { value: YOUTUBE_URL } });
     await waitFor(() => expect(calls.length).toBeGreaterThan(0));
     const external = { provider: "vimeo", id: "12345", originalUrl: "https://vimeo.com/12345" };
-    (view.component as any).setBlock({ type: "video", data: { embed: external } });
+    (view.component as { setBlock: (next: unknown) => void }).setBlock({
+      type: "video",
+      data: { embed: external }
+    });
     flushSync();
     expect(urlInput(view.container).value).toBe(external.originalUrl);
-    await fireEvent.input(within(view.container).getByPlaceholderText("Caption (optional)"), { target: { value: "New" } });
+    await fireEvent.input(within(view.container).getByPlaceholderText("Caption (optional)"), {
+      target: { value: "New" }
+    });
     expect(calls.at(-1).data.embed).toEqual(external);
   });
 
   it("keeps the input when a parent clones the emitted block in onChange", async () => {
-    let view: ReturnType<typeof render>;
-    const calls: any[] = [];
-    view = render(VideoEditorHarness, {
+    const calls: Array<any> = [];
+    const view = render(VideoEditorHarness, {
       initial: { type: "video", data: {} },
       onChange: (next: unknown) => {
         calls.push(next);
-        (view.component as any).setBlock(JSON.parse(JSON.stringify(next)));
-      },
+        (view.component as { setBlock: (next: unknown) => void }).setBlock(cloneThroughWire(next));
+      }
     });
 
     const iframeMarkup = `<iframe src="https://www.youtube.com/embed/${YOUTUBE_ID}"></iframe>`;
@@ -257,23 +271,25 @@ describe("nightfire/video block", () => {
     await waitFor(() =>
       expect(view.container.textContent).toContain("Could not parse embed source")
     );
-    (view.component as any).setBlock(JSON.parse(JSON.stringify(calls.at(-1))));
+    (view.component as { setBlock: (next: unknown) => void }).setBlock(
+      cloneThroughWire(calls.at(-1))
+    );
     flushSync();
     expect(urlInput(view.container).value).toBe("not a url");
   });
 
   it("survives the scenario oracle: paste, title, save, reload", async () => {
-    const calls: unknown[] = [];
+    const calls: Array<unknown> = [];
     const editorView = render(EditorComponent as any, {
       block: { type: "video", version: "initial", data: {} },
-      onChange: (...args: unknown[]) => {
+      onChange: (...args: Array<unknown>) => {
         calls.push(args[0]);
       },
-      parseDebounce: 0,
+      parseDebounce: 0
     });
 
     await fireEvent.input(urlInput(editorView.container), {
-      target: { value: YOUTUBE_URL },
+      target: { value: YOUTUBE_URL }
     });
     await waitFor(() => expect(calls.length).toBeGreaterThan(0));
 
@@ -282,8 +298,8 @@ describe("nightfire/video block", () => {
       data: {
         ...((calls.at(-1) as any).data as object),
         title: "Example film",
-        caption: "Seen from the ridge",
-      },
+        caption: "Seen from the ridge"
+      }
     };
 
     const firstRender = render(RendererComponent as any, { block: saved });
@@ -297,24 +313,24 @@ describe("nightfire/video block", () => {
     const reloaded = render(EditorComponent as any, {
       block: saved,
       onChange: () => {},
-      parseDebounce: 0,
+      parseDebounce: 0
     });
-    expect((urlInput(reloaded.container) as HTMLTextAreaElement).value).toBe(YOUTUBE_URL);
+    expect(urlInput(reloaded.container).value).toBe(YOUTUBE_URL);
   });
 
   it("refuses a disallowed provider and stores nothing", async () => {
-    const calls: unknown[] = [];
+    const calls: Array<unknown> = [];
     const view = render(EditorComponent as any, {
       block: { type: "video", version: "initial", data: {} },
-      onChange: (...args: unknown[]) => {
+      onChange: (...args: Array<unknown>) => {
         calls.push(args[0]);
       },
       providers: ["youtube"],
-      parseDebounce: 0,
+      parseDebounce: 0
     });
 
     await fireEvent.input(urlInput(view.container), {
-      target: { value: "https://vimeo.com/123456" },
+      target: { value: "https://vimeo.com/123456" }
     });
 
     await waitFor(() =>
@@ -324,13 +340,13 @@ describe("nightfire/video block", () => {
   });
 
   it("refuses an unparseable value and leaves the block unchanged", async () => {
-    const calls: unknown[] = [];
+    const calls: Array<unknown> = [];
     const view = render(EditorComponent as any, {
       block: { type: "video", version: "initial", data: {} },
-      onChange: (...args: unknown[]) => {
+      onChange: (...args: Array<unknown>) => {
         calls.push(args[0]);
       },
-      parseDebounce: 0,
+      parseDebounce: 0
     });
 
     await fireEvent.input(urlInput(view.container), { target: { value: "not a url" } });
@@ -342,11 +358,11 @@ describe("nightfire/video block", () => {
   });
 
   it("does not emit a prior pending embed on title or caption edits after a parse error", async () => {
-    const calls: any[] = [];
+    const calls: Array<any> = [];
     const view = render(EditorComponent as any, {
       block: { type: "video", version: "initial", data: {} },
       onChange: (next: unknown) => calls.push(next),
-      parseDebounce: 0,
+      parseDebounce: 0
     });
 
     await fireEvent.input(urlInput(view.container), { target: { value: YOUTUBE_URL } });
@@ -368,22 +384,21 @@ describe("nightfire/video block", () => {
     expect(calls.at(-1).data.embed).toBeUndefined();
     expect(calls.at(-1).data.title).toBe("Updated title");
 
-    await fireEvent.input(
-      within(view.container).getByPlaceholderText("Caption (optional)"),
-      { target: { value: "Updated caption" } }
-    );
+    await fireEvent.input(within(view.container).getByPlaceholderText("Caption (optional)"), {
+      target: { value: "Updated caption" }
+    });
     expect(calls.at(-1).data.embed).toBeUndefined();
     expect(calls.at(-1).data.caption).toBe("Updated caption");
   });
 
   it("drops the embed when the input is cleared and keeps title and caption", async () => {
-    const calls: unknown[] = [];
+    const calls: Array<unknown> = [];
     const view = render(EditorComponent as any, {
       block: titledBlock,
-      onChange: (...args: unknown[]) => {
+      onChange: (...args: Array<unknown>) => {
         calls.push(args[0]);
       },
-      parseDebounce: 0,
+      parseDebounce: 0
     });
 
     await fireEvent.input(urlInput(view.container), { target: { value: "" } });
@@ -396,18 +411,18 @@ describe("nightfire/video block", () => {
   });
 
   it("edits title and caption without losing the embed", async () => {
-    const calls: unknown[] = [];
+    const calls: Array<unknown> = [];
     const view = render(EditorComponent as any, {
       block: titledBlock,
-      onChange: (...args: unknown[]) => {
+      onChange: (...args: Array<unknown>) => {
         calls.push(args[0]);
       },
-      parseDebounce: 0,
+      parseDebounce: 0
     });
 
-    const captionInput = within(view.container).getByPlaceholderText(
+    const captionInput = within(view.container).getByPlaceholderText<HTMLInputElement>(
       "Caption (optional)"
-    ) as HTMLInputElement;
+    );
     await fireEvent.input(captionInput, { target: { value: "A new caption" } });
 
     await waitFor(() => expect(calls.length).toBeGreaterThan(0));

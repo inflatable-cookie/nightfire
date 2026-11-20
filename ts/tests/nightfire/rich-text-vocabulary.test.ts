@@ -15,7 +15,9 @@ const allSources = Object.values(sources).join("\n");
 
 describe("nightfire/rich-text vocabulary", () => {
   it("wraps Poodle in the editor and pins Poodle's exported feature set", () => {
-    expect(sources["RichTextEditor.svelte"]).toContain("@inflatable-cookie/poodle-svelte/rich-text");
+    expect(sources["RichTextEditor.svelte"]).toContain(
+      "@inflatable-cookie/poodle-svelte/rich-text"
+    );
     expect(sources["RichTextEditor.svelte"]).toContain("RICH_TEXT_FEATURES");
     expect(sources["RichTextRenderer.svelte"]).not.toContain("@inflatable-cookie/poodle-svelte");
     expect(sources["render.ts"]).toContain('registerBlockRenderer(null, "rich_text"');

@@ -16,34 +16,37 @@ export type NpmPublicationPackage = { name: string; path: string };
 
 export type NpmPublicationAuthority = {
   candidateManifestName: string;
-  packages: NpmPublicationPackage[];
+  packages: Array<NpmPublicationPackage>;
 };
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
 
 export function readNpmPublicationAuthority(root: string): NpmPublicationAuthority {
   const manifestPath = join(root, "release-manifest.json");
-  const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as Record<string, unknown>;
-  const declared: unknown = manifest.npmPublication;
+  const manifest: unknown = JSON.parse(readFileSync(manifestPath, "utf8"));
+  const declared: unknown = isRecord(manifest) ? manifest.npmPublication : null;
   // `typeof null` is "object", so null and an array need their own refusal.
-  if (declared === null || typeof declared !== "object" || Array.isArray(declared)) {
+  if (!isRecord(declared)) {
     throw new Error("release manifest must declare npmPublication authority");
   }
-  const authority = declared as Record<string, unknown>;
-  const candidateManifestName = authority.candidateManifestName;
+  const candidateManifestName = declared.candidateManifestName;
   if (typeof candidateManifestName !== "string" || candidateManifestName.length === 0) {
     throw new Error("release manifest npmPublication must name its candidate identity manifest");
   }
-  if (!Array.isArray(authority.packages) || authority.packages.length === 0) {
+  if (!Array.isArray(declared.packages) || declared.packages.length === 0) {
     throw new Error("release manifest npmPublication must list at least one package");
   }
-  const packages = authority.packages.map((candidate) => {
-    if (candidate === null || typeof candidate !== "object") {
+  const rawPackages: Array<unknown> = declared.packages;
+  const packages = rawPackages.map((candidate) => {
+    if (!isRecord(candidate)) {
       throw new Error("release manifest npmPublication package entries must be objects");
     }
-    const entry = candidate as Record<string, unknown>;
-    if (typeof entry.name !== "string" || typeof entry.path !== "string") {
+    if (typeof candidate.name !== "string" || typeof candidate.path !== "string") {
       throw new Error("release manifest npmPublication packages need a name and a path");
     }
-    return { name: entry.name, path: entry.path };
+    return { name: candidate.name, path: candidate.path };
   });
   return { candidateManifestName, packages };
 }
@@ -62,7 +65,7 @@ export type CandidateManifest = {
   schema: string;
   sourceCommit: string;
   version: string;
-  packages: CandidatePackage[];
+  packages: Array<CandidatePackage>;
 };
 
 // `node:crypto` rather than a `shasum` shell-out: the digest is the same, and
@@ -83,16 +86,19 @@ export function parseTarballManifest(tarballPath: string): { name: string; versi
   try {
     parsed = JSON.parse(raw);
   } catch {
-    throw new Error(`candidate tarball ${basename(tarballPath)} has a malformed package/package.json`);
+    throw new Error(
+      `candidate tarball ${basename(tarballPath)} has a malformed package/package.json`
+    );
   }
-  if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
-    throw new Error(`candidate tarball ${basename(tarballPath)} has a non-object package/package.json`);
+  if (!isRecord(parsed)) {
+    throw new Error(
+      `candidate tarball ${basename(tarballPath)} has a non-object package/package.json`
+    );
   }
-  const manifest = parsed as Record<string, unknown>;
-  if (typeof manifest.name !== "string" || typeof manifest.version !== "string") {
+  if (typeof parsed.name !== "string" || typeof parsed.version !== "string") {
     throw new Error(`candidate tarball ${basename(tarballPath)} has no name/version`);
   }
-  return { name: manifest.name, version: manifest.version };
+  return { name: parsed.name, version: parsed.version };
 }
 
 function requireString(entry: Record<string, unknown>, key: string, origin: string): string {
@@ -113,38 +119,41 @@ export function parseCandidateManifest(raw: string, origin: string): CandidateMa
   } catch {
     throw new Error(`${origin} is not valid JSON`);
   }
-  if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+  if (!isRecord(parsed)) {
     throw new Error(`${origin} must be a JSON object`);
   }
-  const document = parsed as Record<string, unknown>;
-  if (document.schema !== CANDIDATE_SCHEMA) {
-    throw new Error(`${origin} declares schema ${String(document.schema)}, expected ${CANDIDATE_SCHEMA}`);
+  if (parsed.schema !== CANDIDATE_SCHEMA) {
+    throw new Error(
+      `${origin} declares schema ${String(parsed.schema)}, expected ${CANDIDATE_SCHEMA}`
+    );
   }
-  if (!Array.isArray(document.packages) || document.packages.length === 0) {
+  if (!Array.isArray(parsed.packages) || parsed.packages.length === 0) {
     throw new Error(`${origin} must list at least one package`);
   }
-  const packages = document.packages.map((candidate, index) => {
-    if (candidate === null || typeof candidate !== "object" || Array.isArray(candidate)) {
+  const rawPackages: Array<unknown> = parsed.packages;
+  const packages = rawPackages.map((candidate, index) => {
+    if (!isRecord(candidate)) {
       throw new Error(`${origin} package ${index} must be an object`);
     }
-    const entry = candidate as Record<string, unknown>;
     return {
-      name: requireString(entry, "name", `${origin} package ${index}`),
-      path: requireString(entry, "path", `${origin} package ${index}`),
-      tarball: requireString(entry, "tarball", `${origin} package ${index}`),
-      version: requireString(entry, "version", `${origin} package ${index}`),
-      sha256: requireString(entry, "sha256", `${origin} package ${index}`),
+      name: requireString(candidate, "name", `${origin} package ${index}`),
+      path: requireString(candidate, "path", `${origin} package ${index}`),
+      tarball: requireString(candidate, "tarball", `${origin} package ${index}`),
+      version: requireString(candidate, "version", `${origin} package ${index}`),
+      sha256: requireString(candidate, "sha256", `${origin} package ${index}`)
     };
   });
   return {
     schema: CANDIDATE_SCHEMA,
-    sourceCommit: requireString(document, "sourceCommit", origin),
-    version: requireString(document, "version", origin),
-    packages,
+    sourceCommit: requireString(parsed, "sourceCommit", origin),
+    version: requireString(parsed, "version", origin),
+    packages
   };
 }
 
 export function readCandidateManifest(path: string): CandidateManifest {
-  if (!existsSync(path)) throw new Error(`candidate identity manifest not found: ${path}`);
+  if (!existsSync(path)) {
+    throw new Error(`candidate identity manifest not found: ${path}`);
+  }
   return parseCandidateManifest(readFileSync(path, "utf8"), path);
 }

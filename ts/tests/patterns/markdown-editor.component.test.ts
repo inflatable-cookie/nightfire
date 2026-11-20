@@ -11,7 +11,7 @@ describe("nightfire/markup/MarkdownEditorSurface.svelte", () => {
       label: "Description",
       hint: "Markdown supported",
       value: "Start",
-      onChange,
+      onChange
     });
 
     expect(screen.getByText("Description")).toBeTruthy();

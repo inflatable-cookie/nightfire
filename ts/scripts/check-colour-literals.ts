@@ -32,29 +32,154 @@ const TOKEN_REFERENCE = /var\(\s*--[\w-]+/g;
 // The CSS named colours. `transparent`, `currentColor` and `inherit` are
 // keywords rather than colours and are deliberately absent.
 const NAMED_COLOURS = new Set([
-  "aliceblue", "antiquewhite", "aqua", "aquamarine", "azure", "beige", "bisque", "black",
-  "blanchedalmond", "blue", "blueviolet", "brown", "burlywood", "cadetblue", "chartreuse",
-  "chocolate", "coral", "cornflowerblue", "cornsilk", "crimson", "cyan", "darkblue",
-  "darkcyan", "darkgoldenrod", "darkgray", "darkgreen", "darkgrey", "darkkhaki",
-  "darkmagenta", "darkolivegreen", "darkorange", "darkorchid", "darkred", "darksalmon",
-  "darkseagreen", "darkslateblue", "darkslategray", "darkslategrey", "darkturquoise",
-  "darkviolet", "deeppink", "deepskyblue", "dimgray", "dimgrey", "dodgerblue", "firebrick",
-  "floralwhite", "forestgreen", "fuchsia", "gainsboro", "ghostwhite", "gold", "goldenrod",
-  "gray", "green", "greenyellow", "grey", "honeydew", "hotpink", "indianred", "indigo",
-  "ivory", "khaki", "lavender", "lavenderblush", "lawngreen", "lemonchiffon", "lightblue",
-  "lightcoral", "lightcyan", "lightgoldenrodyellow", "lightgray", "lightgreen", "lightgrey",
-  "lightpink", "lightsalmon", "lightseagreen", "lightskyblue", "lightslategray",
-  "lightslategrey", "lightsteelblue", "lightyellow", "lime", "limegreen", "linen",
-  "magenta", "maroon", "mediumaquamarine", "mediumblue", "mediumorchid", "mediumpurple",
-  "mediumseagreen", "mediumslateblue", "mediumspringgreen", "mediumturquoise",
-  "mediumvioletred", "midnightblue", "mintcream", "mistyrose", "moccasin", "navajowhite",
-  "navy", "oldlace", "olive", "olivedrab", "orange", "orangered", "orchid", "palegoldenrod",
-  "palegreen", "paleturquoise", "palevioletred", "papayawhip", "peachpuff", "peru", "pink",
-  "plum", "powderblue", "purple", "rebeccapurple", "red", "rosybrown", "royalblue",
-  "saddlebrown", "salmon", "sandybrown", "seagreen", "seashell", "sienna", "silver",
-  "skyblue", "slateblue", "slategray", "slategrey", "snow", "springgreen", "steelblue",
-  "tan", "teal", "thistle", "tomato", "turquoise", "violet", "wheat", "white", "whitesmoke",
-  "yellow", "yellowgreen"
+  "aliceblue",
+  "antiquewhite",
+  "aqua",
+  "aquamarine",
+  "azure",
+  "beige",
+  "bisque",
+  "black",
+  "blanchedalmond",
+  "blue",
+  "blueviolet",
+  "brown",
+  "burlywood",
+  "cadetblue",
+  "chartreuse",
+  "chocolate",
+  "coral",
+  "cornflowerblue",
+  "cornsilk",
+  "crimson",
+  "cyan",
+  "darkblue",
+  "darkcyan",
+  "darkgoldenrod",
+  "darkgray",
+  "darkgreen",
+  "darkgrey",
+  "darkkhaki",
+  "darkmagenta",
+  "darkolivegreen",
+  "darkorange",
+  "darkorchid",
+  "darkred",
+  "darksalmon",
+  "darkseagreen",
+  "darkslateblue",
+  "darkslategray",
+  "darkslategrey",
+  "darkturquoise",
+  "darkviolet",
+  "deeppink",
+  "deepskyblue",
+  "dimgray",
+  "dimgrey",
+  "dodgerblue",
+  "firebrick",
+  "floralwhite",
+  "forestgreen",
+  "fuchsia",
+  "gainsboro",
+  "ghostwhite",
+  "gold",
+  "goldenrod",
+  "gray",
+  "green",
+  "greenyellow",
+  "grey",
+  "honeydew",
+  "hotpink",
+  "indianred",
+  "indigo",
+  "ivory",
+  "khaki",
+  "lavender",
+  "lavenderblush",
+  "lawngreen",
+  "lemonchiffon",
+  "lightblue",
+  "lightcoral",
+  "lightcyan",
+  "lightgoldenrodyellow",
+  "lightgray",
+  "lightgreen",
+  "lightgrey",
+  "lightpink",
+  "lightsalmon",
+  "lightseagreen",
+  "lightskyblue",
+  "lightslategray",
+  "lightslategrey",
+  "lightsteelblue",
+  "lightyellow",
+  "lime",
+  "limegreen",
+  "linen",
+  "magenta",
+  "maroon",
+  "mediumaquamarine",
+  "mediumblue",
+  "mediumorchid",
+  "mediumpurple",
+  "mediumseagreen",
+  "mediumslateblue",
+  "mediumspringgreen",
+  "mediumturquoise",
+  "mediumvioletred",
+  "midnightblue",
+  "mintcream",
+  "mistyrose",
+  "moccasin",
+  "navajowhite",
+  "navy",
+  "oldlace",
+  "olive",
+  "olivedrab",
+  "orange",
+  "orangered",
+  "orchid",
+  "palegoldenrod",
+  "palegreen",
+  "paleturquoise",
+  "palevioletred",
+  "papayawhip",
+  "peachpuff",
+  "peru",
+  "pink",
+  "plum",
+  "powderblue",
+  "purple",
+  "rebeccapurple",
+  "red",
+  "rosybrown",
+  "royalblue",
+  "saddlebrown",
+  "salmon",
+  "sandybrown",
+  "seagreen",
+  "seashell",
+  "sienna",
+  "silver",
+  "skyblue",
+  "slateblue",
+  "slategray",
+  "slategrey",
+  "snow",
+  "springgreen",
+  "steelblue",
+  "tan",
+  "teal",
+  "thistle",
+  "tomato",
+  "turquoise",
+  "violet",
+  "wheat",
+  "white",
+  "whitesmoke",
+  "yellow",
+  "yellowgreen"
 ]);
 
 // A declaration, not a selector: the property is the last word before the colon,
@@ -71,13 +196,15 @@ export interface ColourLiteral {
 }
 
 function stripComments(css: string): string {
-  return css.replace(/\/\*[\s\S]*?\*\//g, (comment) => comment.replace(/[^\n]/g, " "));
+  return css.replaceAll(/\/\*[\s\S]*?\*\//g, (comment) => comment.replaceAll(/[^\n]/g, " "));
 }
 
 function lineAt(source: string, index: number): number {
   let line = 1;
   for (let cursor = 0; cursor < index; cursor += 1) {
-    if (source[cursor] === "\n") line += 1;
+    if (source[cursor] === "\n") {
+      line += 1;
+    }
   }
   return line;
 }
@@ -87,9 +214,9 @@ function lineAt(source: string, index: number): number {
 // the value as written.
 function blankNonColour(rawValue: string): string {
   return rawValue
-    .replace(TOKEN_REFERENCE, (token) => `var(${"x".repeat(token.length - 4)}`)
-    .replace(/url\([^)]*\)/gi, (url) => " ".repeat(url.length))
-    .replace(/"[^"]*"|'[^']*'/g, (quoted) => " ".repeat(quoted.length));
+    .replaceAll(TOKEN_REFERENCE, (token) => `var(${"x".repeat(token.length - 4)}`)
+    .replaceAll(/url\([^)]*\)/gi, (url) => " ".repeat(url.length))
+    .replaceAll(/"[^"]*"|'[^']*'/g, (quoted) => " ".repeat(quoted.length));
 }
 
 function sliceOf(original: string, match: { index: number; 0: string }): string {
@@ -100,54 +227,67 @@ function colourLiteralIn(rawValue: string): string | null {
   const value = blankNonColour(rawValue);
 
   const functional = COLOUR_FUNCTION.exec(value);
-  if (functional) return sliceOf(rawValue, functional).trim();
+  if (functional) {
+    return sliceOf(rawValue, functional).trim();
+  }
 
   const hex = HEX_COLOUR.exec(value);
-  if (hex) return sliceOf(rawValue, hex);
+  if (hex) {
+    return sliceOf(rawValue, hex);
+  }
 
   for (const word of value.matchAll(WORD)) {
-    if (NAMED_COLOURS.has(word[0].toLowerCase())) return sliceOf(rawValue, word);
+    if (NAMED_COLOURS.has(word[0].toLowerCase())) {
+      return sliceOf(rawValue, word);
+    }
   }
 
   return null;
 }
 
-export function styleBlocks(source: string): string[] {
+export function styleBlocks(source: string): Array<string> {
   return Array.from(
     source.matchAll(/<style(?:\s[^>]*)?>([\s\S]*?)<\/style>/g),
-    (match) => match[1]!,
+    (match) => match[1] ?? ""
   );
 }
 
-export function colourLiterals(source: string, path = "<source>"): ColourLiteral[] {
-  const findings: ColourLiteral[] = [];
+export function colourLiterals(source: string, path = "<source>"): Array<ColourLiteral> {
+  const findings: Array<ColourLiteral> = [];
   for (const match of source.matchAll(/<style(?:\s[^>]*)?>([\s\S]*?)<\/style>/g)) {
-    const offset = match.index! + match[0]!.indexOf(match[1]!);
-    const css = stripComments(match[1]!);
+    const block = match[1] ?? "";
+    const offset = match.index + match[0].indexOf(block);
+    const css = stripComments(block);
     for (const declaration of css.matchAll(DECLARATION)) {
-      const value = declaration[2]!;
+      const value = declaration[2];
+      const property = declaration[1];
+      if (value === undefined || property === undefined) {
+        continue;
+      }
       const literal = colourLiteralIn(value);
-      if (!literal) continue;
+      if (!literal) {
+        continue;
+      }
       findings.push({
         path,
-        line: lineAt(source, offset + declaration.index! + declaration[0]!.indexOf(value)),
-        property: declaration[1]!,
-        value: value.trim().replace(/\s+/g, " "),
-        literal,
+        line: lineAt(source, offset + declaration.index + declaration[0].indexOf(value)),
+        property,
+        value: value.trim().replaceAll(/\s+/g, " "),
+        literal
       });
     }
   }
   return findings;
 }
 
-export async function checkRepository(root = "ts/src"): Promise<ColourLiteral[]> {
-  const files: string[] = [];
+export async function checkRepository(root = "ts/src"): Promise<Array<ColourLiteral>> {
+  const files: Array<string> = [];
   for await (const path of new Bun.Glob("**/*.svelte").scan({ cwd: root, onlyFiles: true })) {
     files.push(`${root}/${path}`);
   }
   files.sort();
 
-  const findings: ColourLiteral[] = [];
+  const findings: Array<ColourLiteral> = [];
   for (const path of files) {
     findings.push(...colourLiterals(await Bun.file(path).text(), path));
   }
@@ -159,12 +299,14 @@ if (import.meta.main) {
   if (findings.length > 0) {
     for (const finding of findings) {
       console.error(
-        `${finding.path}:${finding.line} has colour literal ${finding.literal} in \`${finding.property}: ${finding.value}\``,
+        `${finding.path}:${finding.line} has colour literal ${finding.literal} in \`${finding.property}: ${finding.value}\``
       );
     }
     throw new Error(
-      `component styles hold ${findings.length} colour literal(s); reference a --nightfire-* token from ts/src/styles.css instead`,
+      `component styles hold ${findings.length} colour literal(s); reference a --nightfire-* token from ts/src/styles.css instead`
     );
   }
-  console.log("colour literal proof passed: no colour literal in any ts/src/**/*.svelte style block");
+  console.log(
+    "colour literal proof passed: no colour literal in any ts/src/**/*.svelte style block"
+  );
 }

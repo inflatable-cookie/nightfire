@@ -12,6 +12,8 @@ import { sanitizeHtml } from "../html.js";
  */
 export function renderSafeMarkdownHtml(markdown: string | null | undefined): string {
   const source = typeof markdown === "string" ? markdown : "";
-  if (source.trim().length === 0) return "";
-  return sanitizeHtml(marked.parse(source, { async: false }) as string);
+  if (source.trim().length === 0) {
+    return "";
+  }
+  return sanitizeHtml(marked.parse(source, { async: false }));
 }

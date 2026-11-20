@@ -10,22 +10,27 @@
 // Poodle's, and the only names here are the two non-text content nodes that set
 // admits.
 
-import type { ProseMirrorNodeJSON } from "@inflatable-cookie/poodle-svelte/rich-text";
-
 const NON_TEXT_CONTENT_NODES = new Set(["image", "horizontalRule"]);
 
-function hasContent(node: unknown): boolean {
-  if (!node || typeof node !== "object" || Array.isArray(node)) return false;
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
 
-  const typed = node as ProseMirrorNodeJSON;
-  if (typed.type === "text") {
-    return typeof typed.text === "string" && typed.text.trim().length > 0;
+function hasContent(node: unknown): boolean {
+  if (!isRecord(node)) {
+    return false;
   }
-  if (typed.type === "hardBreak") return false;
-  if (typeof typed.type === "string" && NON_TEXT_CONTENT_NODES.has(typed.type)) {
+
+  if (node.type === "text") {
+    return typeof node.text === "string" && node.text.trim().length > 0;
+  }
+  if (node.type === "hardBreak") {
+    return false;
+  }
+  if (typeof node.type === "string" && NON_TEXT_CONTENT_NODES.has(node.type)) {
     return true;
   }
-  return Array.isArray(typed.content) && typed.content.some(hasContent);
+  return Array.isArray(node.content) && node.content.some(hasContent);
 }
 
 /**

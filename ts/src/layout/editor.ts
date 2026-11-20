@@ -3,41 +3,50 @@ import TableEditor from "./TableEditor.svelte";
 import {
   isBlockContentEmpty,
   registerBlockEditor,
-  registerBlockEmptyChecker,
+  registerBlockEmptyChecker
 } from "../editor-registry";
 
 registerBlockEditor(null, "item_list", "Item list", ItemListEditor);
 registerBlockEditor(null, "table", "Table", TableEditor);
 
-registerBlockEmptyChecker("item_list", (block) => {
-  const items = Array.isArray(block?.data?.items) ? block.data.items : [];
-  return !items.some((item: unknown) => {
-    if (!item || typeof item !== "object" || Array.isArray(item)) return false;
-    const title = (item as { title?: unknown }).title;
-    if (typeof title === "string" && title.trim().length > 0) return true;
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
 
-    const body = (item as { body?: unknown }).body;
-    const children = Array.isArray(body) ? body : body ? [body] : [];
+registerBlockEmptyChecker("item_list", (block: unknown) => {
+  const rawItems = isRecord(block) && isRecord(block.data) ? block.data.items : null;
+  const items: Array<unknown> = Array.isArray(rawItems) ? rawItems : [];
+  return !items.some((item) => {
+    if (!isRecord(item)) {
+      return false;
+    }
+    if (typeof item.title === "string" && item.title.trim().length > 0) {
+      return true;
+    }
+
+    const body = item.body;
+    const children: Array<unknown> = Array.isArray(body) ? body : body ? [body] : [];
     return children.some((child) => !isBlockContentEmpty(child));
   });
 });
 
-registerBlockEmptyChecker("table", (block) => {
-  const caption = block?.data?.caption;
-  if (typeof caption === "string" && caption.trim().length > 0) return false;
+registerBlockEmptyChecker("table", (block: unknown) => {
+  const data = isRecord(block) && isRecord(block.data) ? block.data : null;
+  const caption = data?.caption;
+  if (typeof caption === "string" && caption.trim().length > 0) {
+    return false;
+  }
 
-  const rows = Array.isArray(block?.data?.rows) ? block.data.rows : [];
-  return !rows.some(
-    (row: unknown) =>
-      row !== null &&
-      typeof row === "object" &&
-      Array.isArray((row as { cells?: unknown }).cells) &&
-      (row as { cells: unknown[] }).cells.some(
-        (cell) =>
-          cell !== null &&
-          typeof cell === "object" &&
-          typeof (cell as { markdown?: unknown }).markdown === "string" &&
-          (cell as { markdown: string }).markdown.trim().length > 0,
-      ),
-  );
+  const rawRows = data?.rows;
+  const rows: Array<unknown> = Array.isArray(rawRows) ? rawRows : [];
+  return !rows.some((row) => {
+    if (!isRecord(row) || !Array.isArray(row.cells)) {
+      return false;
+    }
+    const cells: Array<unknown> = row.cells;
+    return cells.some(
+      (cell) =>
+        isRecord(cell) && typeof cell.markdown === "string" && cell.markdown.trim().length > 0
+    );
+  });
 });

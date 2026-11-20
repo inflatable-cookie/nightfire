@@ -110,9 +110,13 @@ block's `data`. The TypeScript and Rust implementations agree on every rule:
 
 Every runtime dependency needs direct retained-source evidence, recorded in
 `PROVENANCE.md` and the package documentation. Forbidden Underlay, framework,
-product, and duplicate utility dependencies stay absent from both manifests,
-locks, and source graphs. `@inflatable-cookie/poodle-svelte` is an optional
-peer for editors; renderer graphs must not reach it at runtime.
+product, and duplicate utility dependencies stay absent from every manifest
+entry, from the published runtime closure of the lock, and from the source
+graphs. Dev tooling may carry its own dependencies — `knip` parses TOML with
+`smol-toml` — so the lock proof follows `dependencies`, which is what a
+consumer installs, rather than every dev tool's internals.
+`@inflatable-cookie/poodle-svelte` is an optional peer for editors; renderer
+graphs must not reach it at runtime.
 
 ## Proof
 

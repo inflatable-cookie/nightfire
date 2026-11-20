@@ -25,5 +25,5 @@ export interface SchemaMismatchInfo {
 export type {
   NightfireSlashCommand,
   NightfireSlashCommandInput,
-  NightfireSlashCommandsConfig,
+  NightfireSlashCommandsConfig
 } from "./slash-commands";

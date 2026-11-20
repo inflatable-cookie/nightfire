@@ -10,14 +10,15 @@
   // The same styling rule as every other renderer applies: semantic markup, a
   // `data-nightfire-block` hook, data attributes for structure, no scoped
   // styles, no class of our own, no token.
-  import { getMediaSource, type ResolvedMedia } from "../media-source";
+  import { getMediaSource } from '../media-source';
+import type { ResolvedMedia } from '../media-source';
 
   type CardFile = { media_id?: unknown; title?: unknown; description?: unknown };
 
   type DownloadCardBlock = {
     data?: {
       description?: unknown;
-      files?: CardFile[];
+      files?: Array<CardFile>;
     };
   };
 
@@ -50,7 +51,7 @@
   function resolveReference(mediaId: string): ResolvedMedia | null {
     try {
       const resolved = getMediaSource()?.resolve({ media_id: mediaId }) ?? null;
-      if (!resolved || typeof resolved.url !== "string" || resolved.url.length === 0) return null;
+      if (!resolved || typeof resolved.url !== "string" || resolved.url.length === 0) {return null;}
       return isSafeDownloadUrl(resolved.url) ? resolved : null;
     } catch {
       return null;
@@ -61,8 +62,10 @@
   // blob scheme, so `javascript:`, `data:` and anything else is refused.
   function isSafeDownloadUrl(url: string): boolean {
     const scheme = /^([a-z][a-z0-9+.-]*):/i.exec(url.trim());
-    if (!scheme) return true;
-    return ["http", "https", "blob"].includes(scheme[1]!.toLowerCase());
+    if (!scheme) {return true;}
+    const schemeName = scheme[1];
+    if (!schemeName) {return true;}
+    return ["http", "https", "blob"].includes(schemeName.toLowerCase());
   }
 
   function fileTitle(file: { title?: unknown }): string {
@@ -74,7 +77,7 @@
   }
 
   function formatSize(size: number): string {
-    if (!Number.isFinite(size) || size < 0) return "";
+    if (!Number.isFinite(size) || size < 0) {return "";}
     const units = ["B", "KB", "MB", "GB", "TB"];
     let value = size;
     let unit = 0;

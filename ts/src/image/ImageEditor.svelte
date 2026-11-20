@@ -98,7 +98,7 @@
   }
 
   async function handlePick() {
-    if (!mediaSource || picking) return;
+    if (!mediaSource || picking) {return;}
     picking = true;
 
     try {
@@ -106,7 +106,7 @@
         multiple: false,
         filterKind: MediaKind.Image
       });
-      if (!picked) return; // cancelled
+      if (!picked) {return;} // cancelled
 
       const first = picked.find(
         (reference) =>

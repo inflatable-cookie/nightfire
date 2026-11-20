@@ -1,0 +1,14 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema-json.json",
+  "entry": [
+    "ts/scripts/**/*.ts",
+    "ts/tests/**/*.test.ts",
+    "ts/tests/components/VideoEditorHarness.svelte",
+    "ts/tests/fixtures/*.svelte",
+    "ts/tests/render.ts",
+    "ts/tests/setup/*.ts",
+    "ts/tests/helpers/*.ts"
+  ],
+  "project": ["ts/**/*.{ts,svelte}"],
+  "ignoreDependencies": ["oxfmt", "svelte-check"]
+}

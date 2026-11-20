@@ -17,25 +17,26 @@ function installed(specifier: string): string {
   return join(checkoutRoot, "node_modules", name!, "lib", "index.js");
 }
 
+const report = () =>
+  assertLoaderToolchain(ts, (specifier) =>
+    specifier === "svelte/compiler"
+      ? join(checkoutRoot, "..", "svelte", "compiler.js")
+      : installed(specifier)
+  );
+
 describe("shared Svelte loader toolchain", () => {
   it("accepts the TypeScript this package pins", () => {
     expect(() => assertLoaderToolchain(ts)).not.toThrow();
   });
 
   it("names a dependency that resolves outside the checkout", () => {
-    const report = () =>
-      assertLoaderToolchain(ts, (specifier) =>
-        specifier === "svelte/compiler"
-          ? join(checkoutRoot, "..", "svelte", "compiler.js")
-          : installed(specifier),
-      );
     expect(report).toThrow("svelte/compiler resolved outside this checkout");
     expect(report).toThrow("effigy bootstrap:deps");
   });
 
   it("refuses a version-only typescript root export", () => {
     expect(() =>
-      assertLoaderToolchain({ version: "7.0.2", versionMajorMinor: [7, 0] }, installed),
+      assertLoaderToolchain({ version: "7.0.2", versionMajorMinor: [7, 0] }, installed)
     ).toThrow("no compiler API");
   });
 });

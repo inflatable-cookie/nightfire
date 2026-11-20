@@ -5,13 +5,8 @@ import "../../src/render-registrations";
 import "../../src/editor-registrations";
 import { getBlockRenderer } from "../../src/render-registry";
 import { getBlockEditor, isBlockContentEmpty } from "../../src/editor-registry";
-import {
-  MediaKind,
-  registerMediaSource,
-  unregisterMediaSource,
-  type MediaSource,
-  type ResolvedMedia,
-} from "../../src/media-source";
+import { MediaKind, registerMediaSource, unregisterMediaSource } from "../../src/media-source";
+import type { MediaSource, ResolvedMedia } from "../../src/media-source";
 import { createRichTextImageRequest } from "../../src/rich-text/images";
 
 const RendererComponent = getBlockRenderer(undefined, "image");
@@ -23,19 +18,19 @@ const resolvedByRef: Record<string, ResolvedMedia> = {
     filename: "hero.jpg",
     width: 1600,
     height: 900,
-    title: "Library title",
+    title: "Library title"
   },
   "img-2": {
     url: "https://files.example/icon.png",
-    filename: "icon.png",
-  },
+    filename: "icon.png"
+  }
 };
 
 function stubSource(overrides: Partial<MediaSource> = {}): MediaSource {
   return {
     pick: async () => null,
     resolve: (reference) => resolvedByRef[reference.media_id] ?? null,
-    ...overrides,
+    ...overrides
   };
 }
 
@@ -47,8 +42,8 @@ const sizedBlock = {
     alt: "A hero shot",
     title: "Author title",
     caption: "Seen from the ridge",
-    sizing: "medium",
-  },
+    sizing: "medium"
+  }
 };
 
 afterEach(() => {
@@ -57,13 +52,24 @@ afterEach(() => {
 
 describe("nightfire/image block", () => {
   it("recovers from a rejected picker and keeps the block id", async () => {
-    registerMediaSource(stubSource({ pick: async () => { throw new Error("unavailable"); } }));
+    registerMediaSource(
+      stubSource({
+        pick: async () => {
+          throw new Error("unavailable");
+        }
+      })
+    );
     const onChange = mock();
-    const view = render(EditorComponent as any, { block: { id: "block-1", type: "image", data: {} }, onChange });
+    const view = render(EditorComponent as any, {
+      block: { id: "block-1", type: "image", data: {} },
+      onChange
+    });
     const button = within(view.container).getByRole("button", { name: "Choose image" });
     await fireEvent.click(button);
     await waitFor(() => expect(button.hasAttribute("disabled")).toBe(false));
-    await fireEvent.input(within(view.container).getByPlaceholderText("Alt text"), { target: { value: "text" } });
+    await fireEvent.input(within(view.container).getByPlaceholderText("Alt text"), {
+      target: { value: "text" }
+    });
     expect(onChange.mock.calls.at(-1)![0].id).toBe("block-1");
   });
 
@@ -107,17 +113,15 @@ describe("nightfire/image block", () => {
     registerMediaSource(stubSource());
 
     const fallback = render(RendererComponent as any, {
-      block: { type: "image", version: "initial", data: { media_id: "img-1", alt: "x" } },
+      block: { type: "image", version: "initial", data: { media_id: "img-1", alt: "x" } }
     });
     expect(fallback.container.querySelector("img")!.getAttribute("title")).toBe("Library title");
 
     const authorWins = render(RendererComponent as any, { block: sizedBlock });
-    expect(authorWins.container.querySelector("img")!.getAttribute("title")).toBe(
-      "Author title"
-    );
+    expect(authorWins.container.querySelector("img")!.getAttribute("title")).toBe("Author title");
 
     const neither = render(RendererComponent as any, {
-      block: { type: "image", version: "initial", data: { media_id: "img-2" } },
+      block: { type: "image", version: "initial", data: { media_id: "img-2" } }
     });
     expect(neither.container.querySelector("img")!.hasAttribute("title")).toBe(false);
   });
@@ -126,7 +130,7 @@ describe("nightfire/image block", () => {
     registerMediaSource(stubSource());
 
     const view = render(RendererComponent as any, {
-      block: { type: "image", version: "initial", data: { media_id: "img-2", alt: "icon" } },
+      block: { type: "image", version: "initial", data: { media_id: "img-2", alt: "icon" } }
     });
     const img = view.container.querySelector("img") as HTMLImageElement;
     expect(img.getAttribute("src")).toBe("https://files.example/icon.png");
@@ -139,7 +143,7 @@ describe("nightfire/image block", () => {
     registerMediaSource(stubSource());
 
     const natural = render(RendererComponent as any, {
-      block: { type: "image", version: "initial", data: { media_id: "img-1" } },
+      block: { type: "image", version: "initial", data: { media_id: "img-1" } }
     });
     const naturalRoot = natural.container.querySelector('[data-nightfire-block="image"]');
     expect(naturalRoot).toBeTruthy();
@@ -150,8 +154,8 @@ describe("nightfire/image block", () => {
       block: {
         type: "image",
         version: "initial",
-        data: { media_id: "img-1", sizing: "1200px" },
-      },
+        data: { media_id: "img-1", sizing: "1200px" }
+      }
     });
     const unknownRoot = unknown.container.querySelector('[data-nightfire-block="image"]');
     expect(unknownRoot).toBeTruthy();
@@ -163,7 +167,7 @@ describe("nightfire/image block", () => {
 
     for (const data of [{}, { alt: "x" }, { media_id: "  " }]) {
       const view = render(RendererComponent as any, {
-        block: { type: "image", version: "initial", data },
+        block: { type: "image", version: "initial", data }
       });
       expect(view.container.querySelector('[data-nightfire-block="image"]')).toBeNull();
     }
@@ -172,8 +176,8 @@ describe("nightfire/image block", () => {
       block: {
         type: "image",
         version: "initial",
-        data: { media_id: "missing", alt: "x", caption: "kept" },
-      },
+        data: { media_id: "missing", alt: "x", caption: "kept" }
+      }
     });
     const root = unknown.container.querySelector('[data-nightfire-block="image"]');
     expect(root).toBeTruthy();
@@ -197,7 +201,7 @@ describe("nightfire/image block", () => {
     const onChange = mock();
     const view = render(EditorComponent as any, {
       block: { type: "image", version: "initial", data: {} },
-      onChange,
+      onChange
     });
 
     await fireEvent.click(
@@ -216,9 +220,9 @@ describe("nightfire/image block", () => {
     // The parent feeds the emitted block back; the row shows the resolved
     // filename and the alt field sits next to the picker.
     const editor = render(EditorComponent as any, { block: afterPick, onChange });
-    expect(
-      editor.container.querySelector(".underlay-image-editor__file-name")!.textContent
-    ).toBe("hero.jpg");
+    expect(editor.container.querySelector(".underlay-image-editor__file-name")!.textContent).toBe(
+      "hero.jpg"
+    );
     const altInput = editor.container.querySelector(
       'input[placeholder="Alt text"]'
     ) as HTMLInputElement;
@@ -227,7 +231,7 @@ describe("nightfire/image block", () => {
     await waitFor(() => expect(onChange.mock.calls.length).toBe(2));
     expect(onChange.mock.calls.at(-1)![0].data).toEqual({
       media_id: "img-1",
-      alt: "A hero shot",
+      alt: "A hero shot"
     });
   });
 
@@ -237,16 +241,14 @@ describe("nightfire/image block", () => {
     const onChange = mock();
     const view = render(EditorComponent as any, {
       block: { type: "image", version: "initial", data: {} },
-      onChange,
+      onChange
     });
 
     await fireEvent.click(
       await waitFor(() => within(view.container).getByRole("button", { name: /choose image/i }))
     );
     await waitFor(() =>
-      expect(
-        within(view.container).getByRole("button", { name: /choose image/i })
-      ).toBeTruthy()
+      expect(within(view.container).getByRole("button", { name: /choose image/i })).toBeTruthy()
     );
     expect(onChange).not.toHaveBeenCalled();
   });
@@ -257,16 +259,18 @@ describe("nightfire/image block", () => {
     const onChange = mock();
     const editorView = render(EditorComponent as any, {
       block: { type: "image", version: "initial", data: {} },
-      onChange,
+      onChange
     });
     await fireEvent.click(
-      await waitFor(() => within(editorView.container).getByRole("button", { name: /choose image/i }))
+      await waitFor(() =>
+        within(editorView.container).getByRole("button", { name: /choose image/i })
+      )
     );
     await waitFor(() => expect(onChange).toHaveBeenCalled());
 
     const saved = {
       ...onChange.mock.calls.at(-1)![0],
-      data: { ...onChange.mock.calls.at(-1)![0].data, alt: "A hero shot", sizing: "medium" },
+      data: { ...onChange.mock.calls.at(-1)![0].data, alt: "A hero shot", sizing: "medium" }
     };
 
     const firstRender = render(RendererComponent as any, { block: saved });
@@ -294,7 +298,7 @@ describe("nightfire/image block", () => {
     expect(input).toEqual({
       src: "https://files.example/hero.jpg",
       alt: "",
-      title: "Library title",
+      title: "Library title"
     });
 
     registerMediaSource(stubSource({ pick: async () => null }));
@@ -307,7 +311,7 @@ describe("nightfire/image block", () => {
       stubSource({
         pick: async () => {
           throw new Error("picker failed");
-        },
+        }
       })
     );
     expect(await createRichTextImageRequest()!()).toBeNull();
@@ -317,7 +321,7 @@ describe("nightfire/image block", () => {
         pick: async () => [{ media_id: "img-1" }],
         resolve: () => {
           throw new Error("resolve failed");
-        },
+        }
       })
     );
     expect(await createRichTextImageRequest()!()).toBeNull();
@@ -325,7 +329,7 @@ describe("nightfire/image block", () => {
     registerMediaSource(
       stubSource({
         pick: async () => [{ media_id: "img-1" }],
-        resolve: () => ({ url: "   ", filename: "blank.jpg" }),
+        resolve: () => ({ url: "   ", filename: "blank.jpg" })
       })
     );
     expect(await createRichTextImageRequest()!()).toBeNull();
@@ -336,12 +340,12 @@ describe("nightfire/image block", () => {
       stubSource({
         resolve: () => {
           throw new Error("resolve failed");
-        },
+        }
       })
     );
     const throwingView = render(EditorComponent as any, {
       block: { type: "image", version: "initial", data: { media_id: "img-1" } },
-      onChange: mock(),
+      onChange: mock()
     });
     expect(
       throwingView.container.querySelector(".underlay-image-editor__file-name")!.textContent
@@ -349,12 +353,12 @@ describe("nightfire/image block", () => {
 
     registerMediaSource(
       stubSource({
-        resolve: () => ({ url: "   ", filename: "ignored.jpg" }),
+        resolve: () => ({ url: "   ", filename: "ignored.jpg" })
       })
     );
     const blankUrlView = render(EditorComponent as any, {
       block: { type: "image", version: "initial", data: { media_id: "img-2" } },
-      onChange: mock(),
+      onChange: mock()
     });
     expect(
       blankUrlView.container.querySelector(".underlay-image-editor__file-name")!.textContent

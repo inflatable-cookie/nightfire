@@ -12,10 +12,7 @@ import {
   parseNightfireMediaLocator,
   resolveNightfireMediaLocator
 } from "../../src/media-locator";
-import {
-  configureNightfireStrategies,
-  getStrategy
-} from "../../src/strategies";
+import { configureNightfireStrategies, getStrategy } from "../../src/strategies";
 import type { NightfireStrategy } from "../../src/strategies";
 import { normaliseNightfireValue } from "../../src/utils";
 import {
@@ -61,8 +58,8 @@ describe("Nightfire Rust/TypeScript wire conformance v1", () => {
 
     expect(id.startsWith(expected.prefix)).toBe(true);
     expect(id.length).toBe(expected.length);
-    expect(id[expected.versionNibble.index]).toBe(expected.versionNibble.value);
-    expect(expected.variantNibble.allowed).toContain(id[expected.variantNibble.index]);
+    expect(id[expected.versionNibble.index]!).toBe(expected.versionNibble.value);
+    expect(expected.variantNibble.allowed).toContain(id[expected.variantNibble.index]!);
   });
 
   it("builds the real block-version registry from the shared contract", () => {
@@ -105,13 +102,10 @@ describe("Nightfire Rust/TypeScript wire conformance v1", () => {
     for (const testCase of fixture.validationCases) {
       const validated = validateNightfireValue(testCase.value);
       const accepted =
-        validated.blocks.length > 0 &&
-        validated.blocks.length === testCase.value.blocks.length;
+        validated.blocks.length > 0 && validated.blocks.length === testCase.value.blocks.length;
 
       expect(accepted).toBe(testCase.accepted);
-      expect(validated.blocks.map((block) => block.version)).toEqual(
-        testCase.resolvedVersions
-      );
+      expect(validated.blocks.map((block) => block.version)).toEqual(testCase.resolvedVersions);
     }
   });
 
@@ -136,7 +130,7 @@ describe("Nightfire Rust/TypeScript wire conformance v1", () => {
   it("rejects legacy v1 sibling block/hash envelopes", () => {
     expect(normaliseNightfireValue(fixture.rejectedV1, fixture.rejectedV1.schema)).toEqual({
       schema: fixture.rejectedV1.schema,
-      blocks: [],
+      blocks: []
     });
     expect(prepareNightfireForSave(fixture.rejectedV1 as never)).toBeNull();
   });

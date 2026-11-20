@@ -53,10 +53,7 @@ export function registerBlockEditor(
   blockTypeOptions.set(schema, type, { type, label });
 }
 
-export function unregisterBlockEditor(
-  schema: string | null,
-  type: string
-): boolean {
+export function unregisterBlockEditor(schema: string | null, type: string): boolean {
   blockTypeOptions.delete(schema, type);
   return blockEditors.delete(schema, type);
 }
@@ -66,9 +63,7 @@ export function clearBlockEditors(): void {
   blockTypeOptions.clear();
 }
 
-export function getSchemaDefinition(
-  schema: string
-): SchemaDefinition | null {
+export function getSchemaDefinition(schema: string): SchemaDefinition | null {
   return schemaDefs.get(schema);
 }
 
@@ -83,16 +78,11 @@ export function getBlockEditor(
  * The palette options for a schema. A schema's own entries come first and win
  * over a wildcard (`*`) entry for the same type.
  */
-export function getBlockTypeOptionsForSchema(
-  schema: string
-): BlockTypeOption[] {
+export function getBlockTypeOptionsForSchema(schema: string): Array<BlockTypeOption> {
   return blockTypeOptions.entriesForSchema(schema).map(({ value }) => value);
 }
 
-export function getBlockTypeLabel(
-  schema: string,
-  type: string
-): string | null {
+export function getBlockTypeLabel(schema: string, type: string): string | null {
   return blockTypeOptions.get(schema, type)?.label ?? null;
 }
 
@@ -103,10 +93,7 @@ export function getBlockTypeLabel(
  * When no checker is registered for a block type the default behaviour
  * is to treat any present block as non-empty.
  */
-export function registerBlockEmptyChecker(
-  type: string,
-  checker: BlockEmptyChecker
-): void {
+export function registerBlockEmptyChecker(type: string, checker: BlockEmptyChecker): void {
   blockEmptyCheckers.set(type, checker);
 }
 
@@ -124,12 +111,21 @@ export function clearBlockEmptyCheckers(): void {
  * has meaningful content. When no checker is registered the block is
  * assumed to be non-empty (conservative default).
  */
-export function isBlockContentEmpty(block: any): boolean {
-  if (!block || typeof block !== "object") return true;
-  const type = block.type as string | undefined;
-  if (!type) return true;
+export function isBlockContentEmpty(block: unknown): boolean {
+  if (!block || typeof block !== "object") {
+    return true;
+  }
+  const type = "type" in block ? block.type : undefined;
+  if (!type) {
+    return true;
+  }
+  if (typeof type !== "string") {
+    return false;
+  } // non-string type has no checker → assume non-empty
   const checker = blockEmptyCheckers.get(type);
-  if (!checker) return false; // no checker → assume non-empty
+  if (!checker) {
+    return false;
+  } // no checker → assume non-empty
   return checker(block);
 }
 

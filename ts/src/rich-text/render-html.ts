@@ -22,9 +22,7 @@ export function renderRichTextHtml(
   options: RenderRichTextHtmlOptions = {}
 ): string {
   const schema =
-    typeof options.schema === "string" && options.schema.length > 0
-      ? options.schema
-      : null;
+    typeof options.schema === "string" && options.schema.length > 0 ? options.schema : null;
   const html = renderRichTextDocumentHtml(value, { schema });
   return html ? sanitizeHtml(html) : "";
 }

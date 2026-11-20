@@ -3,7 +3,7 @@ import { fireEvent, render, screen } from "../render";
 import SlashCommandPalette from "../../src/SlashCommandPalette.svelte";
 import type { NightfireSlashCommand } from "../../src/editor";
 
-const commands: NightfireSlashCommand[] = [
+const commands: Array<NightfireSlashCommand> = [
   {
     id: "insert-heading",
     type: "heading",
@@ -34,7 +34,7 @@ describe("nightfire/SlashCommandPalette.svelte", () => {
       onSelect: selected
     });
 
-    const input = screen.getByLabelText("Filter commands") as HTMLInputElement;
+    const input = screen.getByLabelText<HTMLInputElement>("Filter commands");
     await fireEvent.input(input, { target: { value: "atta" } });
     expect(queryChanges).toHaveBeenCalledWith("atta");
 

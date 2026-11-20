@@ -1,25 +1,22 @@
-import {
-  coerceNightfireBlock,
-  type NightfireBlock,
-  type NightfireValue
-} from "./types";
-import {
-  isBlockContentEmpty,
-  type BlockTypeOption,
-  type SchemaDefinition
-} from "./editor-registry";
+import { coerceNightfireBlock } from "./types";
+import type { NightfireBlock, NightfireValue } from "./types";
+import { isBlockContentEmpty } from "./editor-registry";
+import type { BlockTypeOption, SchemaDefinition } from "./editor-registry";
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
 
 function asRecord(value: unknown): Record<string, unknown> | null {
   // v1 `{ block }` is not accepted. Dual-shape conversion is gone.
-  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+  if (!isRecord(value)) {
     return null;
   }
 
-  const record = value as Record<string, unknown>;
-  return Object.hasOwn(record, "block") ? null : record;
+  return Object.hasOwn(value, "block") ? null : value;
 }
 
-function readBlocks(record: Record<string, unknown>, defaultType: string): NightfireBlock[] {
+function readBlocks(record: Record<string, unknown>, defaultType: string): Array<NightfireBlock> {
   if (!Array.isArray(record.blocks)) {
     return [];
   }
@@ -38,7 +35,7 @@ function readBlocks(record: Record<string, unknown>, defaultType: string): Night
 export function normaliseNightfireValue(
   value: unknown,
   schema: string,
-  allowedBlockTypes?: string[] | null
+  allowedBlockTypes?: Array<string> | null
 ): NightfireValue {
   const defaultType = allowedBlockTypes?.[0] ?? "markdown";
   const record = asRecord(value);
@@ -46,9 +43,7 @@ export function normaliseNightfireValue(
   if (record) {
     // A blank schema is no schema: the caller's schema is the only home left.
     const recordSchema =
-      typeof record.schema === "string" && record.schema.trim().length > 0
-        ? record.schema
-        : schema;
+      typeof record.schema === "string" && record.schema.trim().length > 0 ? record.schema : schema;
 
     return {
       schema: recordSchema,
@@ -74,12 +69,11 @@ export function normaliseNightfireValue(
 
 export function normaliseNightfireBlock(
   block: unknown,
-  typeOptions: BlockTypeOption[],
+  typeOptions: Array<BlockTypeOption>,
   definition: SchemaDefinition
 ): NightfireBlock {
   const allowed = typeOptions.map((option) => option.type);
-  const defaultType =
-    definition.defaultType ?? typeOptions[0]?.type ?? "markdown";
+  const defaultType = definition.defaultType ?? typeOptions[0]?.type ?? "markdown";
   const normalized = coerceNightfireBlock(block, defaultType) ?? {
     type: defaultType,
     version: "initial",
@@ -116,10 +110,16 @@ export function isEmptyNightfire(
   value: NightfireValue | null | undefined,
   contentLevel: boolean = true
 ): boolean {
-  if (!value || typeof value !== "object") return true;
+  if (!value || typeof value !== "object") {
+    return true;
+  }
 
   const blocks = Array.isArray(value.blocks) ? value.blocks : [];
-  if (blocks.length === 0) return true;
-  if (!contentLevel) return false;
+  if (blocks.length === 0) {
+    return true;
+  }
+  if (!contentLevel) {
+    return false;
+  }
   return blocks.every((b) => isBlockContentEmpty(b));
 }

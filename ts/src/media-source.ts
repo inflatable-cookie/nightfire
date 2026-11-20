@@ -60,7 +60,10 @@ export interface MediaSource {
    * `null` when the user cancels. `filterKind` is a hint the picker may use
    * to show only that kind; a picker that cannot filter ignores it.
    */
-  pick(options: { multiple: boolean; filterKind?: MediaKind }): Promise<MediaReference[] | null>;
+  pick(options: {
+    multiple: boolean;
+    filterKind?: MediaKind;
+  }): Promise<Array<MediaReference> | null>;
   /**
    * Resolve a reference over metadata the consumer has already loaded.
    * Returns `null` for a reference the source does not know.

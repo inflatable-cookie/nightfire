@@ -13,10 +13,7 @@ export function registerBlockRenderer(
   registry.set(schema, type, component);
 }
 
-export function unregisterBlockRenderer(
-  schema: string | null,
-  type: string
-): boolean {
+export function unregisterBlockRenderer(schema: string | null, type: string): boolean {
   return registry.delete(schema, type);
 }
 

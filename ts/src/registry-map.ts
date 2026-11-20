@@ -7,7 +7,7 @@
 // Schema-scoped registries resolve `schema` before the `*` wildcard: an entry
 // registered for a schema always beats the same type registered for everything.
 
-export const WILDCARD_SCHEMA = "*";
+const WILDCARD_SCHEMA = "*";
 
 function schemaScope(schema: string | null | undefined): string {
   const scope = schema?.trim();

@@ -14,9 +14,9 @@
 
 import {
   getRichTextInlineNodeRenderer,
-  isAdmittedBuiltinRichTextNodeType,
-  type RichTextInlineNode
+  isAdmittedBuiltinRichTextNodeType
 } from "./inline-node-registry";
+import type { RichTextInlineNode } from "./inline-node-registry";
 
 const ADMITTED_HEADING_LEVELS = new Set([1, 2, 3, 4, 5, 6]);
 const ADMITTED_URL_PROTOCOLS = new Set(["http:", "https:", "mailto:"]);
@@ -26,7 +26,7 @@ const ADMITTED_DATA_IMAGE_URL = /^data:image\/(?:png|jpeg|gif|webp|avif)[;,]/i;
 // HTML's own limits: colspan is clamped to 1000 and rowspan to 65534 by the
 // specification, so a larger stored value cannot mean anything.
 const MAX_COLSPAN = 1000;
-const MAX_ROWSPAN = 65534;
+const MAX_ROWSPAN = 65_534;
 const REL_FOR_NEW_CONTEXT = ["noopener", "noreferrer"];
 
 type MarkJSON = {
@@ -37,8 +37,8 @@ type MarkJSON = {
 type NodeJSON = {
   type?: unknown;
   attrs?: Record<string, unknown>;
-  content?: unknown[];
-  marks?: MarkJSON[];
+  content?: Array<unknown>;
+  marks?: Array<MarkJSON>;
   text?: unknown;
 };
 
@@ -60,7 +60,9 @@ function urlProtocolOf(value: string): string {
 }
 
 function isAdmittedLinkHref(href: string): boolean {
-  if (href.startsWith("#")) return true;
+  if (href.startsWith("#")) {
+    return true;
+  }
   return ADMITTED_URL_PROTOCOLS.has(urlProtocolOf(href));
 }
 
@@ -73,10 +75,7 @@ function isAdmittedImageUrl(src: string): boolean {
 }
 
 function escapeHtml(value: string): string {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;");
+  return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 }
 
 function escapeAttr(value: string): string {
@@ -84,7 +83,9 @@ function escapeAttr(value: string): string {
 }
 
 function attr(name: string, value: unknown): string {
-  if (typeof value !== "string" || value.length === 0) return "";
+  if (typeof value !== "string" || value.length === 0) {
+    return "";
+  }
   return ` ${name}="${escapeAttr(value)}"`;
 }
 
@@ -95,14 +96,27 @@ function attrsOf(node: NodeJSON): Record<string, unknown> {
 }
 
 function childrenOf(node: NodeJSON, context: RenderContext): string {
-  if (!Array.isArray(node.content)) return "";
+  if (!Array.isArray(node.content)) {
+    return "";
+  }
   return node.content.map((child) => renderNode(child, context)).join("");
 }
 
+function isMarkJson(value: unknown): value is MarkJSON {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
 function applyMarks(marks: unknown, html: string): string {
-  if (html === "" || !Array.isArray(marks)) return html;
+  if (html === "" || !Array.isArray(marks)) {
+    return html;
+  }
+  const markList: Array<unknown> = marks;
   let wrapped = html;
-  for (const mark of marks) wrapped = wrapMark(mark as MarkJSON, wrapped);
+  for (const mark of markList) {
+    if (isMarkJson(mark)) {
+      wrapped = wrapMark(mark, wrapped);
+    }
+  }
   return wrapped;
 }
 
@@ -110,10 +124,7 @@ function applyMarks(marks: unknown, html: string): string {
 // string makes a formula silently disappear from a sentence. The fallback is
 // the escaped node type inside a stable hook, with the cause recorded, so a
 // consumer can read it and their stylesheet can target it.
-function inlineLeafFallback(
-  node: NodeJSON,
-  reason: "unregistered" | "failed"
-): string {
+function inlineLeafFallback(node: NodeJSON, reason: "unregistered" | "failed"): string {
   const type = typeof node.type === "string" ? node.type : "";
   return (
     `<span data-nightfire-inline-node="${escapeAttr(type)}"` +
@@ -129,8 +140,10 @@ function renderUnadmittedNode(node: NodeJSON, context: RenderContext): string {
   // An unknown container is not an inline leaf: keep its children, even an empty
   // list, rather than replacing it with a fallback label. Only a node with no
   // content array is a leaf.
-  if (!renderer) {
-    if (Array.isArray(node.content)) return children;
+  if (!renderer || context.schema === null) {
+    if (Array.isArray(node.content)) {
+      return children;
+    }
     return applyMarks(node.marks, inlineLeafFallback(node, "unregistered"));
   }
 
@@ -143,7 +156,7 @@ function renderUnadmittedNode(node: NodeJSON, context: RenderContext): string {
   let html: string;
   try {
     const output = renderer({
-      schema: context.schema as string,
+      schema: context.schema,
       node: inlineNode,
       childrenHtml: children,
       escapeText: escapeHtml,
@@ -160,10 +173,11 @@ function renderUnadmittedNode(node: NodeJSON, context: RenderContext): string {
 }
 
 function wrapMark(mark: MarkJSON, inner: string): string {
-  if (!mark || typeof mark.type !== "string") return inner;
-  const attrs = mark.attrs && typeof mark.attrs === "object" && !Array.isArray(mark.attrs)
-    ? mark.attrs
-    : {};
+  if (!mark || typeof mark.type !== "string") {
+    return inner;
+  }
+  const attrs =
+    mark.attrs && typeof mark.attrs === "object" && !Array.isArray(mark.attrs) ? mark.attrs : {};
   switch (mark.type) {
     case "bold":
       return `<strong>${inner}</strong>`;
@@ -175,7 +189,9 @@ function wrapMark(mark: MarkJSON, inner: string): string {
       return `<code>${inner}</code>`;
     case "link": {
       const href = typeof attrs.href === "string" ? attrs.href : "";
-      if (!href || !isAdmittedLinkHref(href)) return inner;
+      if (!href || !isAdmittedLinkHref(href)) {
+        return inner;
+      }
       const title = attr("title", attrs.title);
       const target = attr("target", attrs.target);
       const rel = linkRel(attrs.target, attrs.rel);
@@ -192,7 +208,9 @@ function linkRel(target: unknown, rel: unknown): string {
   const tokens = typeof rel === "string" ? rel.split(/\s+/).filter(Boolean) : [];
   if (target === "_blank") {
     for (const token of REL_FOR_NEW_CONTEXT) {
-      if (!tokens.includes(token)) tokens.push(token);
+      if (!tokens.includes(token)) {
+        tokens.push(token);
+      }
     }
   }
   return tokens.length > 0 ? attr("rel", tokens.join(" ")) : "";
@@ -208,12 +226,16 @@ function boundedSpan(value: unknown, max: number): number | null {
 }
 
 function renderText(node: NodeJSON): string {
-  if (typeof node.text !== "string") return "";
+  if (typeof node.text !== "string") {
+    return "";
+  }
   return applyMarks(node.marks, escapeHtml(node.text));
 }
 
 function headingTag(level: unknown): string | null {
-  if (typeof level !== "number" || !ADMITTED_HEADING_LEVELS.has(level)) return null;
+  if (typeof level !== "number" || !ADMITTED_HEADING_LEVELS.has(level)) {
+    return null;
+  }
   return `h${level}`;
 }
 
@@ -223,11 +245,15 @@ function renderTable(node: NodeJSON, context: RenderContext): string {
 
 function cellTag(kind: "th" | "td", node: NodeJSON, context: RenderContext): string {
   const attrs = attrsOf(node);
-  const parts: string[] = [];
+  const parts: Array<string> = [];
   const colspan = boundedSpan(attrs.colspan, MAX_COLSPAN);
-  if (colspan !== null) parts.push(` colspan="${colspan}"`);
+  if (colspan !== null) {
+    parts.push(` colspan="${colspan}"`);
+  }
   const rowspan = boundedSpan(attrs.rowspan, MAX_ROWSPAN);
-  if (rowspan !== null) parts.push(` rowspan="${rowspan}"`);
+  if (rowspan !== null) {
+    parts.push(` rowspan="${rowspan}"`);
+  }
   if (typeof attrs.align === "string" && attrs.align.length > 0) {
     parts.push(attr("align", attrs.align));
   }
@@ -235,9 +261,13 @@ function cellTag(kind: "th" | "td", node: NodeJSON, context: RenderContext): str
 }
 
 function renderNode(value: unknown, context: RenderContext): string {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return "";
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return "";
+  }
   const node = value as NodeJSON;
-  if (typeof node.type !== "string" || node.type.length === 0) return "";
+  if (typeof node.type !== "string" || node.type.length === 0) {
+    return "";
+  }
   if (!isAdmittedBuiltinRichTextNodeType(node.type)) {
     return renderUnadmittedNode(node, context);
   }
@@ -285,7 +315,9 @@ function renderNode(value: unknown, context: RenderContext): string {
     case "image": {
       const attrs = attrsOf(node);
       const src = typeof attrs.src === "string" ? attrs.src : "";
-      if (!src || !isAdmittedImageUrl(src)) return "";
+      if (!src || !isAdmittedImageUrl(src)) {
+        return "";
+      }
       const alt = typeof attrs.alt === "string" ? attrs.alt : "";
       const title = attr("title", attrs.title);
       return `<img src="${escapeAttr(src)}" alt="${escapeAttr(alt)}"${title}>`;
@@ -317,11 +349,13 @@ export function renderRichTextDocumentHtml(
   value: unknown,
   options: RenderRichTextDocumentOptions = {}
 ): string {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return "";
-  if ((value as NodeJSON).type !== "doc") return "";
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return "";
+  }
+  if ((value as NodeJSON).type !== "doc") {
+    return "";
+  }
   const schema =
-    typeof options.schema === "string" && options.schema.length > 0
-      ? options.schema
-      : null;
+    typeof options.schema === "string" && options.schema.length > 0 ? options.schema : null;
   return renderNode(value, { schema });
 }

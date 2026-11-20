@@ -1,8 +1,8 @@
 import { getSchemaDefinition } from "../editor-registry";
 
 export interface ResolvedNightfireSchemaDefinition {
-	mode: "single" | "multi";
-	defaultType: string;
+  mode: "single" | "multi";
+  defaultType: string;
 }
 
 /**
@@ -11,16 +11,16 @@ export interface ResolvedNightfireSchemaDefinition {
  * name is kept as given.
  */
 export function resolveSchemaDefinition(schemaId: string): ResolvedNightfireSchemaDefinition {
-	const definition = getSchemaDefinition(schemaId);
-	if (definition) {
-		return {
-			mode: definition.mode,
-			defaultType: definition.defaultType
-		};
-	}
+  const definition = getSchemaDefinition(schemaId);
+  if (definition) {
+    return {
+      mode: definition.mode,
+      defaultType: definition.defaultType
+    };
+  }
 
-	return {
-		mode: "single",
-		defaultType: "markdown"
-	};
+  return {
+    mode: "single",
+    defaultType: "markdown"
+  };
 }

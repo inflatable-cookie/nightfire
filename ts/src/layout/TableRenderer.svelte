@@ -24,12 +24,12 @@
   };
 
   // `section` is optional: a row without one groups with its neighbours.
-  type TableRow = { section?: string; cells: TableCell[] };
+  type TableRow = { section?: string; cells: Array<TableCell> };
 
   type TableBlock = {
     data?: {
       caption?: string | null;
-      rows?: TableRow[];
+      rows?: Array<TableRow>;
     };
   };
 
@@ -68,13 +68,13 @@
   function borderAttrs(borders?: CellBorders): Record<string, string> {
     const attrs: Record<string, string> = {};
     for (const edge of ["top", "bottom", "left", "right"] as const) {
-      if (borders?.[edge]) attrs[`data-border-${edge}`] = "true";
+      if (borders?.[edge]) {attrs[`data-border-${edge}`] = "true";}
     }
     return attrs;
   }
 
   function alignStyle(cell: TableCell): string | undefined {
-    const parts: string[] = [];
+    const parts: Array<string> = [];
     if (cell.horizontal_align && HORIZONTAL_ALIGNS.has(cell.horizontal_align)) {
       parts.push(`text-align:${cell.horizontal_align}`);
     }
@@ -93,12 +93,12 @@
   // body group, and a section whose cells are all marked as headers renders as a head
   // group so assistive technology reads the table's structure rather than a flat grid.
   const groups = $derived.by(() => {
-    const out: { section: string | undefined; rows: typeof rows; isHead: boolean }[] = [];
+    const out: Array<{ section: string | undefined; rows: typeof rows; isHead: boolean }> = [];
     for (const row of rows) {
       const isHead = row.cells.length > 0 && row.cells.every((cell) => cell.is_header === true);
       const last = out.at(-1);
-      if (last && last.section === row.section && last.isHead === isHead) last.rows.push(row);
-      else out.push({ section: row.section, rows: [row], isHead });
+      if (last && last.section === row.section && last.isHead === isHead) {last.rows.push(row);}
+      else {out.push({ section: row.section, rows: [row], isHead });}
     }
     return out;
   });

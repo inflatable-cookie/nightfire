@@ -4,14 +4,16 @@ import {
   fail,
   loadPublishedSchemas,
   payloadDocumentPath,
-  validatePayload,
+  validatePayload
 } from "../../scripts/schema-documents";
 
 function representativePayload(type: string): Record<string, unknown> {
   const entry = fixture.values.find((value) => value.name === "core-payloads");
   const block = entry?.value.blocks.find((candidate) => candidate.type === type);
   const data = asObject(block?.data);
-  if (!data) fail(`core-payloads is missing a ${type} representative`);
+  if (!data) {
+    fail(`core-payloads is missing a ${type} representative`);
+  }
   return data;
 }
 
@@ -19,9 +21,11 @@ function assertStoredKeysCovered(
   stored: unknown,
   representative: unknown,
   path: string,
-  skipSubtrees: ReadonlySet<string>,
+  skipSubtrees: ReadonlySet<string>
 ): void {
-  if (skipSubtrees.has(path)) return;
+  if (skipSubtrees.has(path)) {
+    return;
+  }
 
   const storedObject = asObject(stored);
   const representativeObject = asObject(representative);
@@ -37,7 +41,7 @@ function assertStoredKeysCovered(
         storedObject[key],
         representativeObject[key],
         `${path}.${key}`,
-        skipSubtrees,
+        skipSubtrees
       );
     }
     return;
@@ -45,11 +49,14 @@ function assertStoredKeysCovered(
 
   if (Array.isArray(stored)) {
     if (!Array.isArray(representative) || representative.length === 0) {
-      if (stored.length === 0) return;
+      if (stored.length === 0) {
+        return;
+      }
       fail(`${path}: editor stored an array; core-payloads representative does not`);
     }
+    const templates: Array<unknown> = representative;
     stored.forEach((entry, index) => {
-      const template = representative[Math.min(index, representative.length - 1)];
+      const template = templates[Math.min(index, templates.length - 1)];
       assertStoredKeysCovered(entry, template, `${path}[${index}]`, skipSubtrees);
     });
   }
@@ -60,7 +67,7 @@ export async function proveEditorPayload(type: string, data: unknown): Promise<v
   const errors = validatePayload(catalog, type, data);
   if (errors.length > 0) {
     fail(
-      `${type} editor payload failed ${payloadDocumentPath(type)}:\n${errors.join("\n")}\n${JSON.stringify(data, null, 2)}`,
+      `${type} editor payload failed ${payloadDocumentPath(type)}:\n${errors.join("\n")}\n${JSON.stringify(data, null, 2)}`
     );
   }
 

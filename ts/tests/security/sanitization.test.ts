@@ -25,8 +25,12 @@ describe(`markdown sanitization (${runtime})`, () => {
   for (const fixture of cases) {
     it(`sanitizes ${fixture.name}`, () => {
       const html = renderSafeMarkdownPreview(fixture.input);
-      for (const text of fixture.mustContain) expect(html).toContain(text);
-      for (const text of fixture.mustNotContain) expect(html.toLowerCase()).not.toContain(text.toLowerCase());
+      for (const text of fixture.mustContain) {
+        expect(html).toContain(text);
+      }
+      for (const text of fixture.mustNotContain) {
+        expect(html.toLowerCase()).not.toContain(text.toLowerCase());
+      }
       expect((globalThis as { __nightfirePwned?: boolean }).__nightfirePwned).toBeUndefined();
     });
   }
@@ -123,7 +127,7 @@ describe(`svg sanitization (${runtime})`, () => {
   it("removes script, event handlers and foreignObject", () => {
     const html = sanitizeSvgHtml(
       '<svg onload="globalThis.__nightfirePwned=true"><script>globalThis.__nightfirePwned=true</script>' +
-        "<foreignObject><div>x</div></foreignObject><circle r=\"1\"></circle></svg>"
+        '<foreignObject><div>x</div></foreignObject><circle r="1"></circle></svg>'
     );
     expect(html).toContain("<circle");
     expect(html).not.toContain("onload");

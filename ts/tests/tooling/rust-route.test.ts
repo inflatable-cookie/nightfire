@@ -77,7 +77,7 @@ type Sandbox = {
   log: string;
   tmp: string;
   env: (extra?: Record<string, string>) => Record<string, string>;
-  calls: () => Promise<string[]>;
+  calls: () => Promise<Array<string>>;
 };
 
 async function createSandbox(tools: { oxide?: boolean; cargo?: boolean } = {}): Promise<Sandbox> {
@@ -87,12 +87,14 @@ async function createSandbox(tools: { oxide?: boolean; cargo?: boolean } = {}): 
   for (const path of [bin, tmp, join(dir, "target"), join(dir, "scratch")]) {
     await mkdir(path, { recursive: true });
   }
-  const stubs: [string, string][] = [
+  const stubs: Array<[string, string]> = [
     ["oxide", OXIDE_STUB],
-    ["cargo", CARGO_STUB],
+    ["cargo", CARGO_STUB]
   ];
   for (const [name, body] of stubs) {
-    if (tools[name as "oxide" | "cargo"] === false) continue;
+    if (tools[name as "oxide" | "cargo"] === false) {
+      continue;
+    }
     const path = join(bin, name);
     await writeFile(path, body);
     await chmod(path, 0o755);
@@ -110,7 +112,7 @@ async function createSandbox(tools: { oxide?: boolean; cargo?: boolean } = {}): 
     TMPDIR: tmp,
     GITHUB_ACTIONS: "",
     EFFIGY_OXIDE_ESCAPE: "",
-    ...extra,
+    ...extra
   });
   const calls = async () =>
     (await readFile(log, "utf8")).split("\n").filter((line) => line.length > 0);
@@ -119,7 +121,7 @@ async function createSandbox(tools: { oxide?: boolean; cargo?: boolean } = {}): 
 
 async function withSandbox(
   tools: { oxide?: boolean; cargo?: boolean },
-  body: (sandbox: Sandbox) => Promise<void>,
+  body: (sandbox: Sandbox) => Promise<void>
 ): Promise<void> {
   const sandbox = await createSandbox(tools);
   try {
@@ -130,25 +132,25 @@ async function withSandbox(
 }
 
 function spawn(
-  command: string[],
+  command: Array<string>,
   env: Record<string, string | undefined>,
-  cwd?: string,
+  cwd?: string
 ): { code: number | null; stdout: string; stderr: string } {
   const child = Bun.spawnSync(command, {
     cwd,
     env,
     stdout: "pipe",
     stderr: "pipe",
-    timeout: 60_000,
+    timeout: 60_000
   });
   return {
     code: child.exitCode,
     stdout: child.stdout.toString(),
-    stderr: child.stderr.toString(),
+    stderr: child.stderr.toString()
   };
 }
 
-function route(args: string[], env: Record<string, string>) {
+function route(args: Array<string>, env: Record<string, string>) {
   return spawn(["/bin/sh", RUNNER, ...args], env);
 }
 
@@ -162,25 +164,31 @@ async function prepareWorkspace(directory: string): Promise<void> {
 describe("Rust route", () => {
   it("runs local Cargo commands through oxide and keeps their arguments", async () => {
     await withSandbox({}, async (sandbox) => {
-      const result = route(["run", "check", "--workspace", "--all-targets", "--locked"], sandbox.env());
+      const result = route(
+        ["run", "check", "--workspace", "--all-targets", "--locked"],
+        sandbox.env()
+      );
       expect(result.code).toBe(0);
       expect(await sandbox.calls()).toEqual([
         "oxide check --workspace --all-targets --locked",
-        "cargo check --workspace --all-targets --locked",
+        "cargo check --workspace --all-targets --locked"
       ]);
     });
   }, 30_000);
 
   it("uses Cargo when GITHUB_ACTIONS is true and preserves its exit status", async () => {
     await withSandbox({}, async (sandbox) => {
-      const ok = route(["run", "test", "--workspace", "--locked"], sandbox.env({ GITHUB_ACTIONS: "true" }));
+      const ok = route(
+        ["run", "test", "--workspace", "--locked"],
+        sandbox.env({ GITHUB_ACTIONS: "true" })
+      );
       expect(ok.code).toBe(0);
       expect(await sandbox.calls()).toEqual(["cargo test --workspace --locked"]);
 
       await writeFile(sandbox.log, "");
       const failed = route(
         ["run", "test", "--workspace", "--locked"],
-        sandbox.env({ GITHUB_ACTIONS: "true", STUB_CARGO_EXIT: "5" }),
+        sandbox.env({ GITHUB_ACTIONS: "true", STUB_CARGO_EXIT: "5" })
       );
       expect(failed.code).toBe(5);
       expect(await sandbox.calls()).toEqual(["cargo test --workspace --locked"]);
@@ -191,11 +199,11 @@ describe("Rust route", () => {
     await withSandbox({}, async (sandbox) => {
       const result = route(
         ["run", "clippy", "--workspace", "--all-targets", "--locked", "--", "-D", "warnings"],
-        sandbox.env({ EFFIGY_OXIDE_ESCAPE: "cargo" }),
+        sandbox.env({ EFFIGY_OXIDE_ESCAPE: "cargo" })
       );
       expect(result.code).toBe(0);
       expect(await sandbox.calls()).toEqual([
-        "cargo clippy --workspace --all-targets --locked -- -D warnings",
+        "cargo clippy --workspace --all-targets --locked -- -D warnings"
       ]);
     });
   }, 30_000);
@@ -225,7 +233,7 @@ describe("Rust route", () => {
     await withSandbox({}, async (sandbox) => {
       const result = route(
         ["run", "test", "--workspace", "--locked"],
-        sandbox.env({ STUB_OXIDE_EXIT: "101" }),
+        sandbox.env({ STUB_OXIDE_EXIT: "101" })
       );
       expect(result.code).toBe(101);
       expect(result.stderr).toContain("oxide: refusing to build in");
@@ -241,13 +249,13 @@ describe("Rust route", () => {
       const manifest = join(workspace, "Cargo.toml");
       const result = route(
         ["tool", manifest, "--", "cargo", "package", "-p", "nightfire", "--locked"],
-        sandbox.env(),
+        sandbox.env()
       );
       expect(result.code).toBe(0);
       expect(await sandbox.calls()).toEqual([
         `oxide exec --manifest-path ${manifest} -- cargo package -p nightfire --locked`,
         `prepared yes ${manifest}`,
-        "cargo package -p nightfire --locked",
+        "cargo package -p nightfire --locked"
       ]);
     });
   }, 30_000);
@@ -257,7 +265,7 @@ describe("Rust route", () => {
       const manifest = join(sandbox.dir, "workspace", "Cargo.toml");
       const result = route(
         ["tool", manifest, "--", "cargo", "run", "--quiet"],
-        sandbox.env({ GITHUB_ACTIONS: "true", STUB_CARGO_EXIT: "3" }),
+        sandbox.env({ GITHUB_ACTIONS: "true", STUB_CARGO_EXIT: "3" })
       );
       expect(result.code).toBe(3);
       expect(await sandbox.calls()).toEqual(["cargo run --quiet"]);
@@ -268,7 +276,9 @@ describe("Rust route", () => {
     await withSandbox({}, async (sandbox) => {
       expect(route(["mode"], sandbox.env()).stdout.trim()).toBe("oxide");
       expect(route(["mode"], sandbox.env({ GITHUB_ACTIONS: "true" })).stdout.trim()).toBe("cargo");
-      expect(route(["mode"], sandbox.env({ EFFIGY_OXIDE_ESCAPE: "cargo" })).stdout.trim()).toBe("cargo");
+      expect(route(["mode"], sandbox.env({ EFFIGY_OXIDE_ESCAPE: "cargo" })).stdout.trim()).toBe(
+        "cargo"
+      );
     });
   }, 30_000);
 });
@@ -294,22 +304,24 @@ describe("proof script routing", () => {
       const calls = await sandbox.calls();
       const rootManifest = join(root, "Cargo.toml");
       expect(calls).toContain(
-        `oxide exec --manifest-path ${rootManifest} -- cargo metadata --no-deps --format-version 1`,
+        `oxide exec --manifest-path ${rootManifest} -- cargo metadata --no-deps --format-version 1`
       );
       expect(calls).toContain(
-        `oxide exec --manifest-path ${rootManifest} -- cargo package -p nightfire --locked`,
+        `oxide exec --manifest-path ${rootManifest} -- cargo package -p nightfire --locked`
       );
       const unpackedExec = calls.find(
-        (line) => line.startsWith("oxide exec --manifest-path ") && line.includes("/unpacked/"),
+        (line) => line.startsWith("oxide exec --manifest-path ") && line.includes("/unpacked/")
       );
       expect(unpackedExec).toBeDefined();
-      expect(unpackedExec!.startsWith(`oxide exec --manifest-path ${sandbox.tmp}/nightfire-crate-`)).toBe(
-        true,
+      expect(
+        unpackedExec!.startsWith(`oxide exec --manifest-path ${sandbox.tmp}/nightfire-crate-`)
+      ).toBe(true);
+      expect(
+        unpackedExec!.endsWith(`/unpacked/nightfire-${VERSION}/Cargo.toml -- cargo test --locked`)
+      ).toBe(true);
+      const prepared = calls.filter(
+        (line) => line.startsWith("prepared ") && line.includes("/unpacked/")
       );
-      expect(unpackedExec!.endsWith(`/unpacked/nightfire-${VERSION}/Cargo.toml -- cargo test --locked`)).toBe(
-        true,
-      );
-      const prepared = calls.filter((line) => line.startsWith("prepared ") && line.includes("/unpacked/"));
       expect(prepared).toHaveLength(1);
       expect(prepared[0]!.startsWith("prepared yes ")).toBe(true);
       expect(prepared[0]!.endsWith(`/unpacked/nightfire-${VERSION}/Cargo.toml`)).toBe(true);
@@ -324,7 +336,7 @@ describe("proof script routing", () => {
       const result = spawn(
         [process.execPath, PACKAGE_PROOF],
         sandbox.env({ STUB_FIXTURE: '{"blocks":[1]}' }),
-        root,
+        root
       );
       expect(result.code).not.toBe(0);
       expect(result.stderr).toContain("packaged Cargo fixture differs from the root fixture");
@@ -336,7 +348,11 @@ describe("proof script routing", () => {
   it("keeps the package proof on Cargo in CI", async () => {
     await withSandbox({}, async (sandbox) => {
       const root = await createProofRoot(sandbox);
-      const result = spawn([process.execPath, PACKAGE_PROOF], sandbox.env({ GITHUB_ACTIONS: "true" }), root);
+      const result = spawn(
+        [process.execPath, PACKAGE_PROOF],
+        sandbox.env({ GITHUB_ACTIONS: "true" }),
+        root
+      );
       expect(result.code).toBe(0);
       const calls = await sandbox.calls();
       expect(calls.some((line) => line.startsWith("oxide"))).toBe(false);
@@ -356,7 +372,7 @@ describe("proof script routing", () => {
         ["git", "config", "user.email", "proof@example.com"],
         ["git", "config", "user.name", "Proof"],
         ["git", "commit", "-q", "--allow-empty", "-m", "proof"],
-        ["git", "remote", "add", "origin", "https://github.com/inflatable-cookie/nightfire.git"],
+        ["git", "remote", "add", "origin", "https://github.com/inflatable-cookie/nightfire.git"]
       ]) {
         const step = spawn(command, { ...process.env }, root);
         expect(step.code).toBe(0);
@@ -371,7 +387,9 @@ describe("proof script routing", () => {
       const calls = await sandbox.calls();
       const exec = calls.find((line) => line.startsWith("oxide exec --manifest-path "));
       expect(exec).toBeDefined();
-      expect(exec!.startsWith(`oxide exec --manifest-path ${sandbox.tmp}/nightfire-cargo-consumer-`)).toBe(true);
+      expect(
+        exec!.startsWith(`oxide exec --manifest-path ${sandbox.tmp}/nightfire-cargo-consumer-`)
+      ).toBe(true);
       expect(exec!.endsWith("/Cargo.toml -- cargo run --quiet")).toBe(true);
       expect(calls.filter((line) => line.startsWith("prepared yes "))).toHaveLength(1);
       expect(await readdir(sandbox.tmp)).toEqual([]);
@@ -387,7 +405,7 @@ describe("proof script routing", () => {
         ["git", "config", "user.email", "proof@example.com"],
         ["git", "config", "user.name", "Proof"],
         ["git", "commit", "-q", "--allow-empty", "-m", "proof"],
-        ["git", "remote", "add", "origin", "https://github.com/inflatable-cookie/nightfire.git"],
+        ["git", "remote", "add", "origin", "https://github.com/inflatable-cookie/nightfire.git"]
       ]) {
         const step = spawn(command, { ...process.env }, root);
         expect(step.code).toBe(0);
@@ -396,7 +414,7 @@ describe("proof script routing", () => {
       const result = spawn(
         [process.execPath, CONSUMER_PROOF, "cargo"],
         sandbox.env({ GITHUB_ACTIONS: "true" }),
-        root,
+        root
       );
       expect(result.code).toBe(0);
       const calls = await sandbox.calls();

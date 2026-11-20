@@ -7,7 +7,7 @@ import {
   CANDIDATE_SCHEMA,
   parseCandidateManifest,
   readNpmPublicationAuthority,
-  sha256File,
+  sha256File
 } from "../../scripts/npm-publication";
 import { cliValue } from "../../scripts/verify-npm-candidate";
 
@@ -17,12 +17,12 @@ import { cliValue } from "../../scripts/verify-npm-candidate";
 
 const REPO_ROOT = join(import.meta.dir, "../../..");
 
-function manifest(packages: unknown[] = []): string {
+function manifest(packages: Array<unknown> = []): string {
   return JSON.stringify({
     schema: CANDIDATE_SCHEMA,
     sourceCommit: "b2b13e9d1f365fbf1d83f25c9eb6fefbd541e48a",
     version: "0.6.0",
-    packages,
+    packages
   });
 }
 
@@ -43,7 +43,7 @@ const PACKAGE = {
   path: ".",
   tarball: "inflatable-cookie-nightfire-0.6.0.tgz",
   version: "0.6.0",
-  sha256: "0".repeat(64),
+  sha256: "0".repeat(64)
 };
 
 describe("tooling/npm-publication", () => {
@@ -53,7 +53,7 @@ describe("tooling/npm-publication", () => {
       const path = join(scratch, "probe.txt");
       writeFileSync(path, "nightfire\n");
       expect(sha256File(path)).toBe(
-        "0b712120cf05083e1f1df3fa5f1d1411df8253d5159fe7cb4d77ef362be9e0e8",
+        "0b712120cf05083e1f1df3fa5f1d1411df8253d5159fe7cb4d77ef362be9e0e8"
       );
     } finally {
       rmSync(scratch, { recursive: true, force: true });
@@ -65,14 +65,17 @@ describe("tooling/npm-publication", () => {
       schema: CANDIDATE_SCHEMA,
       sourceCommit: "b2b13e9d1f365fbf1d83f25c9eb6fefbd541e48a",
       version: "0.6.0",
-      packages: [PACKAGE],
+      packages: [PACKAGE]
     });
   });
 
   it("refuses a manifest that is not the candidate identity document", () => {
     expect(() => parseCandidateManifest("{", "candidate.json")).toThrow(/is not valid JSON/);
     expect(() =>
-      parseCandidateManifest(JSON.stringify({ schema: "other", packages: [PACKAGE] }), "candidate.json")
+      parseCandidateManifest(
+        JSON.stringify({ schema: "other", packages: [PACKAGE] }),
+        "candidate.json"
+      )
     ).toThrow(/declares schema other/);
     expect(() => parseCandidateManifest(manifest(), "candidate.json")).toThrow(
       /must list at least one package/
@@ -104,17 +107,20 @@ describe("tooling/npm-publication", () => {
   });
 
   it("reads the npm publication authority from the release manifest", () => {
-    withReleaseManifest(JSON.stringify({
-      npmPublication: {
-        candidateManifestName: "candidate.json",
-        packages: [{ name: "@inflatable-cookie/nightfire", path: "." }],
-      },
-    }), (root) => {
-      expect(readNpmPublicationAuthority(root)).toEqual({
-        candidateManifestName: "candidate.json",
-        packages: [{ name: "@inflatable-cookie/nightfire", path: "." }],
-      });
-    });
+    withReleaseManifest(
+      JSON.stringify({
+        npmPublication: {
+          candidateManifestName: "candidate.json",
+          packages: [{ name: "@inflatable-cookie/nightfire", path: "." }]
+        }
+      }),
+      (root) => {
+        expect(readNpmPublicationAuthority(root)).toEqual({
+          candidateManifestName: "candidate.json",
+          packages: [{ name: "@inflatable-cookie/nightfire", path: "." }]
+        });
+      }
+    );
   });
 
   it("refuses an npmPublication authority that is null, an array or absent", () => {
@@ -122,11 +128,11 @@ describe("tooling/npm-publication", () => {
       '{"npmPublication": null}',
       '{"npmPublication": []}',
       '{"npmPublication": "candidate.json"}',
-      "{}",
+      "{}"
     ]) {
       withReleaseManifest(body, (root) => {
         expect(() => readNpmPublicationAuthority(root)).toThrow(
-          /must declare npmPublication authority/,
+          /must declare npmPublication authority/
         );
       });
     }
@@ -134,12 +140,8 @@ describe("tooling/npm-publication", () => {
 
   it("fails the verify CLI when the tag-version flag carries no value", () => {
     const result = Bun.spawnSync(
-      [
-        process.execPath,
-        join(REPO_ROOT, "ts/scripts/verify-npm-candidate.ts"),
-        "--tag-version",
-      ],
-      { cwd: REPO_ROOT, stdout: "pipe", stderr: "pipe" },
+      [process.execPath, join(REPO_ROOT, "ts/scripts/verify-npm-candidate.ts"), "--tag-version"],
+      { cwd: REPO_ROOT, stdout: "pipe", stderr: "pipe" }
     );
     expect(result.exitCode).toBe(1);
     expect(result.stderr.toString()).toContain("--tag-version requires a value");

@@ -8,7 +8,7 @@ const TableRenderer = getBlockRenderer(undefined, "table") as any;
 
 const cell = (markdown: string, extra: Record<string, unknown> = {}) => ({ markdown, ...extra });
 
-function renderTable(rows: unknown[], caption?: string) {
+function renderTable(rows: Array<unknown>, caption?: string) {
   const view = render(TableRenderer, { block: { data: { rows, caption } } });
   return view.container;
 }
@@ -19,7 +19,7 @@ describe("nightfire/table renderer", () => {
     const container = renderTable([
       { cells: [cell("first")] },
       { cells: [cell("heading", { is_header: true })] },
-      { cells: [cell("second")] },
+      { cells: [cell("second")] }
     ]);
     expect(container.querySelectorAll("tbody")).toHaveLength(2);
     expect(container.querySelectorAll("thead")).toHaveLength(1);
@@ -33,11 +33,11 @@ describe("nightfire/table renderer", () => {
         cells: [
           cell("hostile", {
             horizontal_align: "left;background:red",
-            vertical_align: "top;color:red",
+            vertical_align: "top;color:red"
           }),
-          cell("aligned", { horizontal_align: "center", vertical_align: "middle" }),
-        ],
-      },
+          cell("aligned", { horizontal_align: "center", vertical_align: "middle" })
+        ]
+      }
     ]);
     const [hostile, aligned] = Array.from(container.querySelectorAll("td"));
     expect(hostile!.getAttribute("style")).toBeNull();
@@ -48,7 +48,7 @@ describe("nightfire/table renderer", () => {
 
   it("renders a header cell inside a body row as a th", () => {
     const container = renderTable([
-      { section: "body", cells: [cell("Row label", { is_header: true }), cell("5")] },
+      { section: "body", cells: [cell("Row label", { is_header: true }), cell("5")] }
     ]);
     const tbody = container.querySelector("tbody");
     expect(tbody).toBeTruthy();
@@ -61,7 +61,7 @@ describe("nightfire/table renderer", () => {
     const container = renderTable([
       { section: "x" },
       null,
-      { section: "y", cells: [cell("kept")] },
+      { section: "y", cells: [cell("kept")] }
     ]);
     const cells = container.querySelectorAll("td");
     expect(cells).toHaveLength(1);
@@ -74,9 +74,9 @@ describe("nightfire/table renderer", () => {
         section: "body",
         cells: [
           cell("a", { colspan: Number.NaN, rowspan: Number.POSITIVE_INFINITY }),
-          cell("b", { colspan: 2, rowspan: 3 }),
-        ],
-      },
+          cell("b", { colspan: 2, rowspan: 3 })
+        ]
+      }
     ]);
     const [first, second] = Array.from(container.querySelectorAll("td"));
     expect(first!.hasAttribute("colspan")).toBe(false);
@@ -89,8 +89,8 @@ describe("nightfire/table renderer", () => {
     const container = renderTable([
       {
         section: "body",
-        cells: [cell("**bold** <img src=x onerror=\"globalThis.__pwned=true\">")],
-      },
+        cells: [cell('**bold** <img src=x onerror="globalThis.__pwned=true">')]
+      }
     ]);
     const td = container.querySelector("td")!;
     expect(td.querySelector("strong")?.textContent).toBe("bold");

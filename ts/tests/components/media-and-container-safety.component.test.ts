@@ -4,12 +4,8 @@ import { render } from "../render";
 import "../../src/render-registrations";
 import NightfireRenderer from "../../src/NightfireRenderer.svelte";
 import { getBlockRenderer } from "../../src/render-registry";
-import {
-  registerMediaSource,
-  unregisterMediaSource,
-  type MediaSource,
-  type ResolvedMedia,
-} from "../../src/media-source";
+import { registerMediaSource, unregisterMediaSource } from "../../src/media-source";
+import type { MediaSource, ResolvedMedia } from "../../src/media-source";
 
 const ImageRenderer = getBlockRenderer(undefined, "image") as any;
 const DownloadCardRenderer = getBlockRenderer(undefined, "download_card") as any;
@@ -18,7 +14,7 @@ const ItemListRenderer = getBlockRenderer(undefined, "item_list") as any;
 function sourceResolving(resolve: (media_id: string) => ResolvedMedia | null): MediaSource {
   return {
     pick: async () => null,
-    resolve: ({ media_id }) => resolve(media_id),
+    resolve: ({ media_id }) => resolve(media_id)
   };
 }
 
@@ -27,14 +23,14 @@ function throwingSource(): MediaSource {
     pick: async () => null,
     resolve: () => {
       throw new Error("library unavailable");
-    },
+    }
   };
 }
 
 const imageBlock = {
   type: "image",
   version: "initial",
-  data: { media_id: "img-1", alt: "A hero", caption: "Seen from the ridge" },
+  data: { media_id: "img-1", alt: "A hero", caption: "Seen from the ridge" }
 };
 
 const downloadBlock = {
@@ -42,8 +38,8 @@ const downloadBlock = {
   version: "initial",
   data: {
     description: "Read before the walk",
-    files: [{ media_id: "m-1", title: "Trail map", description: "Printable" }],
-  },
+    files: [{ media_id: "m-1", title: "Trail map", description: "Printable" }]
+  }
 };
 
 afterEach(() => {
@@ -64,7 +60,9 @@ describe("nightfire/media resolution safety", () => {
     registerMediaSource(sourceResolving(() => ({ url: "", filename: "hero.jpg" })));
     const view = render(ImageRenderer, { block: imageBlock });
     expect(
-      view.container.querySelector('[data-nightfire-block="image"]')!.getAttribute("data-media-state")
+      view.container
+        .querySelector('[data-nightfire-block="image"]')!
+        .getAttribute("data-media-state")
     ).toBe("inert");
     expect(view.container.querySelector("img")).toBeNull();
   });
@@ -93,7 +91,7 @@ describe("nightfire/media resolution safety", () => {
   it.each([
     ["javascript:", "javascript:globalThis.__pwned=true"],
     ["data:", "data:text/html;base64,PHNjcmlwdD4="],
-    ["vbscript:", "vbscript:msgbox(1)"],
+    ["vbscript:", "vbscript:msgbox(1)"]
   ])("refuses a download href with a %s scheme and keeps the row inert", (_label, url) => {
     registerMediaSource(sourceResolving(() => ({ url, filename: "trail.pdf" })));
     const view = render(DownloadCardRenderer, { block: downloadBlock });
@@ -104,7 +102,11 @@ describe("nightfire/media resolution safety", () => {
   });
 
   it("admits a web, blob or relative download href", () => {
-    for (const url of ["https://files.example/map.pdf", "blob:https://app.example/1", "/files/map.pdf"]) {
+    for (const url of [
+      "https://files.example/map.pdf",
+      "blob:https://app.example/1",
+      "/files/map.pdf"
+    ]) {
       registerMediaSource(sourceResolving(() => ({ url, filename: "map.pdf" })));
       const view = render(DownloadCardRenderer, { block: downloadBlock });
       expect(view.container.querySelector("a")!.getAttribute("href")).toBe(url);
@@ -117,14 +119,14 @@ describe("nightfire/container renderers", () => {
     const view = render(ItemListRenderer, {
       block: {
         data: {
-          items: [{ title: "Step one", body: { type: "markdown", data: { text: "**Mix** well" } } }],
-        },
+          items: [{ title: "Step one", body: { type: "markdown", data: { text: "**Mix** well" } } }]
+        }
       },
-      schema: "consumer.test",
+      schema: "consumer.test"
     });
-    expect(view.container.querySelector('[data-nightfire-block="markdown"] strong')?.textContent).toBe(
-      "Mix"
-    );
+    expect(
+      view.container.querySelector('[data-nightfire-block="markdown"] strong')?.textContent
+    ).toBe("Mix");
   });
 
   it("renders every block when blocks carry no id", () => {
@@ -132,9 +134,9 @@ describe("nightfire/container renderers", () => {
       value: {
         blocks: [
           { type: "markdown", data: { text: "first" } },
-          { type: "markdown", data: { text: "second" } },
-        ],
-      },
+          { type: "markdown", data: { text: "second" } }
+        ]
+      }
     });
     const markdown = view.container.querySelectorAll('[data-nightfire-block="markdown"]');
     expect(markdown).toHaveLength(2);

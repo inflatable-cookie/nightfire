@@ -31,7 +31,7 @@
      * provided by the caller (typically the field-level Nightfire editor).
      */
     definition: SchemaDefinition;
-    typeOptions: BlockTypeOption[];
+    typeOptions: Array<BlockTypeOption>;
     onContextChange?: ((context: MarkdownEditorContext) => void) | null;
   }
 

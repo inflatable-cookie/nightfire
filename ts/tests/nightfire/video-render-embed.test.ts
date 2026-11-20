@@ -7,7 +7,7 @@ describe("nightfire/video renderEmbed", () => {
       renderEmbed({
         provider: "generic",
         id: "x",
-        originalEmbed: '<iframe src="https://example.com/e"></iframe>',
+        originalEmbed: '<iframe src="https://example.com/e"></iframe>'
       })
     ).toBe('<iframe src="https://example.com/e"></iframe>');
   });
@@ -27,7 +27,7 @@ describe("nightfire/video renderEmbed", () => {
   it("percent-encodes the id so it cannot end the src or add an attribute", () => {
     const html = renderEmbed({
       provider: "youtube",
-      id: 'x" onload="alert(1)',
+      id: 'x" onload="alert(1)'
     });
     expect(html).toBe(
       '<iframe src="https://www.youtube.com/embed/x%22%20onload%3D%22alert(1)" loading="lazy" allowfullscreen></iframe>'
@@ -42,9 +42,7 @@ describe("nightfire/video renderEmbed", () => {
     expect(renderEmbed({ provider: "audioboom", id: "9 9" })).toContain(
       "https://embeds.audioboom.com/posts/9%209/embed/v5"
     );
-    expect(renderEmbed({ provider: "youtube", id: "dQw4w9WgXcQ" })).toContain(
-      "/embed/dQw4w9WgXcQ"
-    );
+    expect(renderEmbed({ provider: "youtube", id: "dQw4w9WgXcQ" })).toContain("/embed/dQw4w9WgXcQ");
   });
 
   it("returns null for an unknown provider without pasted markup", () => {

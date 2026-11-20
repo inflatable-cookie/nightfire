@@ -14,7 +14,7 @@
   type ItemListBlock = RecordValue & {
     type?: string;
     version?: string;
-    data?: RecordValue & { title?: unknown; items?: unknown[] };
+    data?: RecordValue & { title?: unknown; items?: Array<unknown> };
   };
 
   interface Props {
@@ -29,7 +29,7 @@
   let confirmation = $state<number | null>(null);
 
   const editorSchema = $derived(typeof value?.schema === "string" ? value.schema : "");
-  const editorTypeOptions = $derived<BlockTypeOption[]>(
+  const editorTypeOptions = $derived<Array<BlockTypeOption>>(
     getBlockTypeOptionsForSchema(editorSchema).map((option) => ({
       type: option.type,
       label: option.label,
@@ -40,12 +40,12 @@
     mode: "multi",
     defaultType: editorTypeOptions[0]?.type ?? "markdown",
   });
-  const groupedOptions: GroupedOptions[] | null = null;
+  const groupedOptions: Array<GroupedOptions> | null = null;
 
   const items = $derived(readItems(block));
 
-  function readItems(source: ItemListBlock): Item[] {
-    return Array.isArray(source?.data?.items) ? (source.data.items as Item[]) : [];
+  function readItems(source: ItemListBlock): Array<Item> {
+    return Array.isArray(source?.data?.items) ? (source.data.items as Array<Item>) : [];
   }
 
   function readData(source: ItemListBlock): RecordValue {
@@ -54,7 +54,7 @@
       : {};
   }
 
-  function itemBlocks(item: Item): ChildBlock[] {
+  function itemBlocks(item: Item): Array<ChildBlock> {
     if (Array.isArray(item?.body)) {
       return item.body.filter(isChildBlock);
     }
@@ -80,7 +80,7 @@
     });
   }
 
-  function updateItems(nextItems: Item[]): void {
+  function updateItems(nextItems: Array<Item>): void {
     confirmation = null;
     emitData({ ...readData(block), items: nextItems });
   }
@@ -89,19 +89,19 @@
     // `items` is always written: an empty block has none yet, and the saved
     // payload must still carry the list the schema requires.
     const data: RecordValue = { ...readData(block), items };
-    if (title.trim().length > 0) data.title = title;
-    else delete data.title;
+    if (title.trim().length > 0) {data.title = title;}
+    else {delete data.title;}
     emitData(data);
   }
 
   function setItemTitle(index: number, title: string): void {
     const nextItems = items.slice();
     const item = nextItems[index];
-    if (!item) return;
+    if (!item) {return;}
 
     const nextItem = { ...item };
-    if (title.trim().length > 0) nextItem.title = title;
-    else delete nextItem.title;
+    if (title.trim().length > 0) {nextItem.title = title;}
+    else {delete nextItem.title;}
     nextItems[index] = nextItem;
     updateItems(nextItems);
   }
@@ -111,59 +111,63 @@
   }
 
   function requestRemoveItem(index: number): void {
-    if (itemHasContent(items[index])) confirmation = index;
-    else removeItem(index);
+    if (itemHasContent(items[index])) {confirmation = index;}
+    else {removeItem(index);}
   }
 
   function itemHasContent(item: Item | undefined): boolean {
-    if (!item) return false;
-    if (typeof item.title === "string" && item.title.trim().length > 0) return true;
+    if (!item) {return false;}
+    if (typeof item.title === "string" && item.title.trim().length > 0) {return true;}
     return itemBlocks(item).some((child) => !isBlockContentEmpty(child));
   }
 
   function removeItem(index: number): void {
     confirmation = null;
-    if (index < 0 || index >= items.length) return;
+    if (index < 0 || index >= items.length) {return;}
     updateItems(items.filter((_item, itemIndex) => itemIndex !== index));
   }
 
   function moveItem(from: number, to: number): void {
-    if (from < 0 || to < 0 || from >= items.length || to >= items.length) return;
+    if (from < 0 || to < 0 || from >= items.length || to >= items.length) {return;}
     const nextItems = items.slice();
     const [moved] = nextItems.splice(from, 1);
-    if (!moved) return;
+    if (!moved) {return;}
     nextItems.splice(to, 0, moved);
     updateItems(nextItems);
   }
 
-  function setItemBlocks(index: number, blocks: ChildBlock[]): void {
+  function setItemBlocks(index: number, blocks: Array<ChildBlock>): void {
     const nextItems = items.slice();
     const item = nextItems[index];
-    if (!item) return;
+    if (!item) {return;}
     nextItems[index] = { ...item, body: blocks };
     updateItems(nextItems);
   }
 
   function addChildBlock(itemIndex: number): void {
     const item = items[itemIndex];
-    if (!item) return;
+    if (!item) {return;}
     const nextBlock = createDefaultBlock(effectiveDef.defaultType) as ChildBlock;
     setItemBlocks(itemIndex, [...itemBlocks(item), nextBlock]);
   }
 
   function changeChildType(itemIndex: number, blockIndex: number, nextType: string): void {
-    const children = itemBlocks(items[itemIndex]);
+    const item = items[itemIndex];
+    if (!item) {return;}
+    const children = itemBlocks(item);
     const current = children[blockIndex];
-    if (!current) return;
+    if (!current) {return;}
     const nextChildren = children.slice();
     nextChildren[blockIndex] = changeBlockType(current, nextType) as ChildBlock;
     setItemBlocks(itemIndex, nextChildren);
   }
 
   function changeChildBlock(itemIndex: number, blockIndex: number, nextBlock: ChildBlock): void {
-    const children = itemBlocks(items[itemIndex]);
+    const item = items[itemIndex];
+    if (!item) {return;}
+    const children = itemBlocks(item);
     const current = children[blockIndex];
-    if (!current) return;
+    if (!current) {return;}
 
     const nextChildren = children.slice();
     nextChildren[blockIndex] =
@@ -174,18 +178,22 @@
   }
 
   function removeChildBlock(itemIndex: number, blockIndex: number): void {
+    const item = items[itemIndex];
+    if (!item) {return;}
     setItemBlocks(
       itemIndex,
-      itemBlocks(items[itemIndex]).filter((_child, childIndex) => childIndex !== blockIndex),
+      itemBlocks(item).filter((_child, childIndex) => childIndex !== blockIndex),
     );
   }
 
   function moveChildBlock(itemIndex: number, from: number, to: number): void {
-    const children = itemBlocks(items[itemIndex]);
-    if (from < 0 || to < 0 || from >= children.length || to >= children.length) return;
+    const item = items[itemIndex];
+    if (!item) {return;}
+    const children = itemBlocks(item);
+    if (from < 0 || to < 0 || from >= children.length || to >= children.length) {return;}
     const nextChildren = children.slice();
     const [moved] = nextChildren.splice(from, 1);
-    if (!moved) return;
+    if (!moved) {return;}
     nextChildren.splice(to, 0, moved);
     setItemBlocks(itemIndex, nextChildren);
   }

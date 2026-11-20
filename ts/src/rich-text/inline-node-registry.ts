@@ -22,7 +22,7 @@ import { ADMITTED_BUILTIN_NODE_TYPES } from "./builtin-node-types";
 export type RichTextInlineNode = {
   type: string;
   attrs: Readonly<Record<string, unknown>>;
-  content: readonly unknown[];
+  content: ReadonlyArray<unknown>;
 };
 
 export interface RichTextInlineNodeContext {
@@ -42,9 +42,7 @@ export interface RichTextInlineNodeContext {
 }
 
 /** Return HTML for the node. The document sanitizer runs after composition. */
-export type RichTextInlineNodeRenderer = (
-  context: RichTextInlineNodeContext
-) => string;
+export type RichTextInlineNodeRenderer = (context: RichTextInlineNodeContext) => string;
 
 // Two levels, schema then type, so lookup never builds a composite string key
 // that a schema or type containing the separator could collide with.
@@ -83,9 +81,7 @@ export function registerRichTextInlineNodeRenderer(
     throw new TypeError("rich-text inline node renderer must be a function");
   }
   if (isAdmittedBuiltinRichTextNodeType(nodeType)) {
-    throw new TypeError(
-      `rich-text node type ${nodeType} is built in and cannot be overridden`
-    );
+    throw new TypeError(`rich-text node type ${nodeType} is built in and cannot be overridden`);
   }
   let byType = renderers.get(scope);
   if (!byType) {
@@ -99,16 +95,19 @@ export function registerRichTextInlineNodeRenderer(
  * Remove one schema-scoped registration. Returns false when none was
  * registered, so a caller can tell cleanup from a typo.
  */
-export function unregisterRichTextInlineNodeRenderer(
-  schema: string,
-  type: string
-): boolean {
-  if (typeof schema !== "string" || typeof type !== "string") return false;
+export function unregisterRichTextInlineNodeRenderer(schema: string, type: string): boolean {
+  if (typeof schema !== "string" || typeof type !== "string") {
+    return false;
+  }
   const scope = schema.trim();
   const byType = renderers.get(scope);
-  if (!byType) return false;
+  if (!byType) {
+    return false;
+  }
   const removed = byType.delete(type.trim());
-  if (byType.size === 0) renderers.delete(scope);
+  if (byType.size === 0) {
+    renderers.delete(scope);
+  }
   return removed;
 }
 
@@ -128,6 +127,8 @@ export function getRichTextInlineNodeRenderer(
   schema: string | null | undefined,
   type: string | undefined
 ): RichTextInlineNodeRenderer | null {
-  if (!schema || !type) return null;
+  if (!schema || !type) {
+    return null;
+  }
   return renderers.get(schema.trim())?.get(type.trim()) ?? null;
 }

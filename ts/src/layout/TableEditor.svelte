@@ -4,18 +4,13 @@
   import { Button, Select, TextInput } from "@inflatable-cookie/poodle-svelte";
   import { renderSafeMarkdownPreview } from "../markup/markdown-preview";
 
-  import {
-    emptyCell, entryAt, entriesForSelection, isHeaderRow, layoutRows,
-    lineHasContent, mergeCells, mergeHasDiscardedContent, normalizedRows as normalize,
-    insertRow as insertModelRow, insertColumn as insertModelColumn,
-    removeLine, splitCell as splitModelCell, toggleHeaderRow as toggleModelHeaderRow,
-    type Edge, type GridEntry, type TableCell, type TableRow,
-  } from "./table-model";
+  import { emptyCell, entryAt, entriesForSelection, isHeaderRow, layoutRows, lineHasContent, mergeCells, mergeHasDiscardedContent, normalizedRows as normalize, insertRow as insertModelRow, insertColumn as insertModelColumn, removeLine, splitCell as splitModelCell, toggleHeaderRow as toggleModelHeaderRow } from './table-model';
+import type { Edge, GridEntry, TableCell, TableRow } from './table-model';
 
   type TableBlock = Record<string, unknown> & {
     type?: string;
     version?: string;
-    data?: Record<string, unknown> & { caption?: string | null; rows?: TableRow[] };
+    data?: Record<string, unknown> & { caption?: string | null; rows?: Array<TableRow> };
   };
 
   interface Props {
@@ -49,14 +44,14 @@
     { value: "bottom", label: "Bottom" },
   ];
 
-  function startingRows(): TableRow[] {
+  function startingRows(): Array<TableRow> {
     return [
       { cells: [emptyCell(true), emptyCell(true)] },
       { cells: [emptyCell(), emptyCell()] },
     ];
   }
 
-  function sourceRows(): TableRow[] {
+  function sourceRows(): Array<TableRow> {
     return Array.isArray(block?.data?.rows) && block.data.rows.length > 0
       ? block.data.rows
       : startingRows();
@@ -76,12 +71,12 @@
     focusedEntry !== undefined && (focusedEntry.colspan > 1 || focusedEntry.rowspan > 1),
   );
 
-  function normalizedRows(): TableRow[] {
+  function normalizedRows(): Array<TableRow> {
     return normalize(rows);
   }
 
   function emit(
-    nextRows: TableRow[],
+    nextRows: Array<TableRow>,
     nextData: Record<string, unknown> = { ...(block?.data ?? {}) },
   ): void {
     confirmation = null;
@@ -103,9 +98,9 @@
   ): void {
     const nextRows = normalizedRows();
     const entry = entryAt(layoutRows(nextRows), rowIndex, columnIndex);
-    if (!entry) return;
+    if (!entry) {return;}
     const row = nextRows[entry.row];
-    if (!row || !Array.isArray(row.cells)) return;
+    if (!row || !Array.isArray(row.cells)) {return;}
     row.cells[entry.cellIndex] = update({ ...row.cells[entry.cellIndex] });
     emit(nextRows);
   }
@@ -140,9 +135,9 @@
   }
 
   function requestMerge(): void {
-    if (!canMerge || !mergeEntries) return;
-    if (mergeHasDiscardedContent(mergeEntries, selection)) confirmation = { kind: "merge" };
-    else mergeSelection();
+    if (!canMerge || !mergeEntries) {return;}
+    if (mergeHasDiscardedContent(mergeEntries, selection)) {confirmation = { kind: "merge" };}
+    else {mergeSelection();}
   }
 
   function mergeSelection(): void {
@@ -158,7 +153,7 @@
 
   function splitCell(): void {
     const entry = focusedEntry;
-    if (!entry) return;
+    if (!entry) {return;}
     const nextRows = splitModelCell(rows, activeRow, activeColumn);
     anchorRow = focusRow = entry.row;
     anchorColumn = focusColumn = entry.column;
@@ -168,8 +163,8 @@
 
   function setCaption(caption: string): void {
     const nextData = { ...(block?.data ?? {}) };
-    if (caption.length > 0) nextData.caption = caption;
-    else delete nextData.caption;
+    if (caption.length > 0) {nextData.caption = caption;}
+    else {delete nextData.caption;}
     emit(normalizedRows(), nextData);
   }
 
@@ -179,8 +174,8 @@
 
   function setAlignment(field: "horizontal_align" | "vertical_align", value: string): void {
     updateCell(activeRow, activeColumn, (cell) => {
-      if (value.length > 0) cell[field] = value;
-      else delete cell[field];
+      if (value.length > 0) {cell[field] = value;}
+      else {delete cell[field];}
       return cell;
     });
   }
@@ -188,10 +183,10 @@
   function toggleBorder(edge: Edge): void {
     updateCell(activeRow, activeColumn, (cell) => {
       const borders = { ...(cell.borders ?? {}) };
-      if (borders[edge]) delete borders[edge];
-      else borders[edge] = true;
-      if (Object.keys(borders).length > 0) cell.borders = borders;
-      else delete cell.borders;
+      if (borders[edge]) {delete borders[edge];}
+      else {borders[edge] = true;}
+      if (Object.keys(borders).length > 0) {cell.borders = borders;}
+      else {delete cell.borders;}
       return cell;
     });
   }
@@ -207,7 +202,7 @@
     emit(toggleModelHeaderRow(rows, activeRow));
   }
 
-  function selectAfterChange(nextRows: TableRow[], row: number, column: number): void {
+  function selectAfterChange(nextRows: Array<TableRow>, row: number, column: number): void {
     const entry = entryAt(layoutRows(nextRows), row, column);
     anchorRow = focusRow = entry?.row ?? row;
     anchorColumn = focusColumn = entry?.column ?? column;
@@ -231,12 +226,12 @@
 
   function requestRemove(kind: "row" | "column"): void {
     const index = kind === "row" ? activeRow : activeColumn;
-    if (lineHasContent(rows, kind, index)) confirmation = { kind, index };
-    else remove(kind, index);
+    if (lineHasContent(rows, kind, index)) {confirmation = { kind, index };}
+    else {remove(kind, index);}
   }
 
   function remove(kind: "row" | "column", index: number): void {
-    if (kind === "row" ? rows.length <= 1 : columnCount <= 1) return;
+    if (kind === "row" ? rows.length <= 1 : columnCount <= 1) {return;}
     const nextRows = removeLine(rows, kind, index);
     const row = kind === "row" ? Math.min(index, nextRows.length - 1) : activeRow;
     const column = kind === "column" ? Math.min(index, columnCount - 2) : activeColumn;
@@ -258,7 +253,7 @@
 
   async function enterEdit(initial?: string): Promise<void> {
     editing = true;
-    if (initial !== undefined) setMarkdown(activeRow, activeColumn, initial);
+    if (initial !== undefined) {setMarkdown(activeRow, activeColumn, initial);}
     await tick();
     rootElement
       ?.querySelector<HTMLTextAreaElement>(
@@ -271,7 +266,7 @@
     const targetRow = Math.max(0, Math.min(row, rows.length - 1));
     const targetColumn = Math.max(0, Math.min(column, columnCount - 1));
     const target = entryAt(layout, targetRow, targetColumn);
-    if (!target) return;
+    if (!target) {return;}
     focusRow = target.row;
     focusColumn = target.column;
     if (!extend) {
@@ -285,9 +280,12 @@
     const entries = layout.entries;
     const index = focusedEntry ? entries.indexOf(focusedEntry) : 0;
     const nextIndex = index + direction;
-    if (nextIndex < 0) move(entries[0]?.row ?? 0, entries[0]?.column ?? 0);
-    else if (nextIndex >= entries.length) insertRow(1);
-    else move(entries[nextIndex].row, entries[nextIndex].column);
+    if (nextIndex < 0) {move(entries[0]?.row ?? 0, entries[0]?.column ?? 0);}
+    else if (nextIndex >= entries.length) {insertRow(1);}
+    else {
+      const nextEntry = entries[nextIndex];
+      if (nextEntry) {move(nextEntry.row, nextEntry.column);}
+    }
   }
 
   function handleCellKeydown(event: KeyboardEvent): void {
@@ -300,14 +298,14 @@
       event.key.toLowerCase() === "s"
     ) {
       splitCell();
-    } else if (event.key === "ArrowUp") move(activeRow - 1, activeColumn, event.shiftKey);
+    } else if (event.key === "ArrowUp") {move(activeRow - 1, activeColumn, event.shiftKey);}
     else if (event.key === "ArrowDown") {
       move(activeRow + (entry?.rowspan ?? 1), activeColumn, event.shiftKey);
-    } else if (event.key === "ArrowLeft") move(activeRow, activeColumn - 1, event.shiftKey);
+    } else if (event.key === "ArrowLeft") {move(activeRow, activeColumn - 1, event.shiftKey);}
     else if (event.key === "ArrowRight") {
       move(activeRow, activeColumn + (entry?.colspan ?? 1), event.shiftKey);
     }
-    else if (event.key === "Enter") enterEdit();
+    else if (event.key === "Enter") {enterEdit();}
     else if (event.key === "Tab") {
       event.preventDefault();
       moveByTab(event.shiftKey ? -1 : 1);
@@ -332,7 +330,7 @@
       focusCell();
       return;
     }
-    if (event.key !== "Tab") return;
+    if (event.key !== "Tab") {return;}
 
     event.preventDefault();
     moveByTab(event.shiftKey ? -1 : 1);
@@ -514,7 +512,7 @@
           pressed={focusedCell.borders?.[edge as Edge] === true}
           onClick={() => toggleBorder(edge as Edge)}
         >
-          {edge[0].toUpperCase() + edge.slice(1)} edge
+          {edge.charAt(0).toUpperCase() + edge.slice(1)} edge
         </Button>
       {/each}
       <Button type="button" variant="ghost" size="sm" onClick={clearBorders}>

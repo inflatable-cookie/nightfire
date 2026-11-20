@@ -9,19 +9,21 @@ describe("nightfire/NightfireEditor defaults", () => {
     const view = render(NightfireEditorHarness, {
       schema: "example:content/description",
       initialValue: {
-        schema: "example:content/description",
+        schema: "example:content/description"
       },
       modeOverride: "single",
       defaultTypeOverride: "markdown",
       blockOptions: [
         { type: "content.list", label: "Content List" },
-        { type: "markdown", label: "Markdown" },
-      ],
+        { type: "markdown", label: "Markdown" }
+      ]
     });
 
     const typeSelect = await screen.findByLabelText("Block type");
     expect((typeSelect as HTMLSelectElement).value).toBe("markdown");
-    expect(view.getByTestId("nightfire-value").textContent).toContain("\"schema\": \"example:content/description\"");
+    expect(view.getByTestId("nightfire-value").textContent).toContain(
+      '"schema": "example:content/description"'
+    );
   });
 
   it("preserves an existing content-empty draft block when required is true", async () => {
@@ -36,10 +38,10 @@ describe("nightfire/NightfireEditor defaults", () => {
             id: "nf_draft_image",
             type: "image",
             version: "initial",
-            data: { alt: "Draft alt" },
-          },
-        ],
-      },
+            data: { alt: "Draft alt" }
+          }
+        ]
+      }
     });
 
     flushSync();
@@ -51,8 +53,8 @@ describe("nightfire/NightfireEditor defaults", () => {
         id: "nf_draft_image",
         type: "image",
         version: "initial",
-        data: { alt: "Draft alt" },
-      },
+        data: { alt: "Draft alt" }
+      }
     ]);
     expect(view.container.textContent).toContain("This field is required.");
   });
@@ -64,8 +66,8 @@ describe("nightfire/NightfireEditor defaults", () => {
       required: true,
       initialValue: {
         schema: "example:content/markup",
-        blocks: [],
-      },
+        blocks: []
+      }
     });
 
     await waitFor(() => {

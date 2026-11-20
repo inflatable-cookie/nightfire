@@ -10,8 +10,7 @@ const ARRAY_INDEX = /^(?:0|[1-9]\d*)$/;
 const NOT_FOUND = Symbol("nightfire-media-locator-not-found");
 type Lookup = unknown | typeof NOT_FOUND;
 
-const INVALID_POINTER =
-  "Nightfire media locator requires a non-empty, slash-prefixed JSON Pointer";
+const INVALID_POINTER = "Nightfire media locator requires a non-empty, slash-prefixed JSON Pointer";
 
 /**
  * True for a well-formed RFC 6901 pointer: non-empty, slash-prefixed, and every
@@ -38,7 +37,7 @@ function isWellFormedPointer(pointer: unknown): boolean {
 }
 
 function decodePointerSegment(segment: string): string {
-  return segment.replace(/~1/g, "/").replace(/~0/g, "~");
+  return segment.replaceAll("~1", "/").replaceAll("~0", "~");
 }
 
 function resolveJsonPointer(value: unknown, pointer: string): unknown {
@@ -58,8 +57,8 @@ function resolveJsonPointer(value: unknown, pointer: string): unknown {
       }
 
       // Own properties only: `#/constructor` and `#/toString` resolve to nothing.
-      return Object.hasOwn(current, segment)
-        ? (current as Record<string, unknown>)[segment]
+      return isObjectRecord(current) && Object.hasOwn(current, segment)
+        ? current[segment]
         : undefined;
     }, value);
 }
@@ -109,8 +108,8 @@ function isObjectRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-function codePoint(character: string): number {
-  return character.codePointAt(0) ?? 0;
+function codePoint(character: string | undefined): number {
+  return character?.codePointAt(0) ?? 0;
 }
 
 /**
@@ -141,7 +140,7 @@ function compareCodePoints(left: string, right: string): number {
  * resolve differently from one parse to the next. Sorting makes the traversal
  * canonical, and matches the Rust resolver.
  */
-function sortedKeys(record: Record<string, unknown>): string[] {
+function sortedKeys(record: Record<string, unknown>): Array<string> {
   return Object.keys(record).sort(compareCodePoints);
 }
 
@@ -156,12 +155,8 @@ function sortedKeys(record: Record<string, unknown>): string[] {
 function isNestedBlockRecord(
   value: Record<string, unknown>,
   blockId: string
-): boolean {
-  return (
-    value.id === blockId &&
-    typeof value.type === "string" &&
-    Object.hasOwn(value, "data")
-  );
+): value is Record<string, unknown> & NightfireBlock {
+  return value.id === blockId && typeof value.type === "string" && Object.hasOwn(value, "data");
 }
 
 export function findNightfireBlockById(
@@ -172,9 +167,7 @@ export function findNightfireBlockById(
     return null;
   }
 
-  const topLevel = value.blocks.find(
-    (block) => isObjectRecord(block) && block.id === blockId
-  );
+  const topLevel = value.blocks.find((block) => isObjectRecord(block) && block.id === blockId);
   if (topLevel) {
     return topLevel;
   }
@@ -211,7 +204,7 @@ function findBlockInJson(value: unknown, blockId: string): NightfireBlock | null
   }
 
   if (isNestedBlockRecord(value, blockId)) {
-    return value as unknown as NightfireBlock;
+    return value;
   }
 
   for (const key of sortedKeys(value)) {
@@ -243,7 +236,7 @@ function findBlockData(value: NightfireValue, blockId: string): Lookup {
   // shadows a top-level block that carries the same id.
   for (const block of blocks) {
     if (block.id === blockId) {
-      return (block.data as Record<string, unknown> | undefined) ?? {};
+      return block.data ?? {};
     }
   }
 
@@ -268,17 +261,16 @@ function findBlockDataInJson(value: unknown, blockId: string): Lookup {
     return NOT_FOUND;
   }
 
-  if (value === null || typeof value !== "object") {
+  if (!isObjectRecord(value)) {
     return NOT_FOUND;
   }
 
-  const record = value as Record<string, unknown>;
-  if (isNestedBlockRecord(record, blockId)) {
-    return record.data;
+  if (isNestedBlockRecord(value, blockId)) {
+    return value.data;
   }
 
-  for (const key of sortedKeys(record)) {
-    const found = findBlockDataInJson(record[key], blockId);
+  for (const key of sortedKeys(value)) {
+    const found = findBlockDataInJson(value[key], blockId);
     if (found !== NOT_FOUND) {
       return found;
     }

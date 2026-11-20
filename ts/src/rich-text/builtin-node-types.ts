@@ -21,5 +21,5 @@ export const ADMITTED_BUILTIN_NODE_TYPES: ReadonlySet<string> = new Set([
   "table",
   "tableRow",
   "tableHeader",
-  "tableCell",
+  "tableCell"
 ]);
