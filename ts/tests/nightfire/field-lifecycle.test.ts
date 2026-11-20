@@ -3,18 +3,16 @@ import { describe, expect, it, vi } from "../vitest";
 const { createPrepareWriter, createRequiredInitialValue } = await import("../../src/editor/field-lifecycle");
 
 describe("nightfire/editor/field-lifecycle", () => {
-	it("creates required initial values as a blocks array for both modes", () => {
-		for (const mode of ["single", "multi"] as const) {
-			const value = createRequiredInitialValue(`schema-${mode}`, mode, "markdown");
-			expect(value.schema).toBe(`schema-${mode}`);
-			expect(value.blocks).toHaveLength(1);
-			expect(value.blocks[0]).toEqual(expect.objectContaining({
-				type: "markdown",
-				version: "initial",
-				data: {},
-			}));
-			expect(value.blocks[0]?.id).toMatch(/^nf_/);
-		}
+	it("creates required initial values as a one-block array with a fresh id", () => {
+		const value = createRequiredInitialValue("schema-a", "markdown");
+		expect(value.schema).toBe("schema-a");
+		expect(value.blocks).toHaveLength(1);
+		expect(value.blocks[0]).toEqual(expect.objectContaining({
+			type: "markdown",
+			version: "initial",
+			data: {},
+		}));
+		expect(value.blocks[0]?.id).toMatch(/^nf_/);
 	});
 
 	it("creates prepare writer closure that writes to FormData", () => {

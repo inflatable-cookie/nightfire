@@ -1,48 +1,26 @@
 import { getSchemaDefinition } from "../editor-registry";
 
-export interface ResolvedNightfireSchema {
-	editorSchema: string;
-	registryDef: {
-		schema: string;
-		mode: "single" | "multi";
-		defaultType: string;
-	};
+export interface ResolvedNightfireSchemaDefinition {
+	mode: "single" | "multi";
+	defaultType: string;
 }
 
-export function resolveSchemaDefinition(
-	schemaId: string,
-	fallbackSchemaId: string | null
-): ResolvedNightfireSchema {
+/**
+ * The registry's mode and default type for a schema. A schema with no
+ * registry entry edits as a single markdown block, while its stored schema
+ * name is kept as given.
+ */
+export function resolveSchemaDefinition(schemaId: string): ResolvedNightfireSchemaDefinition {
 	const definition = getSchemaDefinition(schemaId);
 	if (definition) {
 		return {
-			editorSchema: schemaId,
-			registryDef: {
-				schema: definition.schema,
-				mode: definition.mode,
-				defaultType: definition.defaultType
-			}
-		};
-	}
-
-	const fallbackDefinition = fallbackSchemaId ? getSchemaDefinition(fallbackSchemaId) : null;
-	if (fallbackDefinition) {
-		return {
-			editorSchema: fallbackSchemaId!,
-			registryDef: {
-				schema: fallbackDefinition.schema,
-				mode: fallbackDefinition.mode,
-				defaultType: fallbackDefinition.defaultType
-			}
+			mode: definition.mode,
+			defaultType: definition.defaultType
 		};
 	}
 
 	return {
-		editorSchema: schemaId,
-		registryDef: {
-			schema: schemaId,
-			mode: "single",
-			defaultType: "markdown"
-		}
+		mode: "single",
+		defaultType: "markdown"
 	};
 }

@@ -8,20 +8,20 @@ describe("nightfire/editor/strategy-normalisation", () => {
 			{ type: "a", version: "initial", data: {} },
 			{ type: "b", version: "initial", data: {} },
 		];
-		const result = normaliseForStrategy({ schema: "old", blocks }, "new", "single");
+		const result = normaliseForStrategy({ schema: "old", blocks }, "new");
 		expect(result.coerced).toEqual({ schema: "new", blocks });
 		expect(result.schemaMismatch).toBe("old");
 	});
 
 	it("does not convert a leftover v1 block field", () => {
-		expect(normaliseForStrategy({ schema: "same", block: { type: "a" } } as any, "same", "multi")).toEqual({
+		expect(normaliseForStrategy({ schema: "same", block: { type: "a" } } as any, "same")).toEqual({
 			coerced: { schema: "same", blocks: [] },
 			schemaMismatch: null,
 		});
 	});
 
 	it("handles empty blocks", () => {
-		expect(normaliseForStrategy(null as any, "schema-a", "single")).toEqual({
+		expect(normaliseForStrategy(null as any, "schema-a")).toEqual({
 			coerced: { schema: "schema-a", blocks: [] },
 			schemaMismatch: null,
 		});
@@ -29,7 +29,7 @@ describe("nightfire/editor/strategy-normalisation", () => {
 
 	it("keeps multi arrays in multi mode", () => {
 		const blocks = [{ type: "a", version: "initial", data: {} }];
-		expect(normaliseForStrategy({ schema: 123, blocks } as any, "schema-b", "multi")).toEqual({
+		expect(normaliseForStrategy({ schema: 123, blocks } as any, "schema-b")).toEqual({
 			coerced: { schema: "schema-b", blocks },
 			schemaMismatch: 123,
 		});

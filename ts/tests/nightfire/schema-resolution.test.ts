@@ -4,26 +4,19 @@ import { registerSchema } from "../../src/editor-registry";
 const { resolveSchemaDefinition } = await import("../../src/editor/schema-resolution");
 
 describe("nightfire/editor/schema-resolution", () => {
-	it("prefers requested schema when definition exists", () => {
+	it("returns the registered mode and default type when the schema has a definition", () => {
 		registerSchema({ schema: "requested", mode: "multi", defaultType: "section" });
 
-		expect(resolveSchemaDefinition("requested", "fallback")).toEqual({
-			editorSchema: "requested",
-			registryDef: { schema: "requested", mode: "multi", defaultType: "section" },
+		expect(resolveSchemaDefinition("requested")).toEqual({
+			mode: "multi",
+			defaultType: "section",
 		});
 	});
 
-	it("falls back to fallback schema or synthetic default", () => {
-		registerSchema({ schema: "fallback", mode: "single", defaultType: "markdown" });
-
-		expect(resolveSchemaDefinition("missing", "fallback")).toEqual({
-			editorSchema: "fallback",
-			registryDef: { schema: "fallback", mode: "single", defaultType: "markdown" },
-		});
-
-		expect(resolveSchemaDefinition("missing", "also-missing")).toEqual({
-			editorSchema: "missing",
-			registryDef: { schema: "missing", mode: "single", defaultType: "markdown" },
+	it("falls back to a single markdown block for an unregistered schema", () => {
+		expect(resolveSchemaDefinition("unregistered:schema")).toEqual({
+			mode: "single",
+			defaultType: "markdown",
 		});
 	});
 });

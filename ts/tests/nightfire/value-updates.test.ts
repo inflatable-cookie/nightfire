@@ -3,12 +3,9 @@ import {
 	asSingleBlockValue,
 	asMultiBlockValue,
 	replaceBlockAtIndex,
-	changeSingleBlockType,
 	changeBlockType,
 	addBlock,
-	insertBlockAfter,
-	removeBlock,
-	moveBlock
+	insertBlockAfter
 } from "../../src/editor/value-updates";
 
 describe("nightfire value-updates", () => {
@@ -46,26 +43,36 @@ describe("nightfire value-updates", () => {
 		expect(original).toEqual([{ type: "a" }, { type: "b" }]);
 	});
 
-	it("changes a single block type without product-specific transforms", () => {
-		const result = changeSingleBlockType("example:content/article", null, "custom", (type) => type);
-		expect(result.warning).toBeNull();
-		expect(result.block).toEqual({ type: "custom", version: "initial", data: {} });
+	it("resets data and version on a type change, keeping the block id", () => {
+		const changed = changeBlockType(
+			{ id: "nf_keep", type: "markdown", version: "2", data: { text: "old", extra: true } },
+			"example.option_list"
+		);
+
+		expect(changed).toEqual({
+			id: "nf_keep",
+			type: "example.option_list",
+			version: "initial",
+			data: {}
+		});
 	});
 
-	it("changes generic block type and normalises non-object input", () => {
-		expect(changeBlockType({ foo: "bar" }, "new.type")).toMatchObject({
-			type: "new.type",
-			data: {},
-			version: "initial"
-		});
-		expect(changeBlockType("not-an-object", "markdown")).toMatchObject({
+	it("omits the id on a type change when the block has none", () => {
+		const changed = changeBlockType({ type: "markdown", data: { text: "old" } }, "custom");
+
+		expect(changed).toEqual({ type: "custom", version: "initial", data: {} });
+		expect(Object.keys(changed)).not.toContain("id");
+	});
+
+	it("normalises non-object input to a markdown block before a type change", () => {
+		expect(changeBlockType("not-an-object", "markdown")).toEqual({
 			type: "markdown",
-			data: {},
-			version: "initial"
+			version: "initial",
+			data: {}
 		});
 	});
 
-	it("adds, removes, and moves blocks", () => {
+	it("adds and inserts blocks with fresh ids", () => {
 		const added = addBlock([], "markdown");
 		expect(added).toHaveLength(1);
 		expect(added[0]).toMatchObject({
@@ -86,18 +93,5 @@ describe("nightfire value-updates", () => {
 		});
 		expect((inserted[1] as { id?: string }).id).toMatch(/^nf_/);
 		expect(inserted[2]).toMatchObject({ type: "b" });
-
-		const removed = removeBlock([{ type: "a" }, { type: "b" }], 0);
-		expect(removed).toEqual([{ type: "b" }]);
-
-		const moved = moveBlock([{ type: "a" }, { type: "b" }, { type: "c" }], 0, 2);
-		expect(moved).toEqual([{ type: "b" }, { type: "c" }, { type: "a" }]);
-	});
-
-	it("returns null when block move indices are invalid", () => {
-		const blocks = [{ type: "a" }, { type: "b" }];
-		expect(moveBlock(blocks, -1, 1)).toBeNull();
-		expect(moveBlock(blocks, 0, 2)).toBeNull();
-		expect(moveBlock(blocks, 1, 1)).toBeNull();
 	});
 });

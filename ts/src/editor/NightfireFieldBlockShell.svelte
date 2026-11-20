@@ -1,6 +1,7 @@
 <script lang="ts">
   import { BlockEditor } from "@inflatable-cookie/poodle-svelte";
   import { toBlockTypeGroups, toBlockTypes, toEditorBlocks } from "./poodle-block-editor";
+  import { createStableId } from "../dom";
 
   import type { MarkdownEditorContext } from "../markup/markdown-editor-context";
   import type { BlockTypeOption, SchemaDefinition } from "../editor-registry";
@@ -62,10 +63,15 @@
     groupedOptions?.length ? toBlockTypeGroups(groupedOptions) : null,
   );
 
+  // Minted once per instance, outside any derived state, so fallback ids stay
+  // unique across editors on one page and never change between keystrokes.
+  const fallbackIdPrefix = createStableId("nightfire-unsaved-block");
+
   const shellBlocks = $derived.by(() => {
     if (isMulti) {
       return toEditorBlocks(blocks as any[], {
         fallbackType: definition.defaultType,
+        fallbackIdPrefix,
       });
     }
 
@@ -79,6 +85,7 @@
       ],
       {
         fallbackType: definition.defaultType,
+        fallbackIdPrefix,
       },
     );
   });
@@ -130,9 +137,9 @@
       current && typeof current === "object" && typeof (current as { type?: unknown }).type === "string"
         ? (current as { type: string }).type
         : null;
-    // Poodle BlockEditor owns markdown `content`. Question blocks store payload in
-    // `data`; shell onChange snapshots omit it and wipe inner editor updates
-    // (Add option, body, etc.). Inner NightfireBlockEditor is the source of truth.
+    // Poodle BlockEditor owns markdown `content`. Non-markdown blocks keep their
+    // payload in `data`, which a shell snapshot omits, so it would wipe edits the
+    // inner NightfireBlockEditor has already made. That editor is the source of truth.
     if (currentType && currentType !== "markdown") {
       const incomingType =
         incoming && typeof incoming === "object" && typeof (incoming as { type?: unknown }).type === "string"
