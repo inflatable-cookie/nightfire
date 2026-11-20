@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { createStableId } from "../dom";
   import { tick } from "svelte";
   import { Button, Select, TextInput } from "@inflatable-cookie/poodle-svelte";
   import { renderSafeMarkdownPreview } from "../markup/markdown-preview";
@@ -27,6 +28,7 @@
   }
 
   let { block, onChange = () => {} }: Props = $props();
+  const inputId = createStableId("nightfire-table");
 
   let focusRow = $state(0);
   let focusColumn = $state(0);
@@ -549,7 +551,7 @@
 
 <div class="underlay-table-editor" bind:this={rootElement}>
   <TextInput
-    id="nightfire-table-caption"
+    id={`${inputId}-caption`}
     placeholder="Table caption (optional)"
     value={typeof block?.data?.caption === "string" ? block.data.caption : ""}
     onValueChange={setCaption}
@@ -734,7 +736,7 @@
       aria-modal="false"
       aria-labelledby="nightfire-table-confirmation-title"
     >
-      <p id="nightfire-table-confirmation-title">
+      <p id={`${inputId}-confirmation-title`}>
         {#if confirmation.kind === "merge"}
           Merge these cells? Their content cannot be recovered.
         {:else}

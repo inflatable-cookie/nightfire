@@ -7,6 +7,7 @@
   import { createRichTextImageRequest } from "./images";
 
   type RichTextBlock = {
+    id?: string;
     type?: string;
     version?: string;
     data?: {
@@ -48,6 +49,7 @@
 
   function handleChange(next: ProseMirrorDocumentJSON) {
     onChange({
+      ...(block.id !== undefined ? { id: block.id } : {}),
       type: block?.type ?? "rich_text",
       version: block?.version ?? "initial",
       data: { document: next }

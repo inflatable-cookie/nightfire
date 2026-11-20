@@ -66,22 +66,7 @@
   class={`underlay-markdown-editor-root ${className}`.trim()}
   oninput={handleTextareaEvent}
 >
-  {#if label}
-    <label class="underlay-markdown-editor-label">
-      <span class="underlay-markdown-editor-label__text">{label}</span>
-      <MarkdownEditor
-        value={value ?? ""}
-        {name}
-        {required}
-        disabled={loading}
-        placeholder={placeholder ?? undefined}
-        mode={showPreview ? "split" : "edit"}
-        minHeight="5em"
-        renderHtml={renderSafeMarkdownPreview}
-        onValueChange={handleValueChange}
-      />
-    </label>
-  {:else}
+  {#snippet editor()}
     <MarkdownEditor
       value={value ?? ""}
       {name}
@@ -93,6 +78,14 @@
       renderHtml={renderSafeMarkdownPreview}
       onValueChange={handleValueChange}
     />
+  {/snippet}
+  {#if label}
+    <label class="underlay-markdown-editor-label">
+      <span class="underlay-markdown-editor-label__text">{label}</span>
+      {@render editor()}
+    </label>
+  {:else}
+    {@render editor()}
   {/if}
 
   {#if hint}

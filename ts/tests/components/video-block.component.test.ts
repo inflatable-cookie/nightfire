@@ -206,6 +206,20 @@ describe("nightfire/video block", () => {
     expect(view.container.textContent).toContain("youtube");
   });
 
+  it("keeps the id and does not restore a cleared embed when editing the title", async () => {
+    const calls: any[] = [];
+    const view = render(EditorComponent as any, {
+      block: { ...titledBlock, id: "video-1" },
+      onChange: (next: unknown) => calls.push(next),
+      parseDebounce: 0,
+    });
+    await fireEvent.input(urlInput(view.container), { target: { value: "" } });
+    const title = within(view.container).getByPlaceholderText("Title (optional, used as the embed's accessible name)");
+    await fireEvent.input(title, { target: { value: "Changed" } });
+    expect(calls.at(-1).id).toBe("video-1");
+    expect(calls.at(-1).data.embed).toBeUndefined();
+  });
+
   it("survives the scenario oracle: paste, title, save, reload", async () => {
     const calls: unknown[] = [];
     const editorView = render(EditorComponent as any, {
