@@ -29,6 +29,20 @@ describe("tooling/check-colour-literals", () => {
     expect(findings[0]!.line).toBe(3);
   });
 
+  it("ignores hyphenated identifiers and CSS math functions named like colours", () => {
+    const source = `<style>\n  .probe {\n    animation: red-pulse 1s;\n    transform: rotate(tan(45deg));\n    color: var(--nightfire-color-tan);\n  }\n</style>`;
+
+    expect(colourLiterals(source, "probe.svelte")).toEqual([]);
+  });
+
+  it("still bites on a named colour beside a hyphenated word", () => {
+    const source = `<style>\n  .probe {\n    border: 1px solid red;\n  }\n</style>`;
+
+    expect(colourLiterals(source, "probe.svelte").map((finding) => finding.literal)).toEqual([
+      "red",
+    ]);
+  });
+
   it("accepts color-mix() that mixes tokens only", () => {
     const source = `<style>\n  .probe {\n    background: color-mix(in srgb, var(--nightfire-color-surface) 40%, transparent);\n  }\n</style>`;
 

@@ -32,8 +32,9 @@ const status = Bun.spawnSync(["git", "status", "--porcelain"], { stdout: "pipe" 
 if (status.exitCode !== 0 || status.stdout.toString().trim()) {
   throw new Error("Git-consumer proof requires a clean exact repository head");
 }
-const revision = Bun.spawnSync(["git", "rev-parse", "HEAD"], { stdout: "pipe" })
-  .stdout.toString().trim();
+const head = Bun.spawnSync(["git", "rev-parse", "HEAD"], { stdout: "pipe" });
+if (head.exitCode !== 0) throw new Error("git rev-parse HEAD failed; the consumer proof needs an exact head");
+const revision = head.stdout.toString().trim();
 const origin = Bun.spawnSync(["git", "remote", "get-url", "origin"], { stdout: "pipe" });
 if (origin.exitCode !== 0) throw new Error("origin Git URL is required for consumer proof");
 const repository =

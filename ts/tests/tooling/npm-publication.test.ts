@@ -6,6 +6,7 @@ import { join } from "node:path";
 import {
   CANDIDATE_SCHEMA,
   parseCandidateManifest,
+  readNpmPublicationAuthority,
   sha256File,
 } from "../../scripts/npm-publication";
 import { cliValue } from "../../scripts/verify-npm-candidate";
@@ -23,6 +24,18 @@ function manifest(packages: unknown[] = []): string {
     version: "0.6.0",
     packages,
   });
+}
+
+// Each case gets its own fixture directory under the run's temporary root, and
+// removes only that directory.
+function withReleaseManifest(body: string, run: (root: string) => void): void {
+  const root = mkdtempSync(join(tmpdir(), "nightfire-npm-authority-"));
+  try {
+    writeFileSync(join(root, "release-manifest.json"), body);
+    run(root);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 }
 
 const PACKAGE = {
@@ -88,6 +101,35 @@ describe("tooling/npm-publication", () => {
     expect(() => cliValue(["--tag-version", "--dir", "x"], "--tag-version")).toThrow(
       /--tag-version requires a value/
     );
+  });
+
+  it("reads the npm publication authority from the release manifest", () => {
+    withReleaseManifest(JSON.stringify({
+      npmPublication: {
+        candidateManifestName: "candidate.json",
+        packages: [{ name: "@inflatable-cookie/nightfire", path: "." }],
+      },
+    }), (root) => {
+      expect(readNpmPublicationAuthority(root)).toEqual({
+        candidateManifestName: "candidate.json",
+        packages: [{ name: "@inflatable-cookie/nightfire", path: "." }],
+      });
+    });
+  });
+
+  it("refuses an npmPublication authority that is null, an array or absent", () => {
+    for (const body of [
+      '{"npmPublication": null}',
+      '{"npmPublication": []}',
+      '{"npmPublication": "candidate.json"}',
+      "{}",
+    ]) {
+      withReleaseManifest(body, (root) => {
+        expect(() => readNpmPublicationAuthority(root)).toThrow(
+          /must declare npmPublication authority/,
+        );
+      });
+    }
   });
 
   it("fails the verify CLI when the tag-version flag carries no value", () => {
