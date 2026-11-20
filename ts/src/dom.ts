@@ -6,7 +6,7 @@
  * can mint the same id, and its output depends on everything rendered before it.
  * A random id carries no request state.
  */
-export function createUniqueId(prefix: string): string {
+export function createStableId(prefix: string): string {
   return `${prefix}-${randomToken()}`;
 }
 

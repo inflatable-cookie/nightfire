@@ -6,9 +6,9 @@
 - A slower strategies fetch can no longer overwrite a newer `refresh()` or
   `invalidate()`. An empty strategy list is cached like any other answer
   instead of being refetched on every `ensure()`.
-- `createUniqueId` replaces the module counter behind element ids. The counter
-  drifted across concurrent SSR requests in one process; a per-call id carries
-  no request state.
+- `createStableId` replaces the module counter behind element ids with a
+  per-call random token. The counter drifted across concurrent SSR requests in
+  one process; a per-call id carries no request state.
 - Media locators now match the Rust crate. The pointer must be non-empty and
   slash-prefixed, a `#` in the block id is refused, a `~` must escape `0` or
   `1`, an array segment is `0` or a digit string without a leading zero, and

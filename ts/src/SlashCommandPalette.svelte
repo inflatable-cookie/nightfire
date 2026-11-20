@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { createUniqueId } from "./dom";
+  import { createStableId } from "./dom";
   import type { NightfireSlashCommand } from "./slash-commands";
 
   interface Props {
@@ -19,7 +19,7 @@
     onClose = () => {}
   }: Props = $props();
 
-  const listboxId = createUniqueId("underlay-nightfire-slash-listbox");
+  const listboxId = createStableId("underlay-nightfire-slash-listbox");
   let queryInput: HTMLInputElement | null = $state(null);
   let selectedIndex = $state(0);
 
