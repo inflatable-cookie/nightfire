@@ -3,6 +3,8 @@ import { describe, expect, it } from "../vitest";
 import { fireEvent, render, waitFor, within } from "../render";
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
+import { flushSync } from "svelte";
+import VideoEditorHarness from "./VideoEditorHarness.svelte";
 
 import "../../src/render-registrations";
 import "../../src/editor-registrations";
@@ -206,6 +208,33 @@ describe("nightfire/video block", () => {
     expect(view.container.textContent).toContain("youtube");
   });
 
+  it("keeps the id and does not restore a cleared embed when editing the title", async () => {
+    const calls: any[] = [];
+    const view = render(EditorComponent as any, {
+      block: { ...titledBlock, id: "video-1" },
+      onChange: (next: unknown) => calls.push(next),
+      parseDebounce: 0,
+    });
+    await fireEvent.input(urlInput(view.container), { target: { value: "" } });
+    const title = within(view.container).getByPlaceholderText("Title (optional, used as the embed's accessible name)");
+    await fireEvent.input(title, { target: { value: "Changed" } });
+    expect(calls.at(-1).id).toBe("video-1");
+    expect(calls.at(-1).data.embed).toBeUndefined();
+  });
+
+  it("updates the input and subsequent edits when the parent replaces the embed", async () => {
+    const calls: any[] = [];
+    const view = render(VideoEditorHarness, { initial: { type: "video", data: {} }, onChange: (next: unknown) => calls.push(next) });
+    await fireEvent.input(urlInput(view.container), { target: { value: YOUTUBE_URL } });
+    await waitFor(() => expect(calls.length).toBeGreaterThan(0));
+    const external = { provider: "vimeo", id: "12345", originalUrl: "https://vimeo.com/12345" };
+    (view.component as any).setBlock({ type: "video", data: { embed: external } });
+    flushSync();
+    expect(urlInput(view.container).value).toBe(external.originalUrl);
+    await fireEvent.input(within(view.container).getByPlaceholderText("Caption (optional)"), { target: { value: "New" } });
+    expect(calls.at(-1).data.embed).toEqual(external);
+  });
+
   it("survives the scenario oracle: paste, title, save, reload", async () => {
     const calls: unknown[] = [];
     const editorView = render(EditorComponent as any, {
@@ -283,6 +312,41 @@ describe("nightfire/video block", () => {
       expect(view.container.textContent).toContain("Could not parse embed source")
     );
     expect(calls.length).toBe(0);
+  });
+
+  it("does not emit a prior pending embed on title or caption edits after a parse error", async () => {
+    const calls: any[] = [];
+    const view = render(EditorComponent as any, {
+      block: { type: "video", version: "initial", data: {} },
+      onChange: (next: unknown) => calls.push(next),
+      parseDebounce: 0,
+    });
+
+    await fireEvent.input(urlInput(view.container), { target: { value: YOUTUBE_URL } });
+    await waitFor(() => expect(calls.length).toBe(1));
+    expect(calls[0].data.embed.id).toBe(YOUTUBE_ID);
+
+    await fireEvent.input(urlInput(view.container), { target: { value: "not a url" } });
+    await waitFor(() =>
+      expect(view.container.textContent).toContain("Could not parse embed source")
+    );
+    expect(calls.length).toBe(1);
+
+    await fireEvent.input(
+      within(view.container).getByPlaceholderText(
+        "Title (optional, used as the embed's accessible name)"
+      ),
+      { target: { value: "Updated title" } }
+    );
+    expect(calls.at(-1).data.embed).toBeUndefined();
+    expect(calls.at(-1).data.title).toBe("Updated title");
+
+    await fireEvent.input(
+      within(view.container).getByPlaceholderText("Caption (optional)"),
+      { target: { value: "Updated caption" } }
+    );
+    expect(calls.at(-1).data.embed).toBeUndefined();
+    expect(calls.at(-1).data.caption).toBe("Updated caption");
   });
 
   it("drops the embed when the input is cleared and keeps title and caption", async () => {

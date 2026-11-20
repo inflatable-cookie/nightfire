@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { createStableId } from "../dom";
   // Generic image editor.
   //
   // The author picks one image from the consumer's library through the
@@ -10,6 +11,7 @@
   import { MediaKind, getMediaSource } from "../media-source";
 
   type ImageBlock = {
+    id?: string;
     type: string;
     version?: string;
     data?: {
@@ -27,6 +29,7 @@
   }
 
   let { block, onChange }: Props = $props();
+  const inputId = createStableId("nightfire-image");
 
   // Read once at mount: registration happens at the consumer's boundary,
   // before any editor renders.
@@ -71,6 +74,7 @@
     const nextCaption = updates.caption ?? caption;
     const nextSizing = updates.sizing ?? sizing;
     onChange({
+      ...(block.id !== undefined ? { id: block.id } : {}),
       type: block?.type ?? "image",
       version: block?.version ?? "initial",
       data: {
@@ -104,6 +108,8 @@
       if (first) {
         emit({ media_id: first.media_id });
       }
+    } catch {
+      // A failed picker leaves the existing selection intact.
     } finally {
       picking = false;
     }
@@ -137,7 +143,7 @@
 
   <div class="underlay-image-editor__alt">
     <TextInput
-      id="nightfire-image-alt"
+      id={`${inputId}-alt`}
       placeholder="Alt text"
       value={alt}
       onValueChange={(nextValue) => emit({ alt: nextValue })}
@@ -146,13 +152,13 @@
 
   <div class="underlay-image-editor__meta">
     <TextInput
-      id="nightfire-image-title"
+      id={`${inputId}-title`}
       placeholder="Title (optional)"
       value={title}
       onValueChange={(nextValue) => emit({ title: nextValue })}
     />
     <TextInput
-      id="nightfire-image-caption"
+      id={`${inputId}-caption`}
       placeholder="Caption (optional)"
       value={caption}
       onValueChange={(nextValue) => emit({ caption: nextValue })}

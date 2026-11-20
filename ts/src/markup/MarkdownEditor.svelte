@@ -4,6 +4,7 @@
   import { renderSafeMarkdownPreview } from "./markdown-preview";
 
   type MarkdownBlock = {
+    id?: string;
     type?: string;
     version?: string;
     data?: {
@@ -23,6 +24,7 @@
 
   function handleInput(next: string) {
     onChange({
+      ...(block.id !== undefined ? { id: block.id } : {}),
       type: block.type ?? "markdown",
       version: block.version ?? "initial",
       data: {

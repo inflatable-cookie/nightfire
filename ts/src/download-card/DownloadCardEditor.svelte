@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { createStableId } from "../dom";
   // Generic download-card editor.
   //
   // The author picks one or more files from the consumer's library through the
@@ -7,12 +8,12 @@
   // file's `{ media_id, title, description }` -- and nothing else, so no field
   // the author entered is silently dropped.
   import { Button, TextInput } from "@inflatable-cookie/poodle-svelte";
-  import type { MarkdownEditorContext } from "../markup/markdown-editor-context";
   import { getMediaSource } from "../media-source";
 
   type CardFile = { media_id: string; title?: string; description?: string };
 
   type DownloadCardBlock = {
+    id?: string;
     type: string;
     version?: string;
     data?: {
@@ -24,10 +25,10 @@
   interface Props {
     block: DownloadCardBlock;
     onChange: (block: DownloadCardBlock) => void;
-    onContextChange?: ((context: MarkdownEditorContext) => void) | null;
   }
 
-  let { block, onChange, onContextChange = null }: Props = $props();
+  let { block, onChange }: Props = $props();
+  const inputId = createStableId("nightfire-download-card");
 
   // Read once at mount: registration happens at the consumer's boundary,
   // before any editor renders.
@@ -61,6 +62,7 @@
     const nextDescription = updates.description ?? description;
     const nextFiles = updates.files ?? files.map((file) => ({ ...file }));
     onChange({
+      ...(block.id !== undefined ? { id: block.id } : {}),
       type: block?.type ?? "download_card",
       version: block?.version ?? "initial",
       data: {
@@ -80,19 +82,24 @@
 
       const known = new Set(files.map((file) => file.media_id));
       const additions = picked
-        .filter(
-          (reference): reference is { media_id: string } =>
-            reference !== null &&
-            typeof reference === "object" &&
-            typeof reference.media_id === "string" &&
-            reference.media_id.trim().length > 0 &&
-            !known.has(reference.media_id)
-        )
+        .filter((reference): reference is { media_id: string } => {
+          if (
+            reference === null ||
+            typeof reference !== "object" ||
+            typeof reference.media_id !== "string" ||
+            reference.media_id.trim().length === 0 ||
+            known.has(reference.media_id)
+          ) return false;
+          known.add(reference.media_id);
+          return true;
+        })
         .map((reference) => ({ media_id: reference.media_id }));
 
       if (additions.length > 0) {
         emit({ files: [...files, ...additions] });
       }
+    } catch {
+      // A failed picker leaves the existing selection intact.
     } finally {
       picking = false;
     }
@@ -132,7 +139,7 @@
 <div class="underlay-download-card-editor">
   <div class="underlay-download-card-editor__description">
     <TextInput
-      id="nightfire-download-card-description"
+      id={`${inputId}-description`}
       placeholder="Card description (optional)"
       value={description}
       onValueChange={(nextValue) => emit({ description: nextValue })}
@@ -141,7 +148,7 @@
 
   {#if files.length > 0}
     <ul class="underlay-download-card-editor__files">
-      {#each files as file, index (index)}
+      {#each files as file, index (file.media_id)}
         <li class="underlay-download-card-editor__file">
           <div class="underlay-download-card-editor__file-info">
             <span class="underlay-download-card-editor__file-name">
@@ -151,13 +158,13 @@
           </div>
           <div class="underlay-download-card-editor__file-controls">
             <TextInput
-              id={`nightfire-download-card-file-title-${index}`}
+              id={`${inputId}-file-title-${index}`}
               placeholder="File title (optional)"
               value={fileTitle(file)}
               onValueChange={(nextValue) => setFileTitle(index, nextValue)}
             />
             <TextInput
-              id={`nightfire-download-card-file-${index}`}
+              id={`${inputId}-file-${index}`}
               placeholder="File description (optional)"
               value={fileDescription(file)}
               onValueChange={(nextValue) => setFileDescription(index, nextValue)}

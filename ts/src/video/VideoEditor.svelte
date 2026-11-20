@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { createStableId } from "../dom";
+  import { untrack } from "svelte";
   // Generic video editor.
   //
   // The author pastes a URL or embed code into Poodle's `EmbedInput`, which
@@ -18,6 +20,7 @@
   } from "@inflatable-cookie/poodle-svelte";
 
   type VideoBlock = {
+    id?: string;
     type?: string;
     version?: string;
     data?: {
@@ -40,6 +43,7 @@
   }
 
   let { block, onChange, providers, parseDebounce }: Props = $props();
+  const inputId = createStableId("nightfire-video");
 
   function storedEmbed(value: unknown): ParsedEmbed | null {
     if (!value || typeof value !== "object" || Array.isArray(value)) return null;
@@ -57,18 +61,27 @@
     typeof block?.data?.caption === "string" ? block.data.caption : ""
   );
 
-  // The input starts from the stored embed's own URL so save and reload
-  // round-trip; afterwards it is the author's in-progress text, never
-  // clobbered by the parent echoing the emitted block back.
-  const initialUrl =
-    block?.data?.embed && typeof block.data.embed.originalUrl === "string"
-      ? block.data.embed.originalUrl
-      : "";
-  let url = $state(initialUrl);
-  let lastParsed = $state<ParsedEmbed | null>(null);
+  const initialEmbed = untrack(() => storedEmbed(block?.data?.embed));
+  let url = $state(initialEmbed?.originalUrl ?? "");
+  let pendingEmbed = $state<ParsedEmbed | null | undefined>(undefined);
+  let lastEmitted: ParsedEmbed | null = initialEmbed;
+  let observedEmbed: ParsedEmbed | null = initialEmbed;
+
+  $effect(() => {
+    const current = embed;
+    if (current !== observedEmbed) {
+      if (current !== lastEmitted) {
+        url = typeof current?.originalUrl === "string" ? current.originalUrl : "";
+      }
+      pendingEmbed = undefined;
+      observedEmbed = current;
+    }
+  });
 
   function emit(current: ParsedEmbed | null, nextTitle: string, nextCaption: string) {
+    lastEmitted = current;
     onChange({
+      ...(block.id !== undefined ? { id: block.id } : {}),
       type: block?.type ?? "video",
       version: block?.version ?? "initial",
       data: {
@@ -80,46 +93,53 @@
   }
 
   function handleParse(parsed: ParsedEmbed | null, error: string | null) {
-    if (parsed) {
-      lastParsed = parsed;
+    if (parsed && url.trim()) {
+      pendingEmbed = parsed;
       emit(parsed, title, caption);
       return;
     }
     // Unparseable: Poodle shows the error; the block is left unchanged, so no
     // partial embed is ever stored.
-    if (error) return;
-    // Cleared input: drop the embed, keep the author's title and caption.
-    if (embed) {
-      lastParsed = null;
-      emit(null, title, caption);
+    if (error) {
+      pendingEmbed = undefined;
+      return;
     }
+    // Cleared input: drop the embed, keep the author's title and caption.
+    pendingEmbed = null;
+    if (embed) emit(null, title, caption);
   }
 </script>
 
 <div class="underlay-video-editor">
   <EmbedInput
-    id="nightfire-video-url"
+    id={`${inputId}-url`}
     value={url}
     {providers}
     {parseDebounce}
     onValueChange={(nextValue) => {
+      const changed = nextValue !== url;
       url = nextValue;
+      if (!nextValue.trim()) {
+        pendingEmbed = null;
+      } else if (changed) {
+        pendingEmbed = undefined;
+      }
     }}
     onParse={handleParse}
   />
 
   <div class="underlay-video-editor__meta">
     <TextInput
-      id="nightfire-video-title"
+      id={`${inputId}-title`}
       placeholder="Title (optional, used as the embed's accessible name)"
       value={title}
-      onValueChange={(nextValue) => emit(lastParsed ?? embed, nextValue, caption)}
+      onValueChange={(nextValue) => emit(pendingEmbed !== undefined ? pendingEmbed : embed, nextValue, caption)}
     />
     <TextInput
-      id="nightfire-video-caption"
+      id={`${inputId}-caption`}
       placeholder="Caption (optional)"
       value={caption}
-      onValueChange={(nextValue) => emit(lastParsed ?? embed, title, nextValue)}
+      onValueChange={(nextValue) => emit(pendingEmbed !== undefined ? pendingEmbed : embed, title, nextValue)}
     />
   </div>
 </div>
