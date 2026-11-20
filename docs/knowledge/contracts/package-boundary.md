@@ -20,14 +20,33 @@ after consumer migration begins.
   through the root `package.json`, from one immutable repository version.
 - Keep implementation in explicit `rust/` and `ts/` tranches with shared root
   wire fixtures.
-- Export explicit entry points for core, validation, registries, rendering,
-  editing, strategies, media, and styles.
-- Export `./rich-text` for the stored rich-text path: the sanitized document
-  renderer and the schema-scoped inline-node renderer registry. It is a
-  renderer entry point, so it loads no editor, no registration effect, and no
-  Poodle. Consumer inline-node registrations are render-time only: schema
-  scoped, composed into the document, and sanitized with it. They change no
-  wire shape, no block schema and no editor vocabulary
+- Export one explicit entry point per job, and no subpath for a module that is
+  only an internal seam:
+
+  | Subpath | Job |
+  | --- | --- |
+  | `.` | Svelte-free aggregate: block IDs, versions, media locators, types, registries, validation |
+  | `./core` | Svelte-free durable value mechanics |
+  | `./validation` | Save-boundary validation, FormData writer |
+  | `./types`, `./utils`, `./block-versions` | Narrow type and normalisation modules |
+  | `./editor-registry`, `./render-registry`, `./validator-registry` | Registry mechanics with registration, unregistration and clear seams |
+  | `./editor`, `./editor-registrations` | Editor surfaces and their registration effect |
+  | `./renderer`, `./render-registrations`, `./rich-text`, `./markdown` | Render surfaces and their registration effect |
+  | `./strategies`, `./media-source`, `./styles.css`, `./package.json` | Strategies loading, media resolution seam, editor appearance, manifest |
+
+- Keep `.` light and Svelte-free. A root import may not reach `./strategies` or
+  a `.svelte` module: `strategies` imports Svelte stores at runtime and is a
+  browser-only subpath.
+- Export `renderSafeMarkdownPreview` from `./markdown`, the surface that already
+  owns markdown rendering.
+- Do not export `block-ids` and `media-locator` as extra subpaths: `./core`,
+  `./validation` and `.` already answer them.
+- `./rich-text` is the stored rich-text path: the sanitized document renderer
+  and the schema-scoped inline-node renderer registry. It is a renderer entry
+  point, so it loads no editor, no registration effect, and no Poodle. Consumer
+  inline-node registrations are render-time only: schema scoped, composed into
+  the document, and sanitized with it. They change no wire shape, no block
+  schema and no editor vocabulary
   ([vocabulary](../domain/vocabulary.md#consumer-inline-nodes)).
 - Keep `core` and `validation` free of Svelte runtime imports.
 - Allow registry modules to import Svelte types only.
@@ -39,15 +58,40 @@ after consumer migration begins.
   breaking and moves the range in a Nightfire release, while a Poodle patch
   needs none (Tom, 2026-09-27).
 - Keep editor and renderer registration as explicit consumer opt-ins.
+- Every registry exposes `unregister` and `clear` next to its `register`. A
+  process-global registry must be retirable, or tests and hot reloads leak one
+  case's registrations into the next. A schema-scoped registry resolves the
+  schema before the `*` wildcard.
+- Side effects are declared by file shape, not by an enumerated list:
+  `**/editor.ts`, `**/render.ts`, `**/*-registrations.ts` and `**/*.css` are the
+  side-effect modules. Adding a block must not require editing that list.
 
 ## Data and trust
 
-- Reject unknown block versions and legacy sibling `block` envelopes.
+- Reject unknown block versions and legacy sibling `block` envelopes, including
+  a hybrid value that carries both `block` and `blocks`.
+- Reject a value with no schema. A block with no schema has no validated home.
 - Do not invent migrations during normalization.
+- A non-object is not an empty block. Coercion returns `null` rather than
+  fabricating one, and a block re-typed to the default type drops the data and
+  version that belonged to the type it was not.
 - Assign missing `nf_` block IDs during save preparation.
 - Treat markdown and embedded HTML as untrusted.
 - Sanitize before every Svelte `{@html}` path in browser, SSR, and desktop
   WebView-shaped execution.
+
+## Media locators
+
+A locator is `<block-id>#<json-pointer>`, with the pointer relative to the
+block's `data`. The TypeScript and Rust implementations agree on every rule:
+
+- The pointer is a non-empty RFC 6901 pointer: slash-prefixed, with every `~`
+  escaping `0` or `1`.
+- A block ID never contains `#`; the separator is the one `#`.
+- An array segment is `0` or a digit string without a leading zero.
+- A segment resolves only an own property, so `#/constructor` resolves nothing.
+- Resolution finds the block by ID among top-level blocks and then inside
+  another block's data, so a nested `item_list` body resolves too.
 
 ## Dependencies
 

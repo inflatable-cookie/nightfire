@@ -77,6 +77,87 @@ describe("nightfire/strategies", () => {
 		expect(calls).toBe(3);
 	});
 
+	it("caches an empty strategy list until it is invalidated", async () => {
+		const strategies = await loadStrategies();
+		let calls = 0;
+		strategies.configureNightfireStrategies({
+			fetchStrategies: async () => {
+				calls += 1;
+				return [];
+			},
+			cacheTtl: 100000,
+		});
+
+		const store = strategies.createNightfireStrategiesContext();
+		await expect(store.ensure()).resolves.toEqual([]);
+		await expect(store.ensure()).resolves.toEqual([]);
+		expect(calls).toBe(1);
+
+		store.invalidate();
+		await store.ensure();
+		expect(calls).toBe(2);
+	});
+
+	it("does not let a slower earlier fetch clobber a refresh", async () => {
+		const strategies = await loadStrategies();
+		let calls = 0;
+		let releaseSlow = () => {};
+		const slowGate = new Promise<void>((resolve) => {
+			releaseSlow = resolve;
+		});
+
+		strategies.configureNightfireStrategies({
+			fetchStrategies: async () => {
+				calls += 1;
+				if (calls === 1) {
+					await slowGate;
+					return [{ id: "slow", cardinality: { mode: "single" }, allowedTypes: [], allowedCategories: [], defaultType: "markdown" }];
+				}
+				return [{ id: "fast", cardinality: { mode: "single" }, allowedTypes: [], allowedCategories: [], defaultType: "markdown" }];
+			},
+			cacheTtl: 100000,
+		});
+
+		const store = strategies.createNightfireStrategiesContext();
+		const slow = store.ensure();
+		const fast = store.refresh();
+		await expect(fast).resolves.toEqual([expect.objectContaining({ id: "fast" })]);
+
+		releaseSlow();
+		await expect(slow).resolves.toEqual([expect.objectContaining({ id: "fast" })]);
+
+		expect(store.findById("fast")?.id).toBe("fast");
+		expect(store.findById("slow")).toBeNull();
+	});
+
+	it("clears loading when an in-flight fetch is invalidated", async () => {
+		const strategies = await loadStrategies();
+		let releaseSlow = () => {};
+		const slowGate = new Promise<void>((resolve) => {
+			releaseSlow = resolve;
+		});
+
+		strategies.configureNightfireStrategies({
+			fetchStrategies: async () => {
+				await slowGate;
+				return [{ id: "stale", cardinality: { mode: "single" }, allowedTypes: [], allowedCategories: [], defaultType: "markdown" }];
+			},
+			cacheTtl: 100000,
+		});
+
+		const store = strategies.createNightfireStrategiesContext();
+		const pending = store.ensure();
+		expect(get(store.loading)).toBe(true);
+
+		store.invalidate();
+		expect(get(store.loading)).toBe(false);
+
+		releaseSlow();
+		await expect(pending).resolves.toEqual([]);
+		expect(get(store.loading)).toBe(false);
+		expect(store.findById("stale")).toBeNull();
+	});
+
 	it("returns null when strategy context is missing", async () => {
 		const strategies = await loadStrategies();
 		expect(strategies.useNightfireStrategies()).toBeNull();

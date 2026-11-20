@@ -82,31 +82,17 @@ describe("normaliseNightfireValue", () => {
 			expect(result.blocks[0]?.data).toEqual({ text: markdown });
 		});
 
-		it("does not convert string if markdown not in allowed types", () => {
-			const result = normaliseNightfireValue("Hello", testSchema, ["custom", "other"]);
-			expect(result).toEqual({
+		it("drops a raw string when markdown is not an allowed type", () => {
+			expect(normaliseNightfireValue("Hello", testSchema, ["custom", "other"])).toEqual({
 				schema: testSchema,
-				blocks: [
-					{
-						type: "custom",
-						version: "initial",
-						data: {},
-					},
-				],
+				blocks: [],
 			});
 		});
 
-		it("falls back to markdown type when allowed block types list is empty", () => {
-			const result = normaliseNightfireValue("Hello", testSchema, []);
-			expect(result).toEqual({
+		it("drops a raw string when the allowed block types list is empty", () => {
+			expect(normaliseNightfireValue("Hello", testSchema, [])).toEqual({
 				schema: testSchema,
-				blocks: [
-					{
-						type: "markdown",
-						version: "initial",
-						data: {},
-					},
-				],
+				blocks: [],
 			});
 		});
 

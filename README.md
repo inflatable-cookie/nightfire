@@ -69,12 +69,22 @@ import type { NightfireValue } from "@inflatable-cookie/nightfire/types";
 import { prepareNightfireForSave } from "@inflatable-cookie/nightfire/validation";
 import { NightfireRenderer } from "@inflatable-cookie/nightfire/renderer";
 import { renderRichTextHtml } from "@inflatable-cookie/nightfire/rich-text";
+import { renderSafeMarkdownPreview } from "@inflatable-cookie/nightfire/markdown";
 ```
 
-`core` and `validation` have no Svelte runtime edge. Registry modules use
-Svelte only for type declarations. Importing `renderer` does not load editors,
-registration side effects, or Poodle. Editor and renderer registration modules
-remain explicit opt-ins. Editors need Poodle installed; renderers do not.
+The export map is the public surface: `.` (Svelte-free aggregate), `core`,
+`types`, `utils`, `block-versions`, `validation`, the three registries,
+`editor`, `editor-registrations`, `renderer`, `render-registrations`,
+`rich-text`, `markdown`, `strategies`, `media-source`, `styles.css` and
+`package.json`. There is no subpath for an internal seam or a zero-caller
+module.
+
+`core`, `validation` and the root `.` have no Svelte runtime edge. Registry
+modules use Svelte only for type declarations. `strategies` imports Svelte
+stores, so it is a browser-only subpath and is not part of `.`; import it
+directly. Importing `renderer` does not load editors, registration side
+effects, or Poodle. Editor and renderer registration modules remain explicit
+opt-ins. Editors need Poodle installed; renderers do not.
 
 The Rust crate exposes the matching value, block, strategy, registry,
 validation, hashing, block-ID, and media-locator contracts. Both languages use
@@ -102,7 +112,13 @@ interface NightfireValue {
 
 Saving validates versions, drops invalid blocks, and assigns missing `nf_`
 UUIDv7-style block IDs. Unknown versions fail closed. Legacy v1 sibling
-`block` envelopes are rejected rather than silently migrated.
+`block` envelopes are rejected rather than silently migrated, and so is a value
+without a schema.
+
+Media locators are `<block-id>#<json-pointer>`, with an RFC 6901 pointer
+relative to the block's `data`. Both languages reject an empty pointer, a `#`
+in the block id, an array index with a leading zero, and a malformed `~` escape;
+resolution finds a block nested inside another block's data too.
 
 Markdown is parsed by `marked` and sanitized by `isomorphic-dompurify` before
 entering Svelte `{@html}`. The malicious fixture suite exercises SSR, browser,

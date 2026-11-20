@@ -1,4 +1,4 @@
-import type { NightfireBlock, NightfireDraftValue, NightfireValue } from "./types";
+import type { NightfireBlock, NightfireValue } from "./types";
 
 export function generateNightfireBlockId(): string {
   const bytes = new Uint8Array(16);
@@ -34,7 +34,7 @@ export function ensureNightfireBlockId(block: NightfireBlock): NightfireBlock {
   };
 }
 
-export function ensureNightfireBlockIds<T extends NightfireDraftValue | NightfireValue>(value: T): T {
+export function ensureNightfireBlockIds<T extends NightfireValue>(value: T): T {
   const blocks = Array.isArray(value.blocks) ? value.blocks : [];
   return {
     ...value,

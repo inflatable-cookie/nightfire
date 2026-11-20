@@ -1,3 +1,4 @@
+import type { BlockTypeOption } from "./editor-registry";
 import type { MarkdownEditorContext } from "./markup/markdown-editor-context";
 
 export interface NightfireSlashCommandInput {
@@ -30,11 +31,6 @@ export interface NightfireSlashMatch {
   query: string;
 }
 
-interface BlockTypeOptionLike {
-  type: string;
-  label: string;
-}
-
 function dedupe(values: string[]): string[] {
   return Array.from(new Set(values.map((value) => value.trim()).filter((value) => value.length > 0)));
 }
@@ -43,7 +39,7 @@ function normaliseSearchValue(value: string): string {
   return value.toLowerCase().trim();
 }
 
-function buildDefaultCommand(option: BlockTypeOptionLike): NightfireSlashCommand {
+function buildDefaultCommand(option: BlockTypeOption): NightfireSlashCommand {
   return {
     id: `insert-${option.type}`,
     type: option.type,
@@ -55,7 +51,7 @@ function buildDefaultCommand(option: BlockTypeOptionLike): NightfireSlashCommand
 }
 
 export function buildNightfireSlashCommands(
-  typeOptions: BlockTypeOptionLike[],
+  typeOptions: BlockTypeOption[],
   config: NightfireSlashCommandsConfig | null | undefined
 ): NightfireSlashCommand[] {
   const allowedTypes = new Map(typeOptions.map((option) => [option.type, option.label]));

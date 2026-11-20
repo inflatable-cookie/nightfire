@@ -1,14 +1,14 @@
-import type { NightfireDraftValue } from "../types";
+import type { NightfireValue } from "../types";
 import { normaliseNightfireValue } from "../utils";
 import type { NightfireFieldMode } from "./field-lifecycle";
 
 export interface StrategyNormalisationResult {
-  coerced: NightfireDraftValue;
+  coerced: NightfireValue;
   schemaMismatch: string | null;
 }
 
 export function normaliseForStrategy(
-  value: NightfireDraftValue,
+  value: NightfireValue,
   schema: string,
   _mode: NightfireFieldMode
 ): StrategyNormalisationResult {

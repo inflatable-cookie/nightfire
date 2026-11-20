@@ -1,100 +1,151 @@
 import { describe, expect, it } from "../vitest";
 import {
-  ensureNightfireBlockIds,
-  findNightfireBlockById,
-  formatNightfireMediaLocator,
-  parseNightfireMediaLocator,
-  resolveNightfireMediaLocator
+	findNightfireBlockById,
+	formatNightfireMediaLocator,
+	parseNightfireMediaLocator,
+	resolveNightfireMediaLocator,
+	type NightfireMediaLocator
 } from "../../src/validation";
 
+const value = {
+	schema: "test:schema",
+	blocks: [
+		{
+			id: "intro_01",
+			type: "markdown",
+			version: "initial",
+			data: { text: "Hello" }
+		},
+		{
+			id: "gallery_02",
+			type: "gallery",
+			version: "initial",
+			data: {
+				pages: [{ image_id: "media-1" }, { image_id: "media-2" }],
+				"a/b": { "m~n": "media-3" }
+			}
+		}
+	]
+};
+
 describe("nightfire/media-locator", () => {
-  it("formats and parses canonical block-id locators", () => {
-    const locatorKey = formatNightfireMediaLocator({
-      blockId: "hero_01",
-      dataPointer: "/pages/1/image_id"
-    });
+	it("formats and parses canonical block-id locators", () => {
+		const locatorKey = formatNightfireMediaLocator({
+			blockId: "hero_01",
+			dataPointer: "/pages/1/image_id"
+		});
 
-    expect(locatorKey).toBe("hero_01#/pages/1/image_id");
-    expect(parseNightfireMediaLocator(locatorKey)).toEqual({
-      blockId: "hero_01",
-      dataPointer: "/pages/1/image_id"
-    });
-  });
+		expect(locatorKey).toBe("hero_01#/pages/1/image_id");
+		expect(parseNightfireMediaLocator(locatorKey)).toEqual({
+			blockId: "hero_01",
+			dataPointer: "/pages/1/image_id"
+		});
+	});
 
-  it("resolves a media reference relative to block.data", () => {
-    const value = {
-      schema: "test:schema",
-      blocks: [
-        {
-          id: "intro_01",
-          type: "markdown",
-          data: { text: "Hello" }
-        },
-        {
-          id: "gallery_02",
-          type: "gallery",
-          data: {
-            pages: [{ image_id: "media-1" }, { image_id: "media-2" }]
-          }
-        }
-      ]
-    };
+	it("trims the block id", () => {
+		expect(parseNightfireMediaLocator(" hero_01 #/image_id")).toEqual({
+			blockId: "hero_01",
+			dataPointer: "/image_id"
+		});
+	});
 
-    const locator = parseNightfireMediaLocator("gallery_02#/pages/1/image_id");
+	it("resolves a media reference relative to block.data", () => {
+		const locator = parseNightfireMediaLocator("gallery_02#/pages/1/image_id");
 
-    expect(findNightfireBlockById(value, "gallery_02")).toEqual(value.blocks[1]);
-    expect(resolveNightfireMediaLocator(value, locator)).toBe("media-2");
-  });
+		expect(findNightfireBlockById(value, "gallery_02")).toEqual(value.blocks[1]);
+		expect(resolveNightfireMediaLocator(value, locator)).toBe("media-2");
+	});
 
-  it("returns undefined when the block or nested path does not exist", () => {
-    const value = {
-      schema: "test:schema",
-      blocks: [
-        {
-          id: "hero_01",
-          type: "image",
-          data: { image_id: "media-1" }
-        }
-      ]
-    };
+	it("decodes ~0 and ~1 escapes", () => {
+		expect(
+			resolveNightfireMediaLocator(value, parseNightfireMediaLocator("gallery_02#/a~1b/m~0n"))
+		).toBe("media-3");
+	});
 
-    expect(
-      resolveNightfireMediaLocator(value, parseNightfireMediaLocator("hero_01#/pages/0/image_id"))
-    ).toBeUndefined();
-    expect(
-      resolveNightfireMediaLocator(value, parseNightfireMediaLocator("gallery_02#/image_id"))
-    ).toBeUndefined();
-  });
+	it("resolves a pointer inside a nested block", () => {
+		const nested = {
+			schema: "test:schema",
+			blocks: [
+				{
+					id: "list_01",
+					type: "item_list",
+					version: "initial",
+					data: {
+						items: [
+							{
+								id: "row_01",
+								body: [
+									{
+										id: "gallery_02",
+										type: "gallery",
+										version: "initial",
+										data: { pages: [{ image_id: "media-1" }, { image_id: "media-2" }] }
+									}
+								]
+							}
+						]
+					}
+				}
+			]
+		};
 
-  it("ensures stable top-level block ids before save", () => {
-    const single = ensureNightfireBlockIds({
-      schema: "test:schema",
-      blocks: [
-        {
-          type: "markdown",
-          data: { text: "Hello" }
-        }
-      ]
-    });
+		expect(
+			resolveNightfireMediaLocator(nested, parseNightfireMediaLocator("gallery_02#/pages/1/image_id"))
+		).toBe("media-2");
+	});
 
-    expect(single.blocks[0]?.id).toMatch(/^nf_/);
+	it("returns undefined when the block or path does not exist", () => {
+		expect(
+			resolveNightfireMediaLocator(value, parseNightfireMediaLocator("gallery_02#/pages/9/image_id"))
+		).toBeUndefined();
+		expect(
+			resolveNightfireMediaLocator(value, parseNightfireMediaLocator("gallery_02#/pages/01/image_id"))
+		).toBeUndefined();
+		expect(
+			resolveNightfireMediaLocator(value, parseNightfireMediaLocator("gallery_02#/pages/ 1 /image_id"))
+		).toBeUndefined();
+		expect(
+			resolveNightfireMediaLocator(value, parseNightfireMediaLocator("missing_03#/image_id"))
+		).toBeUndefined();
+	});
 
-    const multi = ensureNightfireBlockIds({
-      schema: "test:schema",
-      blocks: [
-        {
-          id: "existing_block",
-          type: "markdown",
-          data: { text: "One" }
-        },
-        {
-          type: "markdown",
-          data: { text: "Two" }
-        }
-      ]
-    });
+	it("resolves no prototype property", () => {
+		for (const pointer of ["#/constructor", "#/toString", "#/__proto__"]) {
+			expect(
+				resolveNightfireMediaLocator(value, parseNightfireMediaLocator(`gallery_02${pointer}`)),
+				pointer
+			).toBeUndefined();
+		}
+	});
 
-    expect(multi.blocks[0]?.id).toBe("existing_block");
-    expect(multi.blocks[1]?.id).toMatch(/^nf_/);
-  });
+	it("rejects a locator without a separator or a block id", () => {
+		expect(() => parseNightfireMediaLocator("hero_01:/image_id")).toThrow(/'#'/);
+		expect(() => parseNightfireMediaLocator("#/image_id")).toThrow(/blockId/);
+		expect(() => parseNightfireMediaLocator("  #/image_id")).toThrow(/blockId/);
+		expect(() => formatNightfireMediaLocator({ blockId: " ", dataPointer: "/image_id" })).toThrow(/blockId/);
+	});
+
+	it("rejects a '#' in the block id", () => {
+		expect(() => formatNightfireMediaLocator({ blockId: "hero#01", dataPointer: "/image_id" })).toThrow(
+			/'#'/
+		);
+	});
+
+	it("rejects a malformed pointer", () => {
+		for (const dataPointer of ["", "image_id", "/a~2b", "/a~"]) {
+			expect(
+				() => formatNightfireMediaLocator({ blockId: "hero_01", dataPointer }),
+				JSON.stringify(dataPointer)
+			).toThrow(/JSON Pointer/);
+			expect(
+				() => parseNightfireMediaLocator(`hero_01#${dataPointer}`),
+				JSON.stringify(dataPointer)
+			).toThrow(/JSON Pointer/);
+		}
+	});
+
+	it("validates a hand-built locator before resolving it", () => {
+		const locator: NightfireMediaLocator = { blockId: "hero_01", dataPointer: "image_id" };
+		expect(() => resolveNightfireMediaLocator(value, locator)).toThrow(/JSON Pointer/);
+	});
 });

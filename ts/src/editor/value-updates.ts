@@ -10,7 +10,15 @@ import {
   removeBlockFromList
 } from "./block-list";
 function asBlockObject(value: unknown): NightfireBlock {
-  return coerceNightfireBlock(value, "markdown")!;
+  // These helpers edit a block, so absent or malformed input still needs a
+  // block to edit. `coerceNightfireBlock` refuses to fabricate one by itself.
+  return (
+    coerceNightfireBlock(value, "markdown") ?? {
+      type: "markdown",
+      version: "initial",
+      data: {}
+    }
+  );
 }
 
 export function asSingleBlockValue(schema: string, block: unknown): NightfireValue {

@@ -69,8 +69,12 @@ const byIdStore = derived(strategiesStore, ($strategies) => {
 });
 
 let fetchedAt: number | null = null;
+let hasLoaded = false;
 let fetchPromise: Promise<NightfireStrategy[]> | null = null;
 let config: NightfireStrategiesConfig | null = null;
+// The in-flight request that currently owns the store. A response from any
+// other token is a superseded request and must not write cache or error state.
+let activeRequest: object | null = null;
 
 /**
  * Configure Nightfire strategies loading.
@@ -104,6 +108,8 @@ export function configureNightfireStrategies(cfg: NightfireStrategiesConfig): vo
     );
   }
   config = cfg;
+  // A new fetch source must not inherit the previous one's cache.
+  resetCache();
 }
 
 function isStale(): boolean {
@@ -112,16 +118,23 @@ function isStale(): boolean {
   return Date.now() - fetchedAt > ttl;
 }
 
+function resetCache(): void {
+  fetchedAt = null;
+  hasLoaded = false;
+  fetchPromise = null;
+  activeRequest = null;
+  loadingStore.set(false);
+}
+
 /**
  * Ensure strategies are loaded. Returns cached data if available and fresh,
  * otherwise fetches from the API. Multiple concurrent calls share the same
  * fetch promise.
  */
 async function ensure(): Promise<NightfireStrategy[]> {
-  // Return cached data if fresh
-  const current = get(strategiesStore);
-  if (current.length > 0 && !isStale()) {
-    return current;
+  // A cached empty list is a real answer: it stays cached until it goes stale.
+  if (hasLoaded && !isStale()) {
+    return get(strategiesStore);
   }
 
   // If already fetching, return the existing promise
@@ -135,23 +148,39 @@ async function ensure(): Promise<NightfireStrategy[]> {
     return [];
   }
 
-  // Start a new fetch
+  const request = {};
+  activeRequest = request;
   loadingStore.set(true);
   errorStore.set(null);
+
+  const settle = (): boolean => {
+    if (activeRequest !== request) {
+      return false;
+    }
+    fetchPromise = null;
+    loadingStore.set(false);
+    activeRequest = null;
+    return true;
+  };
 
   fetchPromise = config
     .fetchStrategies()
     .then((result) => {
+      // A slower earlier request must not clobber a later one.
+      if (activeRequest !== request) {
+        return get(strategiesStore);
+      }
       strategiesStore.set(result);
       fetchedAt = Date.now();
-      loadingStore.set(false);
-      fetchPromise = null;
+      hasLoaded = true;
+      settle();
       return result;
     })
     .catch((e) => {
+      if (!settle()) {
+        return get(strategiesStore);
+      }
       errorStore.set(e instanceof Error ? e.message : "Failed to load strategies");
-      loadingStore.set(false);
-      fetchPromise = null;
       return [];
     });
 
@@ -162,8 +191,7 @@ async function ensure(): Promise<NightfireStrategy[]> {
  * Force a refresh of strategies, ignoring the cache.
  */
 async function refresh(): Promise<NightfireStrategy[]> {
-  fetchedAt = null;
-  fetchPromise = null;
+  resetCache();
   return ensure();
 }
 
@@ -171,8 +199,7 @@ async function refresh(): Promise<NightfireStrategy[]> {
  * Invalidate the cache without fetching. Next call to ensure() will fetch.
  */
 function invalidate(): void {
-  fetchedAt = null;
-  fetchPromise = null;
+  resetCache();
 }
 
 /**

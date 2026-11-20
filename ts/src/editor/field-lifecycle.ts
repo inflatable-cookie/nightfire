@@ -1,4 +1,4 @@
-import type { NightfireDraftValue, NightfireValue } from "../types";
+import type { NightfireValue } from "../types";
 import { createDefaultBlock } from "./block-list";
 import { writePreparedNightfireToFormData } from "../validation";
 
@@ -16,7 +16,7 @@ export function createRequiredInitialValue(
 }
 
 export function createPrepareWriter(
-  getValue: () => NightfireDraftValue,
+  getValue: () => NightfireValue,
   getName: () => string
 ): (formData: FormData) => void {
   return (formData: FormData) => {

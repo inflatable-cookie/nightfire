@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount, tick, untrack } from "svelte";
   import type { MarkdownEditorContext } from "./markup/markdown-editor-context";
-  import type { NightfireDraftValue } from "./types";
+  import type { NightfireValue } from "./types";
   // Ensure registrations are loaded before we lookup schema definitions
   import "./editor-registrations";
   import {
@@ -66,7 +66,7 @@
   interface Props {
     name: string;
     schema: string;
-    value: NightfireDraftValue;
+    value: NightfireValue;
     /**
      * Optional overrides derived from a Nightfire strategy.
      * @deprecated Use automatic strategy loading via configureNightfireStrategies() instead.
@@ -94,7 +94,7 @@
     /**
      * Optional callback invoked whenever the NightfireValue changes.
      */
-    onChange?: (value: NightfireDraftValue) => void;
+    onChange?: (value: NightfireValue) => void;
     /**
      * Hook used with a parent form's `prepare` boundary. When bound from a parent
      * (via `bind:prepare`), the editor will populate it with an
@@ -278,7 +278,7 @@
     }
   });
 
-  function emit(nextValue: NightfireDraftValue) {
+  function emit(nextValue: NightfireValue) {
     value = nextValue;
     onChange?.(nextValue);
   }

@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { MarkdownEditorContext } from "../markup/markdown-editor-context";
-  import type { NightfireBlockDefinition, NightfireTypeOption } from "../utils";
+  import type { BlockTypeOption, SchemaDefinition } from "../editor-registry";
   import type { GroupedOptions } from "./grouped-options";
   import { default as NightfireBlockEditor } from "../NightfireBlockEditor.svelte";
   import { default as NightfireTypeSelect } from "./NightfireTypeSelect.svelte";
@@ -10,8 +10,8 @@
     index: number;
     totalBlocks: number;
     editorSchema: string;
-    effectiveDef: NightfireBlockDefinition;
-    editorTypeOptions: NightfireTypeOption[];
+    effectiveDef: SchemaDefinition;
+    editorTypeOptions: BlockTypeOption[];
     groupedOptions: GroupedOptions[] | null;
     onTypeChange: (index: number, value: string) => void;
     onMove: (from: number, to: number) => void;

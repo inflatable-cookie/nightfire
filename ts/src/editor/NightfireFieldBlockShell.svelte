@@ -3,7 +3,7 @@
   import { toBlockTypeGroups, toBlockTypes, toEditorBlocks } from "./poodle-block-editor";
 
   import type { MarkdownEditorContext } from "../markup/markdown-editor-context";
-  import type { NightfireBlockDefinition, NightfireTypeOption } from "../utils";
+  import type { BlockTypeOption, SchemaDefinition } from "../editor-registry";
   import type { GroupedOptions } from "./grouped-options";
   import type { NightfireSlashCommand } from "../slash-commands";
   import { default as NightfireBlockEditor } from "../NightfireBlockEditor.svelte";
@@ -13,8 +13,8 @@
   interface Props {
     schema: string;
     isMulti: boolean;
-    definition: NightfireBlockDefinition;
-    editorTypeOptions: NightfireTypeOption[];
+    definition: SchemaDefinition;
+    editorTypeOptions: BlockTypeOption[];
     groupedOptions: GroupedOptions[] | null;
     singleBlock: any;
     blocks: any[];

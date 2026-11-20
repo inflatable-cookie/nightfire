@@ -1,4 +1,5 @@
-import type { SvelteComponent, Component } from "svelte";
+import type { Component } from "svelte";
+import { KeyedRegistry, SchemaScopedRegistry } from "./registry-map";
 
 export type FieldMode = "single" | "multi";
 
@@ -13,78 +14,86 @@ export interface BlockTypeOption {
   label: string;
 }
 
-type RegistryKey = string;
-
 /**
  * Function that determines whether a block's content is meaningfully empty.
  * Returns `true` when the block has no user-entered content.
  */
 export type BlockEmptyChecker = (block: any) => boolean;
 
-// Support both Svelte 4 class components and Svelte 5 function components
-type AnyComponent =
-  | (new (...args: any[]) => SvelteComponent)
-  | Component<any, any, any>;
+export type BlockEditorComponent = Component<any, any, any>;
 
-export type BlockEditorComponent = AnyComponent;
-
-function makeKey(schema: string | null, type: string): RegistryKey {
-  return `${schema ?? "*"}|${type}`;
-}
-
-const schemaDefs = new Map<string, SchemaDefinition>();
-const blockEditors = new Map<RegistryKey, AnyComponent>();
-const blockTypeOptions = new Map<string, BlockTypeOption[]>();
-const blockEmptyCheckers = new Map<string, BlockEmptyChecker>();
+const schemaDefs = new KeyedRegistry<SchemaDefinition>();
+const blockEditors = new SchemaScopedRegistry<BlockEditorComponent>();
+const blockTypeOptions = new SchemaScopedRegistry<BlockTypeOption>();
+const blockEmptyCheckers = new KeyedRegistry<BlockEmptyChecker>();
 
 export function registerSchema(def: SchemaDefinition): void {
   schemaDefs.set(def.schema, def);
 }
 
+export function unregisterSchema(schema: string): boolean {
+  return schemaDefs.delete(schema);
+}
+
+export function clearSchemas(): void {
+  schemaDefs.clear();
+}
+
+/**
+ * Register an editor and its palette label for `(schema, type)`. Registering
+ * the same pair again replaces the component and updates the label.
+ */
 export function registerBlockEditor(
   schema: string | null,
   type: string,
   label: string,
-  component: AnyComponent
+  component: BlockEditorComponent
 ): void {
-  blockEditors.set(makeKey(schema, type), component);
+  blockEditors.set(schema, type, component);
+  blockTypeOptions.set(schema, type, { type, label });
+}
 
-  const key = schema ?? "*";
-  const existing = blockTypeOptions.get(key) ?? [];
+export function unregisterBlockEditor(
+  schema: string | null,
+  type: string
+): boolean {
+  blockTypeOptions.delete(schema, type);
+  return blockEditors.delete(schema, type);
+}
 
-  if (!existing.some((opt) => opt.type === type)) {
-    blockTypeOptions.set(key, [...existing, { type, label }]);
-  }
+export function clearBlockEditors(): void {
+  blockEditors.clear();
+  blockTypeOptions.clear();
 }
 
 export function getSchemaDefinition(
   schema: string
 ): SchemaDefinition | null {
-  return schemaDefs.get(schema) ?? null;
+  return schemaDefs.get(schema);
 }
 
 export function getBlockEditor(
   schema: string,
   type: string
-): AnyComponent | null {
-  return blockEditors.get(makeKey(schema, type)) ?? blockEditors.get(makeKey(null, type)) ?? null;
+): BlockEditorComponent | null {
+  return blockEditors.get(schema, type);
 }
 
+/**
+ * The palette options for a schema. A schema's own entries come first and win
+ * over a wildcard (`*`) entry for the same type.
+ */
 export function getBlockTypeOptionsForSchema(
   schema: string
 ): BlockTypeOption[] {
-  const options = [...(blockTypeOptions.get("*") ?? []), ...(blockTypeOptions.get(schema) ?? [])];
-  return options.filter((option, index) => options.findIndex((item) => item.type === option.type) === index);
+  return blockTypeOptions.entriesForSchema(schema).map(({ value }) => value);
 }
 
 export function getBlockTypeLabel(
   schema: string,
   type: string
 ): string | null {
-  const options = getBlockTypeOptionsForSchema(schema);
-  if (!options) return null;
-  const match = options.find((opt) => opt.type === type);
-  return match?.label ?? null;
+  return blockTypeOptions.get(schema, type)?.label ?? null;
 }
 
 /**
@@ -99,6 +108,14 @@ export function registerBlockEmptyChecker(
   checker: BlockEmptyChecker
 ): void {
   blockEmptyCheckers.set(type, checker);
+}
+
+export function unregisterBlockEmptyChecker(type: string): boolean {
+  return blockEmptyCheckers.delete(type);
+}
+
+export function clearBlockEmptyCheckers(): void {
+  blockEmptyCheckers.clear();
 }
 
 /**

@@ -6,5 +6,5 @@ export {
   resolveNightfireMediaLocator
 } from "./media-locator";
 
-export type { NightfireDraftValue, NightfireValue } from "./types";
+export type { NightfireValue } from "./types";
 export type { NightfireMediaLocator } from "./media-locator";

@@ -1,18 +1,17 @@
 import { existsSync } from "node:fs";
 
+// The export map is the package's whole public surface: a subpath that no
+// consumer calls is dead weight the next consumer has to sweep. Keep this list
+// equal to `package.json` `exports`, and runtime-import every subpath that is
+// plain TypeScript so a broken target fails here rather than at install time.
 const expected = [
   ".",
-  "./block-editor",
-  "./block-ids",
-  "./block-registration",
   "./block-versions",
   "./core",
-  "./core-blocks",
   "./editor",
   "./editor-registrations",
   "./editor-registry",
   "./markdown",
-  "./media-locator",
   "./media-source",
   "./package.json",
   "./render-registrations",
@@ -21,6 +20,23 @@ const expected = [
   "./rich-text",
   "./strategies",
   "./styles.css",
+  "./types",
+  "./utils",
+  "./validation",
+  "./validator-registry",
+];
+
+// Subpaths whose target is TypeScript with no `.svelte` import, so plain `bun`
+// can load them without the Svelte plugin.
+const pureTypeScript = [
+  ".",
+  "./block-versions",
+  "./core",
+  "./editor-registry",
+  "./media-source",
+  "./render-registry",
+  "./rich-text",
+  "./strategies",
   "./types",
   "./utils",
   "./validation",
@@ -37,11 +53,11 @@ for (const [subpath, target] of Object.entries<string>(manifest.exports)) {
   if (!existsSync(target)) throw new Error(`missing export target ${subpath}: ${target}`);
 }
 
-await import("@inflatable-cookie/nightfire/core");
-await import("@inflatable-cookie/nightfire/validation");
-await import("@inflatable-cookie/nightfire/editor-registry");
-await import("@inflatable-cookie/nightfire/render-registry");
-await import("@inflatable-cookie/nightfire/rich-text");
-await import("@inflatable-cookie/nightfire/media-source");
+for (const subpath of pureTypeScript) {
+  const loaded: unknown = await import(`@inflatable-cookie/nightfire${subpath.slice(1)}`);
+  if (loaded === null || typeof loaded !== "object") {
+    throw new Error(`export target did not load as a module: ${subpath}`);
+  }
+}
 
-console.log(`export proof passed: ${actual.length} explicit subpaths resolve`);
+console.log(`export proof passed: ${actual.length} explicit subpaths resolve, ${pureTypeScript.length} runtime-imported`);
