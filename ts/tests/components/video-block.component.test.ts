@@ -3,6 +3,8 @@ import { describe, expect, it } from "../vitest";
 import { fireEvent, render, waitFor, within } from "../render";
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
+import { flushSync } from "svelte";
+import VideoEditorHarness from "./VideoEditorHarness.svelte";
 
 import "../../src/render-registrations";
 import "../../src/editor-registrations";
@@ -218,6 +220,19 @@ describe("nightfire/video block", () => {
     await fireEvent.input(title, { target: { value: "Changed" } });
     expect(calls.at(-1).id).toBe("video-1");
     expect(calls.at(-1).data.embed).toBeUndefined();
+  });
+
+  it("updates the input and subsequent edits when the parent replaces the embed", async () => {
+    const calls: any[] = [];
+    const view = render(VideoEditorHarness, { initial: { type: "video", data: {} }, onChange: (next: unknown) => calls.push(next) });
+    await fireEvent.input(urlInput(view.container), { target: { value: YOUTUBE_URL } });
+    await waitFor(() => expect(calls.length).toBeGreaterThan(0));
+    const external = { provider: "vimeo", id: "12345", originalUrl: "https://vimeo.com/12345" };
+    (view.component as any).setBlock({ type: "video", data: { embed: external } });
+    flushSync();
+    expect(urlInput(view.container).value).toBe(external.originalUrl);
+    await fireEvent.input(within(view.container).getByPlaceholderText("Caption (optional)"), { target: { value: "New" } });
+    expect(calls.at(-1).data.embed).toEqual(external);
   });
 
   it("survives the scenario oracle: paste, title, save, reload", async () => {

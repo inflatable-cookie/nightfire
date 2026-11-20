@@ -57,6 +57,17 @@ afterEach(() => {
 });
 
 describe("nightfire/image block", () => {
+  it("recovers from a rejected picker and keeps the block id", async () => {
+    registerMediaSource(stubSource({ pick: async () => { throw new Error("unavailable"); } }));
+    const onChange = vi.fn();
+    const view = render(EditorComponent as any, { block: { id: "block-1", type: "image", data: {} }, onChange });
+    const button = within(view.container).getByRole("button", { name: "Choose image" });
+    await fireEvent.click(button);
+    await waitFor(() => expect(button.hasAttribute("disabled")).toBe(false));
+    await fireEvent.input(within(view.container).getByPlaceholderText("Alt text"), { target: { value: "text" } });
+    expect(onChange.mock.calls.at(-1)![0].id).toBe("block-1");
+  });
+
   it("registers both parts", () => {
     expect(RendererComponent).toBeTruthy();
     expect(EditorComponent).toBeTruthy();

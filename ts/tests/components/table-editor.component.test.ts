@@ -185,8 +185,8 @@ describe("nightfire/table editor", () => {
     const afterColumn = lastBlock(onChange);
     expect(afterColumn.data.rows[0].section).toBe("retained-section");
     expect(afterColumn.data.rows[0].cells[0].cell_extension).toBe("retained");
-    expect(afterColumn.data.rows[0].cells).toHaveLength(3);
-    expect(afterColumn.data.rows[0].cells[1].is_header).toBeUndefined();
+    expect(afterColumn.data.rows[0].cells).toHaveLength(2);
+    expect(afterColumn.data.rows[0].cells[0].colspan).toBe(3);
   });
 
   it("writes row headers, alignment, and borders for the focused cell", async () => {
