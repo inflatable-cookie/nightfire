@@ -1,5 +1,8 @@
 //! Nightfire value and schema identifier types.
 
+use std::borrow::Borrow;
+use std::fmt;
+
 use serde::{Deserialize, Serialize};
 
 use crate::block::{generate_block_id, BlockData};
@@ -7,13 +10,33 @@ use crate::block::{generate_block_id, BlockData};
 /// Schema identifier for a Nightfire value.
 ///
 /// Convention: `<namespace>:<context>/<field>`
-/// e.g. `acow:content/rich_text`. Schema IDs are unversioned; version
+/// e.g. `app:content/rich_text`. Schema IDs are unversioned; version
 /// lives on each block.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct SchemaId(pub String);
 
 impl SchemaId {
     pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+impl fmt::Display for SchemaId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.0)
+    }
+}
+
+impl AsRef<str> for SchemaId {
+    fn as_ref(&self) -> &str {
+        &self.0
+    }
+}
+
+// Sound because the derived `Hash` and `Eq` on `SchemaId` delegate to the
+// inner `String`, which hashes and compares exactly like its `str`.
+impl Borrow<str> for SchemaId {
+    fn borrow(&self) -> &str {
         &self.0
     }
 }
@@ -35,7 +58,7 @@ impl From<&str> for SchemaId {
 /// This is the shape persisted in JSONB columns and sent over the wire:
 /// `{ schema, blocks: [ { id, type, version, data } ] }`.
 /// Cardinality is a strategy rule, not a field shape.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct NightfireValue {
     /// Strategy / schema identifier.

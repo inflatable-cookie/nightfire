@@ -111,16 +111,18 @@ fn registries(fixture: &RegistryFixture) -> (BlockRegistry<String>, StrategyRegi
     let mut blocks = BlockRegistry::new();
     for spec in &fixture.blocks {
         let supported: Vec<&'static str> = spec.supported.iter().cloned().map(leak).collect();
+        let versions = BlockVersions::new(
+            leak(spec.current.clone()),
+            Box::leak(supported.into_boxed_slice()),
+        )
+        .expect("fixture block versions must be valid");
         blocks.register(
             BlockDescriptor::new(
                 leak(spec.r#type.clone()),
                 leak(spec.label.clone()),
                 spec.category.clone(),
             )
-            .with_versions(BlockVersions {
-                current: leak(spec.current.clone()),
-                supported: Box::leak(supported.into_boxed_slice()),
-            }),
+            .with_versions(versions),
         );
     }
 
@@ -137,7 +139,9 @@ fn registries(fixture: &RegistryFixture) -> (BlockRegistry<String>, StrategyRegi
             .expect("minBlocks must be non-zero");
             let mut config = MultiConfig::new(minimum);
             if let Some(maximum) = fixture.strategy.cardinality.max_blocks {
-                config = config.with_max_blocks(maximum);
+                config = config
+                    .with_max_blocks(maximum)
+                    .expect("fixture maxBlocks must be at least minBlocks");
             }
             StrategyCardinality::Multi(config)
         }
@@ -194,8 +198,8 @@ fn builds_real_block_and_strategy_registries_from_the_shared_contract() {
             .expect("fixture block must be registered");
         assert_eq!(actual.label, expected.label);
         assert_eq!(actual.category, expected.category);
-        assert_eq!(actual.versions.current, expected.current);
-        assert_eq!(actual.versions.supported, expected.supported);
+        assert_eq!(actual.versions.current(), expected.current);
+        assert_eq!(actual.versions.supported(), expected.supported);
     }
 
     let actual = strategies
@@ -245,8 +249,8 @@ fn resolves_shared_media_locator_cases() {
     for expected in fixture.media_locator_cases {
         let locator = NightfireMediaLocator::parse(&expected.locator)
             .expect("shared media locator must parse");
-        assert_eq!(locator.block_id, expected.block_id);
-        assert_eq!(locator.data_pointer, expected.data_pointer);
+        assert_eq!(locator.block_id(), expected.block_id.as_str());
+        assert_eq!(locator.data_pointer(), expected.data_pointer.as_str());
         assert_eq!(locator.to_locator_key(), expected.locator);
 
         let resolved = locator.resolve_in_value(&value);

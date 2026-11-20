@@ -1,3 +1,4 @@
+use crate::media_locator::NightfireMediaLocatorError;
 use crate::{BlockData, NightfireMediaLocator, NightfireValue};
 use serde_json::json;
 
@@ -15,8 +16,8 @@ fn parses_and_formats_locator_key() {
     let locator =
         NightfireMediaLocator::parse("hero_01#/pages/1/image_id").expect("locator should parse");
 
-    assert_eq!(locator.block_id, "hero_01");
-    assert_eq!(locator.data_pointer, "/pages/1/image_id");
+    assert_eq!(locator.block_id(), "hero_01");
+    assert_eq!(locator.data_pointer(), "/pages/1/image_id");
     assert_eq!(locator.to_locator_key(), "hero_01#/pages/1/image_id");
 }
 
@@ -25,10 +26,7 @@ fn rejects_locator_without_separator() {
     let error =
         NightfireMediaLocator::parse("hero_01:/pages/1/image_id").expect_err("locator should fail");
 
-    assert!(matches!(
-        error,
-        crate::media_locator::NightfireMediaLocatorError::MissingSeparator
-    ));
+    assert_eq!(error, NightfireMediaLocatorError::MissingSeparator);
 }
 
 #[test]
@@ -38,7 +36,71 @@ fn rejects_locator_with_invalid_pointer() {
 
     assert!(matches!(
         error,
-        crate::media_locator::NightfireMediaLocatorError::InvalidDataPointer(_)
+        NightfireMediaLocatorError::InvalidDataPointer(_)
+    ));
+}
+
+#[test]
+fn rejects_hash_in_block_id() {
+    let error = NightfireMediaLocator::new("hero#01", "/image_id")
+        .expect_err("a '#' in the block id would break the locator key");
+
+    assert_eq!(
+        error,
+        NightfireMediaLocatorError::InvalidBlockId("hero#01".to_string())
+    );
+}
+
+#[test]
+fn rejects_empty_data_pointer() {
+    let error = NightfireMediaLocator::parse("hero_01#").expect_err("empty pointer should fail");
+
+    assert_eq!(
+        error,
+        NightfireMediaLocatorError::InvalidDataPointer(String::new())
+    );
+}
+
+#[test]
+fn rejects_missing_block_id() {
+    assert_eq!(
+        NightfireMediaLocator::parse("#/x").expect_err("no block id"),
+        NightfireMediaLocatorError::MissingBlockId
+    );
+    assert_eq!(
+        NightfireMediaLocator::parse("  #/x").expect_err("whitespace-only block id"),
+        NightfireMediaLocatorError::MissingBlockId
+    );
+}
+
+#[test]
+fn trims_block_id_whitespace() {
+    let locator = NightfireMediaLocator::parse(" hero_01 #/image_id").expect("should parse");
+
+    assert_eq!(locator.block_id(), "hero_01");
+    assert_eq!(locator.to_locator_key(), "hero_01#/image_id");
+}
+
+#[test]
+fn accepts_rfc6901_escapes_and_resolves_them() {
+    let locator = NightfireMediaLocator::parse("hero_01#/a~1b/m~0n")
+        .expect("~0 and ~1 are valid RFC 6901 escapes");
+    let value = NightfireValue::single(
+        "test:schema",
+        block("hero_01", json!({ "a/b": { "m~n": "media-1" } })),
+    );
+
+    assert_eq!(locator.resolve_in_value(&value), Some(&json!("media-1")));
+}
+
+#[test]
+fn rejects_malformed_tilde_escape() {
+    let error =
+        NightfireMediaLocator::parse("hero_01#/a~2b").expect_err("~2 is not an RFC 6901 escape");
+
+    assert!(matches!(
+        error,
+        NightfireMediaLocatorError::InvalidDataPointer(_)
     ));
 }
 

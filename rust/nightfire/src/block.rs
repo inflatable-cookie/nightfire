@@ -7,13 +7,23 @@ use uuid::Uuid;
 /// Supported versions for a block type, plus the current implementation.
 ///
 /// Readers resolve any supported stored version to `current`. Unknown
-/// versions fail closed.
+/// versions fail closed. Construction guarantees that `supported` is
+/// non-empty and contains `current`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct BlockVersions {
-    /// Version newly created blocks use.
-    pub current: &'static str,
-    /// Every stored version the current implementation can coerce.
-    pub supported: &'static [&'static str],
+    current: &'static str,
+    supported: &'static [&'static str],
+}
+
+/// Reasons a `BlockVersions` set cannot be built.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
+pub enum BlockVersionsError {
+    /// The supported set was empty; a block type must support one version.
+    #[error("block versions must list at least one supported version")]
+    Empty,
+    /// The current version is not one of the supported versions.
+    #[error("current block version {current} is not in the supported versions")]
+    CurrentNotSupported { current: &'static str },
 }
 
 impl BlockVersions {
@@ -22,6 +32,31 @@ impl BlockVersions {
         current: "initial",
         supported: &["initial"],
     };
+
+    /// Build a version set, failing when `supported` is empty or does not
+    /// contain `current`.
+    pub fn new(
+        current: &'static str,
+        supported: &'static [&'static str],
+    ) -> Result<Self, BlockVersionsError> {
+        if supported.is_empty() {
+            return Err(BlockVersionsError::Empty);
+        }
+        if !supported.contains(&current) {
+            return Err(BlockVersionsError::CurrentNotSupported { current });
+        }
+        Ok(Self { current, supported })
+    }
+
+    /// Version newly created blocks use.
+    pub fn current(self) -> &'static str {
+        self.current
+    }
+
+    /// Every stored version the current implementation can coerce.
+    pub fn supported(self) -> &'static [&'static str] {
+        self.supported
+    }
 
     /// True when `version` is in the supported set.
     pub fn supports(self, version: &str) -> bool {
@@ -44,7 +79,7 @@ impl BlockVersions {
 ///
 /// Wire shape: `{ id, type, version, data }`. `id` is assigned `nf_<uuid7>`
 /// on export when empty. There is no envelope hash.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct BlockData {
     /// Stable block identifier (`nf_<uuid7>`).
@@ -72,7 +107,7 @@ impl BlockData {
         Self {
             id: generate_block_id(),
             r#type: r#type.into(),
-            version: BlockVersions::INITIAL.current.to_string(),
+            version: BlockVersions::INITIAL.current().to_string(),
             data,
         }
     }
@@ -112,15 +147,27 @@ pub trait Block {
     /// Ordered list of supported versions for this block.
     ///
     /// The first entry is the current implementation. Remaining entries
-    /// stay readable via coercion.
+    /// stay readable via coercion. Must not be empty.
     const VERSIONS: &'static [&'static str] = &["initial"];
 
     /// Active version string for this block type.
+    ///
+    /// # Panics
+    ///
+    /// Panics when `VERSIONS` is empty: that is a programming error in the
+    /// block type, and exporting it would store a version nothing can read.
     fn active_version() -> &'static str {
-        Self::VERSIONS.first().copied().unwrap_or("initial")
+        Self::VERSIONS
+            .first()
+            .copied()
+            .expect("Block::VERSIONS must list at least one version")
     }
 
     /// Registry version set derived from `VERSIONS`.
+    ///
+    /// # Panics
+    ///
+    /// Panics under the same condition as [`Block::active_version`].
     fn versions() -> BlockVersions {
         BlockVersions {
             current: Self::active_version(),

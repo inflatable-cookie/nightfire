@@ -31,7 +31,7 @@ fn block_registry_stores_and_retrieves() {
     assert_eq!(desc.type_name, "paragraph");
     assert_eq!(desc.label, "Paragraph");
     assert_eq!(desc.category, TestCategory::Text);
-    assert_eq!(desc.versions.current, "initial");
+    assert_eq!(desc.versions.current(), "initial");
 
     assert!(registry.get("unknown").is_none());
 }

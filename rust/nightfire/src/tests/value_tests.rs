@@ -78,6 +78,38 @@ fn rejects_missing_blocks() {
 }
 
 #[test]
+fn ensure_block_ids_replaces_whitespace_only_ids() {
+    let mut value = NightfireValue::single("test:schema", sample_block().with_id("   "));
+
+    let assigned = ensure_block_ids(&mut value);
+
+    assert_eq!(assigned, 1);
+    assert!(value.blocks[0].id.starts_with("nf_"));
+}
+
+#[test]
+fn values_compare_by_content() {
+    let a = NightfireValue::single("test:schema", sample_block());
+    let b = NightfireValue::single("test:schema", sample_block());
+    let other = NightfireValue::single("test:other", sample_block());
+
+    assert_eq!(a, b);
+    assert_ne!(a, other);
+}
+
+#[test]
+fn schema_id_borrows_as_str_and_displays_plainly() {
+    let id = SchemaId::from("app:content/rich_text");
+
+    assert_eq!(id.to_string(), "app:content/rich_text");
+    assert_eq!(AsRef::<str>::as_ref(&id), "app:content/rich_text");
+
+    let mut by_str = std::collections::HashMap::new();
+    by_str.insert(id, 1);
+    assert_eq!(by_str.get("app:content/rich_text"), Some(&1));
+}
+
+#[test]
 fn ensure_block_ids_assigns_missing_ids() {
     let mut value = NightfireValue::single(
         "test:schema",
