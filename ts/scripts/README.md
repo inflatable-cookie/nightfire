@@ -46,8 +46,8 @@ schema name, structure parsing, SHA-256 via `node:crypto`, and the
 `package/package.json` reader. `npm-admission.ts` requires a clean exact head,
 `npm-archive.ts` packs once and writes the manifest, and
 `verify-npm-candidate.ts` checks the archive set against the tag, the commit and
-every recorded hash before any publish. A flag passed without a value is
-refused rather than ignored.
+every recorded hash before any publish. A flag passed without a value, an
+unknown flag or a repeated flag is refused rather than ignored.
 
 ## Rust route
 

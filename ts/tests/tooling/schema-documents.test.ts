@@ -72,4 +72,52 @@ describe("tooling/schema-documents", () => {
     ]);
     expect(errors([{ a: 1, b: 2 }, { a: 1, b: 3 }], schema)).toEqual([]);
   });
+
+  it("applies both a $ref target and the keywords beside it", () => {
+    const document: JsonSchema = {
+      $ref: "#/$defs/name",
+      minLength: 3,
+      enum: ["abc", "abd"],
+      $defs: { name: { type: "string" } },
+    };
+    const withDefs: SchemaCatalog = {
+      ...catalog,
+      documents: new Map([[SCHEMA_PATH, document as Record<string, unknown>]]),
+    };
+    const check = (value: unknown) => validate(withDefs, value, document, SCHEMA_PATH);
+
+    expect(check("abc")).toEqual([]);
+    // The sibling `minLength` and `enum` are not dropped when `$ref` is present.
+    expect(check("ab")).toEqual(["$: value is not in enum", "$: shorter than minLength 3"]);
+    // The referenced `type` still applies, and the sibling `enum` reports too.
+    expect(check(12)).toEqual(["$: expected string", "$: value is not in enum"]);
+    expect(check("abz")).toEqual(["$: value is not in enum"]);
+  });
+
+  it("refuses an unsupported keyword beside $ref", () => {
+    expect(() =>
+      assertSupportedSchema({ $ref: "#/$defs/name", pattern: "^a" }, "synthetic.schema.json")
+    ).toThrow(/unsupported JSON Schema keyword `pattern`/);
+  });
+
+  it("accepts a value that matches any member of an array-form type", () => {
+    const schema: JsonSchema = { type: ["string", "null"] };
+    expect(errors("a", schema)).toEqual([]);
+    expect(errors(null, schema)).toEqual([]);
+    expect(errors(1, schema)).toEqual(["$: expected string or null"]);
+  });
+
+  it("fails closed on an unknown or empty type name", () => {
+    expect(() => assertSupportedSchema({ type: "date" }, "synthetic.schema.json")).toThrow(
+      /unsupported schema type "date"/
+    );
+    expect(() =>
+      assertSupportedSchema({ type: ["string", "any"] }, "synthetic.schema.json")
+    ).toThrow(/unsupported schema type "any"/);
+    expect(() => assertSupportedSchema({ type: [] }, "synthetic.schema.json")).toThrow(
+      /non-empty array of type names/
+    );
+    // An earlier member that matches must not let a later unknown name pass.
+    expect(() => errors("a", { type: ["string", "any"] })).toThrow(/unsupported schema type "any"/);
+  });
 });

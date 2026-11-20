@@ -1,6 +1,6 @@
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { existsSync } from "node:fs";
-import { isAbsolute, join } from "node:path";
+import { isAbsolute, join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { JSDOM } from "jsdom";
 import { registerSveltePlugin } from "../tests/setup/svelte-plugin";
@@ -17,6 +17,17 @@ function run(command: string[], cwd?: string) {
     );
   }
   return child.stdout.toString();
+}
+
+// The consumer pins the same Svelte this repository builds against, so the proof
+// follows a Svelte bump instead of a copy of its version here.
+const repoRoot = resolve(import.meta.dir, "../..");
+const repoManifest = await Bun.file(join(repoRoot, "package.json")).json() as {
+  devDependencies?: Record<string, unknown>;
+};
+const svelteVersion = repoManifest.devDependencies?.svelte;
+if (typeof svelteVersion !== "string" || svelteVersion.length === 0) {
+  throw new Error("package.json must pin devDependencies.svelte for the renderer consumer proof");
 }
 
 const destination = await mkdtemp(join(tmpdir(), "nightfire-renderer-consumer-"));
@@ -38,7 +49,7 @@ try {
       type: "module",
       dependencies: {
         "@inflatable-cookie/nightfire": tarball,
-        svelte: "5.56.8",
+        svelte: svelteVersion,
       },
     }, null, 2)}\n`,
   );
@@ -83,8 +94,10 @@ try {
     unmount: typeof import("svelte").unmount;
   };
 
-  await import(join(pkg, "ts/src/renderer.ts"));
-  await import(join(pkg, "ts/src/render-registrations.ts"));
+  // The public entries resolve through the installed package's export map, as a
+  // consumer's own import would.
+  await import(Bun.resolveSync("@inflatable-cookie/nightfire/renderer", consumer));
+  await import(Bun.resolveSync("@inflatable-cookie/nightfire/render-registrations", consumer));
   const { CORE_BLOCK_TYPE_NAMES } = await import(join(pkg, "ts/src/core-blocks.ts")) as {
     CORE_BLOCK_TYPE_NAMES: string[];
   };

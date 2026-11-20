@@ -22,10 +22,12 @@ export type NpmPublicationAuthority = {
 export function readNpmPublicationAuthority(root: string): NpmPublicationAuthority {
   const manifestPath = join(root, "release-manifest.json");
   const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as Record<string, unknown>;
-  const authority = manifest.npmPublication as Record<string, unknown> | undefined;
-  if (authority === undefined || typeof authority !== "object") {
+  const declared: unknown = manifest.npmPublication;
+  // `typeof null` is "object", so null and an array need their own refusal.
+  if (declared === null || typeof declared !== "object" || Array.isArray(declared)) {
     throw new Error("release manifest must declare npmPublication authority");
   }
+  const authority = declared as Record<string, unknown>;
   const candidateManifestName = authority.candidateManifestName;
   if (typeof candidateManifestName !== "string" || candidateManifestName.length === 0) {
     throw new Error("release manifest npmPublication must name its candidate identity manifest");

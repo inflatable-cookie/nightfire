@@ -36,11 +36,6 @@ export function rustRoute(): RustRoute {
   return route;
 }
 
-/** Runs one Cargo command through the route. */
-export function runCargo(args: string[], cwd?: string): void {
-  routed(["run", ...args], false, cwd);
-}
-
 /** Runs one tool that calls Cargo itself, bound to one Cargo workspace. */
 export function runRustTool(manifestPath: string, command: string[], cwd?: string): void {
   routed(["tool", manifestPath, "--", ...command], false, cwd);
