@@ -99,7 +99,10 @@ describe("nightfire/editor-registry", () => {
   it("checks block emptiness via registered checker with safe defaults", () => {
     expect(isBlockContentEmpty(null)).toBe(true);
     expect(isBlockContentEmpty({})).toBe(true);
+    expect(isBlockContentEmpty({ type: "" })).toBe(true);
     expect(isBlockContentEmpty({ type: "unknown", data: {} })).toBe(false);
+    expect(isBlockContentEmpty({ type: 5 })).toBe(false);
+    expect(isBlockContentEmpty({ type: {} })).toBe(false);
 
     registerBlockEmptyChecker("markdown", (block) => {
       const text = block?.data?.text;

@@ -116,9 +116,12 @@ export function isBlockContentEmpty(block: unknown): boolean {
     return true;
   }
   const type = "type" in block ? block.type : undefined;
-  if (typeof type !== "string" || type.length === 0) {
+  if (!type) {
     return true;
   }
+  if (typeof type !== "string") {
+    return false;
+  } // non-string type has no checker → assume non-empty
   const checker = blockEmptyCheckers.get(type);
   if (!checker) {
     return false;
