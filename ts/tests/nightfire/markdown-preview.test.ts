@@ -1,5 +1,4 @@
-// @vitest-environment jsdom
-import { describe, expect, it } from "../vitest";
+import { describe, expect, it } from "bun:test";
 
 import { renderSafeMarkdownPreview } from "../../src/markup/markdown-preview";
 
@@ -11,26 +10,8 @@ describe("nightfire/markup renderSafeMarkdownPreview", () => {
 		expect(html).toContain("<strong>bold</strong>");
 	});
 
-	it("strips script tags", () => {
-		const html = renderSafeMarkdownPreview('before\n\n<script>window.__pwned = true;</script>\n\nafter');
-
-		expect(html).not.toContain("<script");
-		expect(html).toContain("before");
-		expect(html).toContain("after");
-	});
-
-	it("strips event handler attributes from inline HTML", () => {
-		const html = renderSafeMarkdownPreview('<img src=x onerror="window.__pwned = true">');
-
-		expect(html).not.toContain("onerror");
-	});
-
-	it("strips javascript: URLs", () => {
-		const html = renderSafeMarkdownPreview('[click](javascript:alert(1))');
-
-		expect(html).not.toContain("javascript:");
-	});
-
+	// Hostile input (script tags, handlers, javascript: URLs) is covered by the
+	// fixture cases in ts/tests/security/sanitization.test.ts.
 	it("keeps safe inline HTML", () => {
 		const html = renderSafeMarkdownPreview('<em>fine</em> and <a href="https://example.com">link</a>');
 

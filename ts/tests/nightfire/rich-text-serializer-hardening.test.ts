@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "../vitest";
+import { afterEach, describe, expect, it } from "bun:test";
 import { renderRichTextDocumentHtml } from "../../src/rich-text/render-document";
 import {
   getRichTextInlineNodeRenderer,

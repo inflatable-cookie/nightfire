@@ -1,4 +1,4 @@
-import { describe, expect, it } from "../vitest";
+import { describe, expect, it } from "bun:test";
 import { KeyedRegistry, SchemaScopedRegistry } from "../../src/registry-map";
 
 describe("nightfire/registry-map", () => {

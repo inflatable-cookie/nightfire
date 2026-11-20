@@ -1,4 +1,4 @@
-import { describe, expect, it } from "../vitest";
+import { describe, expect, it } from "bun:test";
 import { buildGroupedOptions } from "../../src/editor/grouped-options";
 
 describe("nightfire/editor/grouped-options", () => {

@@ -1,5 +1,4 @@
-// @vitest-environment jsdom
-import { afterEach, describe, expect, it, vi } from "../vitest";
+import { afterEach, describe, expect, it, mock } from "bun:test";
 import { cleanup, fireEvent, render, within } from "../render";
 
 import "../../src/editor-registrations";
@@ -9,7 +8,7 @@ const EditorComponent = getBlockEditor(undefined, "table");
 
 afterEach(cleanup);
 
-function tableBlock(rows?: unknown[]) {
+function tableBlock(rows?: unknown[]): { id: string; type: string; version: string; data: { caption?: string; rows?: unknown[] } } {
   return {
     id: "nf_table",
     type: "table",
@@ -18,7 +17,7 @@ function tableBlock(rows?: unknown[]) {
   };
 }
 
-function lastBlock(onChange: ReturnType<typeof vi.fn>) {
+function lastBlock(onChange: ReturnType<typeof mock>): any {
   return onChange.mock.calls.at(-1)![0];
 }
 
@@ -65,7 +64,7 @@ describe("nightfire/table editor", () => {
   });
 
   it("starts empty data as a two-by-two grid with one roving tab stop", () => {
-    const view = render(EditorComponent as any, { block: tableBlock(), onChange: vi.fn() });
+    const view = render(EditorComponent as any, { block: tableBlock(), onChange: mock() });
     const grid = within(view.container).getByRole("grid", { name: "Table cells" });
     const cells = [
       ...within(grid).getAllByRole("columnheader"),
@@ -81,7 +80,7 @@ describe("nightfire/table editor", () => {
   });
 
   it("moves by keyboard, enters raw markdown editing, and adds a row on final Tab", async () => {
-    const onChange = vi.fn();
+    const onChange = mock();
     const view = render(EditorComponent as any, { block: tableBlock(), onChange });
     const first = within(view.container).getByRole("columnheader", {
       name: "Row 1, column 1",
@@ -133,7 +132,7 @@ describe("nightfire/table editor", () => {
           ],
         },
       ]),
-      onChange: vi.fn(),
+      onChange: mock(),
     });
 
     const cell = within(view.container).getByRole("gridcell", { name: "Row 1, column 1" });
@@ -163,7 +162,7 @@ describe("nightfire/table editor", () => {
         cells: [{ markdown: "" }, { markdown: "" }],
       },
     ];
-    const onChange = vi.fn();
+    const onChange = mock();
     const view = render(EditorComponent as any, {
       block: tableBlock(originalRows),
       onChange,
@@ -194,7 +193,7 @@ describe("nightfire/table editor", () => {
       { cells: [{ markdown: "Header", is_header: true }, { markdown: "Amount", is_header: true }] },
       { cells: [{ markdown: "Body" }, { markdown: "10" }] },
     ]);
-    const onChange = vi.fn();
+    const onChange = mock();
     const view = render(EditorComponent as any, { block, onChange });
     const target = within(view.container).getByRole("gridcell", { name: "Row 2, column 1" });
     await fireEvent.focus(target);
@@ -219,7 +218,7 @@ describe("nightfire/table editor", () => {
       { cells: [{ markdown: "Keep" }, { markdown: "" }] },
       { cells: [{ markdown: "" }, { markdown: "" }] },
     ]);
-    const onChange = vi.fn();
+    const onChange = mock();
     const view = render(EditorComponent as any, { block, onChange });
 
     const emptyRowCell = within(view.container).getByRole("gridcell", {
@@ -253,7 +252,7 @@ describe("nightfire/table editor", () => {
       { section: "head", cells: [{ markdown: "" }, { markdown: "" }] },
       { section: "body", cells: [{ markdown: "" }, { markdown: "" }] },
     ]);
-    const onChange = vi.fn();
+    const onChange = mock();
     const view = render(EditorComponent as any, { block, onChange });
     const first = within(view.container).getByRole("gridcell", { name: "Row 1, column 1" });
 
@@ -289,7 +288,7 @@ describe("nightfire/table editor", () => {
       },
       { section: "body", cells: [{ markdown: "Below right" }] },
     ]);
-    const onChange = vi.fn();
+    const onChange = mock();
     const view = render(EditorComponent as any, { block: mergedBlock, onChange });
     const mergedCell = within(view.container).getByRole("columnheader", {
       name: "Row 1, column 1",
@@ -335,7 +334,7 @@ describe("nightfire/table editor", () => {
       { cells: [{ markdown: "Keep" }, { markdown: "Discard" }] },
       { cells: [{ markdown: "" }, { markdown: "" }] },
     ]);
-    const onChange = vi.fn();
+    const onChange = mock();
     const view = render(EditorComponent as any, { block, onChange });
     const first = within(view.container).getByRole("gridcell", { name: "Row 1, column 1" });
 
@@ -352,7 +351,7 @@ describe("nightfire/table editor", () => {
     expect(dialog.textContent).toContain("cannot be recovered");
     await fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
     expect(onChange).not.toHaveBeenCalled();
-    expect(block.data.rows[0].cells).toHaveLength(2);
+    expect((block.data.rows as Array<{ cells: unknown[] }>)[0]!.cells).toHaveLength(2);
 
     await fireEvent.keyDown(document.activeElement as HTMLElement, {
       key: "M",

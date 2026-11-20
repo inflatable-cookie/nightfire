@@ -1,4 +1,4 @@
-import { describe, it, expect } from "../vitest";
+import { describe, it, expect } from "bun:test";
 import {
 	asSingleBlockValue,
 	asMultiBlockValue,
@@ -21,7 +21,7 @@ describe("nightfire value-updates", () => {
 				}
 			]
 		});
-		expect(asSingleBlockValue("schema", block).block).toBeUndefined();
+		expect((asSingleBlockValue("schema", block) as { block?: unknown }).block).toBeUndefined();
 	});
 
 	it("builds multi-block values", () => {

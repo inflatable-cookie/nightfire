@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "../vitest";
+import { describe, expect, it, mock } from "bun:test";
 
 const { createPrepareWriter, createRequiredInitialValue } = await import("../../src/editor/field-lifecycle");
 
@@ -16,8 +16,8 @@ describe("nightfire/editor/field-lifecycle", () => {
 	});
 
 	it("creates prepare writer closure that writes to FormData", () => {
-		const getValue = vi.fn(() => ({ schema: "s", blocks: [{ type: "markdown", data: {} }] }));
-		const getName = vi.fn(() => "content");
+		const getValue = mock(() => ({ schema: "s", blocks: [{ type: "markdown", data: {} }] }));
+		const getName = mock(() => "content");
 		const formData = new FormData();
 
 		const writer = createPrepareWriter(getValue as any, getName);

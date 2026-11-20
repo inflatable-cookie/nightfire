@@ -67,6 +67,8 @@ registerSveltePlugin("client");
 
 afterEach(async () => {
   const { cleanup } = await import("../render");
+  const { flushSync, tick } = await import("svelte");
   cleanup();
-  await new Promise((resolve) => setTimeout(resolve, 25));
+  flushSync();
+  await tick();
 });

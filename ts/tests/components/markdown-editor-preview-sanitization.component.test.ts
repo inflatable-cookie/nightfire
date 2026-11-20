@@ -1,5 +1,4 @@
-// @vitest-environment jsdom
-import { describe, expect, it } from "../vitest";
+import { describe, expect, it } from "bun:test";
 import { render } from "../render";
 
 import MarkdownEditorSurface from "../../src/markup/MarkdownEditorSurface.svelte";

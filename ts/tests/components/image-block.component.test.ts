@@ -1,5 +1,4 @@
-// @vitest-environment jsdom
-import { afterEach, describe, expect, it, vi } from "../vitest";
+import { afterEach, describe, expect, it, mock } from "bun:test";
 import { fireEvent, render, waitFor, within } from "../render";
 
 import "../../src/render-registrations";
@@ -59,7 +58,7 @@ afterEach(() => {
 describe("nightfire/image block", () => {
   it("recovers from a rejected picker and keeps the block id", async () => {
     registerMediaSource(stubSource({ pick: async () => { throw new Error("unavailable"); } }));
-    const onChange = vi.fn();
+    const onChange = mock();
     const view = render(EditorComponent as any, { block: { id: "block-1", type: "image", data: {} }, onChange });
     const button = within(view.container).getByRole("button", { name: "Choose image" });
     await fireEvent.click(button);
@@ -192,10 +191,10 @@ describe("nightfire/image block", () => {
   });
 
   it("round-trips a single image pick with alt text next to the picker", async () => {
-    const pick = vi.fn(async () => [{ media_id: "img-1" }]);
+    const pick = mock(async () => [{ media_id: "img-1" }]);
     registerMediaSource(stubSource({ pick }));
 
-    const onChange = vi.fn();
+    const onChange = mock();
     const view = render(EditorComponent as any, {
       block: { type: "image", version: "initial", data: {} },
       onChange,
@@ -235,7 +234,7 @@ describe("nightfire/image block", () => {
   it("changes nothing when the picker is cancelled", async () => {
     registerMediaSource(stubSource({ pick: async () => null }));
 
-    const onChange = vi.fn();
+    const onChange = mock();
     const view = render(EditorComponent as any, {
       block: { type: "image", version: "initial", data: {} },
       onChange,
@@ -255,7 +254,7 @@ describe("nightfire/image block", () => {
   it("survives the scenario oracle: pick, size, save, reload, then unregister", async () => {
     registerMediaSource(stubSource({ pick: async () => [{ media_id: "img-1" }] }));
 
-    const onChange = vi.fn();
+    const onChange = mock();
     const editorView = render(EditorComponent as any, {
       block: { type: "image", version: "initial", data: {} },
       onChange,

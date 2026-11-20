@@ -1,5 +1,4 @@
-// @vitest-environment jsdom
-import { afterEach, describe, expect, it, vi } from "../vitest";
+import { afterEach, describe, expect, it, mock } from "bun:test";
 import { cleanup, fireEvent, render, waitFor, within } from "../render";
 
 import "../../src/editor-registrations";
@@ -21,7 +20,7 @@ function itemListBlock(data: Record<string, unknown> = {}) {
   };
 }
 
-function lastBlock(onChange: ReturnType<typeof vi.fn>) {
+function lastBlock(onChange: ReturnType<typeof mock>) {
   return onChange.mock.calls.at(-1)![0];
 }
 
@@ -44,7 +43,7 @@ describe("nightfire/item-list editor", () => {
   });
 
   it("writes items alongside a title typed into an empty block", async () => {
-    const onChange = vi.fn();
+    const onChange = mock();
     const view = render(EditorComponent as any, {
       block: itemListBlock({}),
       value: { schema: "example:content/list" },
@@ -61,7 +60,7 @@ describe("nightfire/item-list editor", () => {
   });
 
   it("adds, edits, nests, reorders, and reloads items without dropping unmanaged data", async () => {
-    const onChange = vi.fn();
+    const onChange = mock();
     const initial = itemListBlock({
       intro: { type: "rich_text", retained: true },
       variant: "ordered",
@@ -155,7 +154,7 @@ describe("nightfire/item-list editor", () => {
   });
 
   it("confirms before removing a content-bearing item and preserves it on refusal", async () => {
-    const onChange = vi.fn();
+    const onChange = mock();
     const block = itemListBlock({
       items: [
         { title: "Empty item", body: [] },
@@ -172,8 +171,9 @@ describe("nightfire/item-list editor", () => {
     expect(onChange).not.toHaveBeenCalled();
     const dialog = within(view.container).getByRole("alertdialog");
     expect(dialog.textContent).toContain("cannot be undone");
-    expect(dialog.querySelector("p")?.id).toBeTruthy();
-    expect(dialog.getAttribute("aria-labelledby")).toBe(dialog.querySelector("p")?.id);
+    const heading = dialog.querySelector("p");
+    expect(heading?.id).toBeTruthy();
+    expect(dialog.getAttribute("aria-labelledby")).toBe(heading?.id ?? null);
 
     await fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
     expect(onChange).not.toHaveBeenCalled();

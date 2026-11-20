@@ -1,4 +1,4 @@
-import { describe, expect, it } from "../vitest";
+import { describe, expect, it } from "bun:test";
 import { CORE_BLOCK_TYPES, CORE_BLOCK_TYPE_NAMES } from "../../src/core-blocks";
 import { getBlockEditor, isBlockContentEmpty } from "../../src/editor-registry";
 import { getBlockRenderer } from "../../src/render-registry";

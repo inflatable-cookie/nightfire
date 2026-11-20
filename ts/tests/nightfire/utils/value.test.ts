@@ -1,4 +1,4 @@
-import { describe, expect, it } from "../../vitest";
+import { describe, expect, it } from "bun:test";
 import { normaliseNightfireValue } from "../../../src/utils";
 
 describe("normaliseNightfireValue", () => {

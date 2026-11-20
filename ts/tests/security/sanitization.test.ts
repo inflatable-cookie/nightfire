@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "../vitest";
+import { afterEach, describe, expect, it } from "bun:test";
 import cases from "../fixtures/security/malicious-markdown-v1.json";
 import { renderSafeMarkdownPreview } from "../../src/markup/markdown-preview";
 import { sanitizeEmbedHtml, sanitizeSvgHtml } from "../../src/html";

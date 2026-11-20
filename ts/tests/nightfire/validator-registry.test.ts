@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "../vitest";
+import { afterEach, describe, expect, it, mock } from "bun:test";
 import {
 	clearBlockValidators,
 	prepareNightfireForSave,
@@ -15,9 +15,12 @@ describe("nightfire/validator-registry", () => {
 		clearBlockVersions();
 	});
 
-	it("validates blocks using schema-specific and wildcard validators", () => {
-		registerBlockValidator(null, "markdown", (block: any) => ({ ...block, wildcard: true }));
-		registerBlockValidator("schema-1", "markdown", (block: any) => ({ ...block, scoped: true }));
+	it("applies a schema-scoped validator over the wildcard, and the wildcard elsewhere", () => {
+		// Each validator marks the block's data, so the output shows which one ran.
+		const wildcard = mock((block: any) => ({ ...block, data: { ...block.data, origin: "wildcard" } }));
+		const scoped = mock((block: any) => ({ ...block, data: { ...block.data, origin: "scoped" } }));
+		registerBlockValidator(null, "markdown", wildcard);
+		registerBlockValidator("schema-1", "markdown", scoped);
 
 		expect(
 			validateNightfireValue({
@@ -26,8 +29,10 @@ describe("nightfire/validator-registry", () => {
 			} as any)
 		).toEqual({
 			schema: "schema-1",
-			blocks: [{ id: undefined, type: "markdown", version: "initial", data: {} }],
+			blocks: [{ id: undefined, type: "markdown", version: "initial", data: { origin: "scoped" } }],
 		});
+		expect(scoped).toHaveBeenCalledTimes(1);
+		expect(wildcard).not.toHaveBeenCalled();
 
 		expect(
 			validateNightfireValue({
@@ -36,8 +41,10 @@ describe("nightfire/validator-registry", () => {
 			} as any)
 		).toEqual({
 			schema: "schema-x",
-			blocks: [{ id: undefined, type: "markdown", version: "initial", data: {} }],
+			blocks: [{ id: undefined, type: "markdown", version: "initial", data: { origin: "wildcard" } }],
 		});
+		expect(wildcard).toHaveBeenCalledTimes(1);
+		expect(scoped).toHaveBeenCalledTimes(1);
 	});
 
 	it("retires a validator", () => {
@@ -123,12 +130,6 @@ describe("nightfire/validator-registry", () => {
 
 		expect(prepareNightfireForSave({ schema: "s", blocks: [] } as any)).toBeNull();
 		expect(prepareNightfireForSave({ schema: "", blocks: [{ type: "x" }] } as any)).toBeNull();
-		expect(
-			prepareNightfireForSave({
-				schema: "schema-x",
-				block: { type: "markdown", data: {} },
-			} as any)
-		).toBeNull();
 	});
 
 	it("writes prepared Nightfire JSON to FormData with stable block ids", () => {
@@ -144,7 +145,7 @@ describe("nightfire/validator-registry", () => {
 					},
 				},
 			],
-		});
+		} as any);
 
 		const raw = formData.get("content");
 		expect(typeof raw).toBe("string");

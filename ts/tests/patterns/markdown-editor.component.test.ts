@@ -1,12 +1,11 @@
-// @vitest-environment jsdom
-import { describe, expect, it, vi } from "../vitest";
+import { describe, expect, it, mock } from "bun:test";
 import { fireEvent, render, screen } from "../render";
 import MarkdownEditorHarness from "../fixtures/MarkdownEditorHarness.svelte";
 import MarkdownEditorSurface from "../../src/markup/MarkdownEditorSurface.svelte";
 
 describe("nightfire/markup/MarkdownEditorSurface.svelte", () => {
   it("renders textarea mode with label/hint and updates bound value", async () => {
-    const onChange = vi.fn();
+    const onChange = mock();
     const view = render(MarkdownEditorSurface, {
       showPreview: false,
       label: "Description",

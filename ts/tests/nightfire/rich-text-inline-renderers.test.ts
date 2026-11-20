@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "../vitest";
+import { afterEach, describe, expect, it } from "bun:test";
 import {
   getRichTextInlineNodeRenderer,
   registerRichTextInlineNodeRenderer,
@@ -103,7 +103,8 @@ describe("nightfire/rich-text inline node renderers", () => {
   });
 
   it("hands attributes and rendered children to a registered container renderer", () => {
-    let seen: { attrs: unknown; childrenHtml: string; schema: string } | null = null;
+    // Assigned inside the renderer callback, which TypeScript cannot follow.
+    let seen = null as { attrs: unknown; childrenHtml: string; schema: string } | null;
     register(SCHEMA_A, "callout", ({ node, childrenHtml, schema }) => {
       seen = { attrs: node.attrs, childrenHtml, schema };
       return `<aside data-tone="${String(node.attrs.tone)}">${childrenHtml}</aside>`;

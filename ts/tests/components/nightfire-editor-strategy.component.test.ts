@@ -1,5 +1,4 @@
-// @vitest-environment jsdom
-import { afterEach, describe, expect, it } from "../vitest";
+import { afterEach, describe, expect, it } from "bun:test";
 import { cleanup, fireEvent, render, waitFor, within } from "../render";
 
 import NightfireEditorStrategyHarness from "../fixtures/NightfireEditorStrategyHarness.svelte";

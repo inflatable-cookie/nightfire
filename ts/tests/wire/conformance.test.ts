@@ -1,4 +1,4 @@
-import { describe, expect, it } from "../vitest";
+import { describe, expect, it } from "bun:test";
 import fixture from "../../../fixtures/wire/v1/nightfire-values.json";
 import { generateNightfireBlockId } from "../../src/block-ids";
 import {
@@ -78,10 +78,10 @@ describe("Nightfire Rust/TypeScript wire conformance v1", () => {
 
     try {
       configureNightfireStrategies({
-        fetchStrategies: async () => [fixture.registry.strategy as NightfireStrategy]
+        fetchStrategies: async () => [fixture.registry.strategy as unknown as NightfireStrategy]
       });
       expect(await getStrategy(fixture.registry.strategy.id)).toEqual(
-        fixture.registry.strategy
+        fixture.registry.strategy as unknown as NightfireStrategy
       );
     } finally {
       if (originalWindow) {

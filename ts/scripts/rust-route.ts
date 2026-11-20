@@ -18,13 +18,13 @@ function routed(args: string[], capture: boolean, cwd?: string): string {
     stderr: capture ? "pipe" : "inherit",
   });
   if (child.exitCode !== 0) {
-    const detail = capture ? child.stderr.toString().trim() : "";
+    const detail = capture ? child.stderr?.toString().trim() ?? "" : "";
     throw new Error(
       `Rust route ${args.join(" ")} failed with exit ${child.exitCode}` +
         (detail ? `: ${detail}` : ""),
     );
   }
-  return capture ? child.stdout.toString() : "";
+  return capture ? child.stdout?.toString() ?? "" : "";
 }
 
 /** Which command the route selects right now. */
