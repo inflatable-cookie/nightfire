@@ -1,5 +1,6 @@
-import { describe, expect, it, vi } from "../vitest";
-import { getBlockRenderer, registerBlockRenderer } from "../../src/render-registry";
+import { describe, expect, it } from "bun:test";
+import { CORE_BLOCK_TYPES, CORE_BLOCK_TYPE_NAMES } from "../../src/core-blocks";
+import { clearBlockRenderers, getBlockRenderer, registerBlockRenderer } from "../../src/render-registry";
 
 class A {}
 class B {}
@@ -19,14 +20,15 @@ describe("nightfire/render-registry", () => {
 		expect(getBlockRenderer("schema-1", "unknown")).toBeNull();
 	});
 
-	it("loads default render registrations", async () => {
-		const loaded = { markupRender: false };
-		vi.resetModules();
-		vi.doMock("../../src/markup/render", () => {
-			loaded.markupRender = true;
-			return {};
-		});
+	it("registers a renderer for every core block type that declares one", async () => {
+		// Clear the wildcard entries the tests above left behind, so the check
+		// reads only what the real render catalog registers.
+		clearBlockRenderers();
 		await import("../../src/render-registrations");
-		expect(loaded).toEqual({ markupRender: true });
+
+		for (const type of CORE_BLOCK_TYPE_NAMES) {
+			if (!CORE_BLOCK_TYPES[type].renderer) continue;
+			expect(getBlockRenderer(undefined, type), `renderer for ${type}`).not.toBeNull();
+		}
 	});
 });

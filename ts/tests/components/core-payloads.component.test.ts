@@ -1,5 +1,4 @@
-// @vitest-environment jsdom
-import { afterEach, describe, expect, it } from "../vitest";
+import { afterEach, describe, expect, it } from "bun:test";
 import { render, waitFor } from "../render";
 
 import fixture from "../../../fixtures/wire/v1/nightfire-values.json";

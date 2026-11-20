@@ -1,4 +1,4 @@
-import { describe, expect, it } from "../vitest";
+import { describe, expect, it } from "bun:test";
 
 const { normaliseForStrategy } = await import("../../src/editor/strategy-normalisation");
 
@@ -31,7 +31,8 @@ describe("nightfire/editor/strategy-normalisation", () => {
 		const blocks = [{ type: "a", version: "initial", data: {} }];
 		expect(normaliseForStrategy({ schema: 123, blocks } as any, "schema-b")).toEqual({
 			coerced: { schema: "schema-b", blocks },
-			schemaMismatch: 123,
+			// A non-string schema is reported as received.
+			schemaMismatch: 123 as unknown as string,
 		});
 	});
 });

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "../vitest";
+import { describe, expect, it } from "bun:test";
 import {
   entryAt, entriesForSelection, insertColumn, insertRow, isHeaderRow, layoutRows,
   lineHasContent, mergeCells, mergeHasDiscardedContent, normalizedRows, removeLine,
@@ -24,7 +24,7 @@ describe("table grid model", () => {
     expect(grid(row)).toEqual([["A", "A", "B"], ["A", "A", ""], ["A", "A", "C"], ["D", "E", "F"]]);
     expect(row[0].cells![0].rowspan).toBe(3);
     expect(row[2].section).toBe("body");
-    expect(source[0].cells[0].rowspan).toBe(2);
+    expect(source[0].cells[0]).toMatchObject({ rowspan: 2 });
   });
   it("deletes span origins and covered lines without losing retained content", () => {
     for (const index of [0, 1]) {

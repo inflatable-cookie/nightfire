@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from "../vitest";
+import { beforeEach, describe, expect, it } from "bun:test";
+import { CORE_BLOCK_TYPES, CORE_BLOCK_TYPE_NAMES } from "../../src/core-blocks";
 import {
 	clearBlockEditors,
 	clearSchemas,
@@ -105,18 +106,15 @@ describe("nightfire/editor-registry", () => {
 		expect(isBlockContentEmpty({ type: "markdown", data: { text: "" } })).toBe(false);
 	});
 
-	it("loads editor registrations for markup and download-card", async () => {
-		const loaded = { markup: false, downloadCard: false };
-		vi.resetModules();
-		vi.doMock("../../src/markup/editor", () => {
-			loaded.markup = true;
-			return {};
-		});
-		vi.doMock("../../src/download-card/editor", () => {
-			loaded.downloadCard = true;
-			return {};
-		});
+	it("registers an editor for every core block type that declares one", async () => {
+		// The real catalog, unmocked. The import runs once per test file, and
+		// beforeEach has just cleared the registry, so a registration that does
+		// not happen here fails the test rather than passing on leftovers.
 		await import("../../src/editor-registrations");
-		expect(loaded).toEqual({ markup: true, downloadCard: true });
+
+		for (const type of CORE_BLOCK_TYPE_NAMES) {
+			if (!CORE_BLOCK_TYPES[type].editor) continue;
+			expect(getBlockEditor(undefined, type), `editor for ${type}`).not.toBeNull();
+		}
 	});
 });

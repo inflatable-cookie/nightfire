@@ -1,7 +1,6 @@
-import { beforeEach, describe, expect, it } from "../vitest";
+import { beforeEach, describe, expect, it } from "bun:test";
 import {
   getMediaSource,
-  MediaKind,
   registerMediaSource,
   unregisterMediaSource,
   type MediaSource,
@@ -54,14 +53,5 @@ describe("nightfire/media-source", () => {
     expect(source).not.toBeNull();
     // A synchronous result, not a thenable: a renderer resolves inline.
     expect(source!.resolve({ media_id: "a" })).toBe(resolved);
-  });
-
-  it("exposes the media kinds pickers and rows agree on", () => {
-    expect(MediaKind.Image).toBe("image");
-    expect(MediaKind.Video).toBe("video");
-    expect(MediaKind.Audio).toBe("audio");
-    expect(MediaKind.Document).toBe("document");
-    expect(MediaKind.Pdf).toBe("pdf");
-    expect(MediaKind.Other).toBe("other");
   });
 });

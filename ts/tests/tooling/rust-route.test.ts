@@ -1,4 +1,4 @@
-import { describe, expect, it } from "../vitest";
+import { describe, expect, it } from "bun:test";
 import { chmod, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
@@ -131,7 +131,7 @@ async function withSandbox(
 
 function spawn(
   command: string[],
-  env: Record<string, string>,
+  env: Record<string, string | undefined>,
   cwd?: string,
 ): { code: number | null; stdout: string; stderr: string } {
   const child = Bun.spawnSync(command, {

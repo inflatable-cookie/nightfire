@@ -1,11 +1,8 @@
-import { afterEach, describe, expect, it, vi } from "../vitest";
+import { describe, expect, it } from "bun:test";
 import { configureNightfireStrategies } from "../../src/strategies";
+import { stubGlobalValue } from "../helpers/globals";
 
 describe("nightfire/strategies SSR guard", () => {
-	afterEach(() => {
-		vi.unstubAllGlobals();
-	});
-
 	it("throws when configured during SSR (no window)", () => {
 		expect(typeof window).toBe("undefined");
 		expect(() =>
@@ -16,11 +13,15 @@ describe("nightfire/strategies SSR guard", () => {
 	});
 
 	it("succeeds in the browser", () => {
-		vi.stubGlobal("window", {});
-		expect(() =>
-			configureNightfireStrategies({
-				fetchStrategies: async () => [],
-			}),
-		).not.toThrow();
+		const restoreWindow = stubGlobalValue("window", {});
+		try {
+			expect(() =>
+				configureNightfireStrategies({
+					fetchStrategies: async () => [],
+				}),
+			).not.toThrow();
+		} finally {
+			restoreWindow();
+		}
 	});
 });

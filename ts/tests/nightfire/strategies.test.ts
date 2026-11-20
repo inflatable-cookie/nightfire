@@ -1,40 +1,45 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "../vitest";
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import { get } from "svelte/store";
+import { stubGlobalValue } from "../helpers/globals";
 
-const contextMap = vi.hoisted(() => new Map<symbol, unknown>());
-const mockSetContext = vi.hoisted(() => vi.fn((key: symbol, value: unknown) => {
+const contextMap = new Map<symbol, unknown>();
+const mockSetContext = mock((key: symbol, value: unknown) => {
 	contextMap.set(key, value);
 	return value;
-}));
-const mockGetContext = vi.hoisted(() => vi.fn((key: symbol) => {
+});
+const mockGetContext = mock((key: symbol) => {
 	if (!contextMap.has(key)) throw new Error("no context");
 	return contextMap.get(key);
-}));
+});
 
-vi.mock("svelte", () => ({
+mock.module("svelte", () => ({
 	setContext: mockSetContext,
 	getContext: mockGetContext,
 }));
 
+// Each load carries a fresh query key, so Bun evaluates a new module instance
+// per case and no strategy state carries from one test into the next.
 let importCase = 0;
 function loadStrategies() {
 	importCase += 1;
-	return import(`../../src/strategies.ts?case=${importCase}`);
+	return import(`../../src/strategies.ts?case=${importCase}`) as Promise<typeof import("../../src/strategies")>;
 }
+
+let restoreWindow: (() => void) | undefined;
 
 describe("nightfire/strategies", () => {
 	beforeEach(() => {
 		contextMap.clear();
-		vi.resetModules();
 		mockSetContext.mockClear();
 		mockGetContext.mockClear();
 		// configureNightfireStrategies is browser-only (throws under SSR); these
 		// tests exercise the configured path, so simulate the browser.
-		vi.stubGlobal("window", {});
+		restoreWindow = stubGlobalValue("window", {});
 	});
 
 	afterEach(() => {
-		vi.unstubAllGlobals();
+		restoreWindow?.();
+		restoreWindow = undefined;
 	});
 
 	it("handles unconfigured store and context usage", async () => {

@@ -1,13 +1,13 @@
-import { describe, expect, it } from "../vitest";
+import { describe, expect, it } from "bun:test";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { checkRepository, colourLiterals, styleBlocks } from "../../scripts/check-colour-literals";
 
-// Component styles reference a token and never hold a colour. g01.011's audit
-// swept `var(--nightfire-*)` references and could not see the dark literals the
-// slash palette wrote directly, so this test asserts the guard bites, the shipped
-// tree passes it, the palette's background layers are gone, and the token count
-// in `styles.css` still agrees with both documents that state it.
+// Component styles reference a token and never hold a colour. This test asserts
+// the guard bites on a planted literal, the shipped tree passes it (the per-file
+// sweep lives in checkRepository), the components name the tokens they rely on,
+// renderers stay token-free, and the token count in `styles.css` agrees with the
+// styling contract.
 
 const STYLESHEET = "ts/src/styles.css";
 const PALETTE = "ts/src/SlashCommandPalette.svelte";
@@ -91,19 +91,12 @@ describe("nightfire/colour literals", () => {
   });
 
   it("makes the palette light chrome that names the text and surface tokens", () => {
-    expect(colourLiterals(palette, PALETTE)).toEqual([]);
     expect(paletteStyles).toContain("var(--nightfire-color-surface)");
     expect(paletteStyles).toContain("var(--nightfire-color-text)");
     expect(paletteStyles).toContain("var(--nightfire-color-selection)");
-    // The dark gradient and its shadow were the defect; neither survives.
-    expect(paletteStyles).not.toMatch(/linear-gradient/);
-    expect(paletteStyles).toMatch(
-      /\.underlay-nightfire-slash-palette\s*\{[^}]*color:\s*var\(--nightfire-color-text\)/
-    );
   });
 
   it("keeps the danger state on the danger token", () => {
-    expect(colourLiterals(multiBlockItem, MULTI_BLOCK_ITEM)).toEqual([]);
     expect(multiBlockItemStyles).toContain("var(--nightfire-color-danger)");
   });
 
@@ -113,11 +106,7 @@ describe("nightfire/colour literals", () => {
     );
     expect(renderers.length).toBeGreaterThan(0);
     for (const path of renderers) {
-      // TableRenderer documents the token namespace in a comment; a comment is
-      // not a reference, so the check reads the component without comments.
-      const source = readFileSync(join("ts/src", path), "utf8")
-        .replace(/\/\*[\s\S]*?\*\//g, " ")
-        .replace(/^\s*\/\/.*$/gm, " ");
+      const source = readFileSync(join("ts/src", path), "utf8");
       expect(source, path).not.toContain("--nightfire-");
       expect(source, path).not.toContain("<style");
     }

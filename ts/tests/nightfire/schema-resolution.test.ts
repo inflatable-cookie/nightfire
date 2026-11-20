@@ -1,4 +1,4 @@
-import { describe, expect, it } from "../vitest";
+import { describe, expect, it } from "bun:test";
 import { registerSchema } from "../../src/editor-registry";
 
 const { resolveSchemaDefinition } = await import("../../src/editor/schema-resolution");

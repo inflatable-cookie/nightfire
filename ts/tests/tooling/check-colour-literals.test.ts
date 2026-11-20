@@ -1,4 +1,4 @@
-import { describe, expect, it } from "../vitest";
+import { describe, expect, it } from "bun:test";
 import { colourLiterals } from "../../scripts/check-colour-literals";
 
 // The guard reads a style block for a colour written directly. A token

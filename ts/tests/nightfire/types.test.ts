@@ -1,4 +1,4 @@
-import { describe, expect, it } from "../vitest";
+import { describe, expect, it } from "bun:test";
 import { coerceNightfireBlock } from "../../src/types";
 
 describe("nightfire/types coerceNightfireBlock", () => {

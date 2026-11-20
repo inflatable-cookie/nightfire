@@ -1,5 +1,4 @@
-// @vitest-environment jsdom
-import { describe, expect, it } from "../vitest";
+import { describe, expect, it } from "bun:test";
 import { fireEvent, render, waitFor, within } from "../render";
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";

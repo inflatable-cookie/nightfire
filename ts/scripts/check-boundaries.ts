@@ -183,6 +183,9 @@ async function bundle(entrypoint: string, svelte = false) {
     metafile: true,
   });
   if (!result.success) throw new Error(result.logs.map(String).join("\n"));
+  // metafile is requested above, so its absence means the build did not do what
+  // the boundary check needs; fail loudly rather than report no inputs.
+  if (!result.metafile) throw new Error(`bundle of ${entrypoint} produced no metafile`);
   return {
     text: await result.outputs[0]!.text(),
     size: result.outputs[0]!.size,

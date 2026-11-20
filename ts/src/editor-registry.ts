@@ -73,7 +73,7 @@ export function getSchemaDefinition(
 }
 
 export function getBlockEditor(
-  schema: string,
+  schema: string | null | undefined,
   type: string
 ): BlockEditorComponent | null {
   return blockEditors.get(schema, type);

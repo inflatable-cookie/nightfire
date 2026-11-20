@@ -1,5 +1,4 @@
-// @vitest-environment jsdom
-import { describe, expect, it, vi } from "../vitest";
+import { describe, expect, it, mock } from "bun:test";
 import { fireEvent, render, screen, waitFor } from "../render";
 
 import NightfireTypeSelect from "../../src/editor/NightfireTypeSelect.svelte";
@@ -27,7 +26,7 @@ describe("nightfire/editor NightfireTypeSelect", () => {
       value: "markdown",
       groupedOptions,
       typeOptions: [{ type: "markdown", label: "Markdown" }],
-      onChange: vi.fn(),
+      onChange: mock(),
     });
 
     await fireEvent.click(screen.getByRole("combobox", { name: "Block type" }));
@@ -41,7 +40,7 @@ describe("nightfire/editor NightfireTypeSelect", () => {
   });
 
   it("falls back to the flat type options when no groups are given", async () => {
-    const onChange = vi.fn();
+    const onChange = mock();
     render(NightfireTypeSelect, {
       value: "a",
       groupedOptions: null,

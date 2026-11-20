@@ -1,5 +1,4 @@
-// @vitest-environment jsdom
-import { afterEach, describe, expect, it, vi } from "../vitest";
+import { afterEach, describe, expect, it, mock } from "bun:test";
 import { fireEvent, render, waitFor, within } from "../render";
 
 import "../../src/render-registrations";
@@ -55,7 +54,7 @@ afterEach(() => {
 describe("nightfire/download-card block", () => {
   it("recovers from a rejected picker and keeps the block id", async () => {
     registerMediaSource(stubSource({ pick: async () => { throw new Error("unavailable"); } }));
-    const onChange = vi.fn();
+    const onChange = mock();
     const view = render(EditorComponent as any, { block: { id: "block-1", type: "download_card", data: {} }, onChange });
     const button = within(view.container).getByRole("button", { name: "Choose files" });
     await fireEvent.click(button);
@@ -174,10 +173,10 @@ describe("nightfire/download-card block", () => {
   });
 
   it("round-trips a multi-file pick, a card description, and a file description", async () => {
-    const pick = vi.fn(async () => [{ media_id: "m-1" }, { media_id: "m-2" }]);
+    const pick = mock(async () => [{ media_id: "m-1" }, { media_id: "m-2" }]);
     registerMediaSource(stubSource({ pick }));
 
-    const onChange = vi.fn();
+    const onChange = mock();
     const view = render(EditorComponent as any, {
       block: { type: "download_card", version: "initial", data: {} },
       onChange,
@@ -233,10 +232,10 @@ describe("nightfire/download-card block", () => {
   });
 
   it("changes nothing when the picker is cancelled and skips duplicates", async () => {
-    const pick = vi.fn(async () => [{ media_id: "m-1" }]);
+    const pick = mock(async (): Promise<Array<{ media_id: string }> | null> => [{ media_id: "m-1" }]);
     registerMediaSource(stubSource({ pick }));
 
-    const onChange = vi.fn();
+    const onChange = mock();
     const view = render(EditorComponent as any, {
       block: { type: "download_card", version: "initial", data: { files: [{ media_id: "m-1" }] } },
       onChange,
@@ -262,7 +261,7 @@ describe("nightfire/download-card block", () => {
     // 1. Pick two files, describe the card and one file.
     registerMediaSource(stubSource({ pick: async () => [{ media_id: "m-1" }, { media_id: "m-2" }] }));
 
-    const onChange = vi.fn();
+    const onChange = mock();
     let editorView = render(EditorComponent as any, {
       block: { type: "download_card", version: "initial", data: {} },
       onChange,
@@ -345,7 +344,7 @@ describe("nightfire/download-card block", () => {
 
     // 5. Clear the title: the emitted block drops the key, and the filename
     //    still labels the row.
-    const clearChange = vi.fn();
+    const clearChange = mock();
     const clearView = render(EditorComponent as any, { block: saved, onChange: clearChange });
     await fireEvent.input(
       clearView.container.querySelector('input[placeholder="File title (optional)"]')!,

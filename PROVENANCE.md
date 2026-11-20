@@ -32,8 +32,8 @@ the shared-root-fixture integration test under `rust/nightfire/tests`.
 Changes are limited to the repository boundary:
 
 - internal imports now resolve inside this root package;
-- the Bun test adapter replaces the source repository's Vitest harness without
-  adding Vite or Vitest;
+- tests run directly on `bun:test` in place of the source repository's Vitest
+  harness, without adding Vite or Vitest;
 - product-only summary transforms, Acowtancy schema registrations, and inferred
   product question groups were excluded;
 - generic markdown and media editors register as wildcard block types instead

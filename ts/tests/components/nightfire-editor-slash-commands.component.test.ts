@@ -1,12 +1,11 @@
-// @vitest-environment jsdom
-import { beforeEach, describe, expect, it, vi } from "../vitest";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 import { fireEvent, render, screen, waitFor, within } from "../render";
 
 import NightfireEditorHarness from "../fixtures/NightfireEditorHarness.svelte";
 
 describe("nightfire/NightfireEditor slash commands", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    mock.clearAllMocks();
   });
 
   it("stays inert by default", async () => {

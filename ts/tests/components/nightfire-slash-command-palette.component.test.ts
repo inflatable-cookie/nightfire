@@ -1,5 +1,4 @@
-// @vitest-environment jsdom
-import { describe, expect, it, vi } from "../vitest";
+import { describe, expect, it, mock } from "bun:test";
 import { fireEvent, render, screen } from "../render";
 import SlashCommandPalette from "../../src/SlashCommandPalette.svelte";
 import type { NightfireSlashCommand } from "../../src/editor";
@@ -25,8 +24,8 @@ const commands: NightfireSlashCommand[] = [
 
 describe("nightfire/SlashCommandPalette.svelte", () => {
   it("filters commands and emits the selected command with keyboard navigation", async () => {
-    const selected = vi.fn();
-    const queryChanges = vi.fn();
+    const selected = mock();
+    const queryChanges = mock();
 
     render(SlashCommandPalette, {
       commands,
@@ -46,12 +45,12 @@ describe("nightfire/SlashCommandPalette.svelte", () => {
   });
 
   it("renders an empty state and closes on escape", async () => {
-    const onClose = vi.fn();
+    const onClose = mock();
 
     render(SlashCommandPalette, {
       commands: [],
       query: "missing",
-      onSelect: vi.fn(),
+      onSelect: mock(),
       onClose
     });
 

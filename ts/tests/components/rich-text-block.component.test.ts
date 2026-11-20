@@ -1,5 +1,4 @@
-// @vitest-environment jsdom
-import { afterEach, describe, expect, it, vi } from "../vitest";
+import { afterEach, describe, expect, it, mock } from "bun:test";
 import { readFileSync } from "node:fs";
 import { fireEvent, render, waitFor } from "../render";
 
@@ -135,7 +134,7 @@ describe("nightfire/rich-text block", () => {
   });
 
   it("round-trips an edit as ProseMirror document JSON", async () => {
-    const onChange = vi.fn();
+    const onChange = mock();
     const view = render(EditorComponent as any, {
       block: {
         type: "rich_text",
