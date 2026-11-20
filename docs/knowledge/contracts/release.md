@@ -20,6 +20,9 @@ and never rebuilds on publish.
   section), so the artifact says why the minor moved.
 - **Changelog headings use a hyphen:** `## [0.2.0] - YYYY-MM-DD`. An em dash
   passes docs QA and breaks `effigy release`.
+- **A landed change writes a changelog fragment**, `changelog.d/<task>-<slug>.md`,
+  instead of editing `[Unreleased]`. Release preparation folds the fragments
+  into `CHANGELOG.md`.
 - **Never re-cut a published version.** A tag may move only while nothing has
   been published under it, and only to avoid burning a version on a release
   nobody received. The tag message records the move.
@@ -37,8 +40,9 @@ and never rebuilds on publish.
 ## Sequence
 
 1. Set the version in `package.json` and the root `Cargo.toml`
-   (`check:version-sync` enforces agreement), promote `[Unreleased]` into the
-   dated heading, commit, and push. `release:npm-admission` refuses a dirty tree.
+   (`check:version-sync` enforces agreement), fold the `changelog.d/` fragments
+   into `[Unreleased]` and promote it into the dated heading, commit, and push.
+   `release:npm-admission` refuses a dirty tree.
 2. Run Queue's `project.qa.run` on `main` at that commit. Its recorded stages
    run `effigy bootstrap:deps` before full `effigy qa` in the clean checkout,
    so Bun uses the pinned local compilers rather than its global cache.

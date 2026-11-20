@@ -6,21 +6,15 @@ import { execFileSync } from "node:child_process";
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { basename, join, resolve } from "node:path";
 
-import { readNpmPublicationAuthority, type NpmPublicationAuthority } from "./npm-publication";
-
-const CANDIDATE_SCHEMA = "nightfire.npm-candidate.v1";
-
-export type CandidateManifest = {
-  schema: string;
-  sourceCommit: string;
-  version: string;
-  packages: { name: string; path: string; tarball: string; version: string; sha256: string }[];
-};
-
-function sha256File(path: string): string {
-  const out = execFileSync("shasum", ["-a", "256", path], { encoding: "utf8" });
-  return out.trim().split(/\s+/)[0];
-}
+import {
+  CANDIDATE_SCHEMA,
+  type CandidateManifest,
+  parseCandidateManifest,
+  parseTarballManifest,
+  readNpmPublicationAuthority,
+  sha256File,
+  type NpmPublicationAuthority,
+} from "./npm-publication";
 
 function headCommit(root: string): string {
   return execFileSync("git", ["-C", root, "rev-parse", "HEAD"], { encoding: "utf8" }).trim();
@@ -52,10 +46,8 @@ export function writeCandidateManifest(args: {
       throw new Error(`npm pack produced no tarball name for ${entry.name}`);
     }
     const tarballPath = join(archiveDir, tarball);
-    const inner = JSON.parse(
-      execFileSync("tar", ["-xzOf", tarballPath, "package/package.json"], { encoding: "utf8" }),
-    ) as { name?: string; version?: string };
-    if (inner.name !== entry.name || typeof inner.version !== "string") {
+    const inner = parseTarballManifest(tarballPath);
+    if (inner.name !== entry.name) {
       throw new Error(`packed tarball declares ${inner.name}@${inner.version}, expected ${entry.name}`);
     }
     if (version === "") version = inner.version;
@@ -77,11 +69,8 @@ export function writeCandidateManifest(args: {
     version,
     packages,
   };
-  writeFileSync(
-    join(archiveDir, authority.candidateManifestName),
-    `${JSON.stringify(manifest, null, 2)}\n`,
-    "utf8",
-  );
+  const manifestPath = join(archiveDir, authority.candidateManifestName);
+  writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
   return manifest;
 }
 
@@ -97,6 +86,16 @@ if (import.meta.main) {
         .map((entry) => `  ${entry.name}@${entry.version} ${entry.tarball} ${entry.sha256}\n`)
         .join(""),
   );
-  // Read back once so a malformed manifest cannot leave the step green.
-  readFileSync(join(archiveDir, readNpmPublicationAuthority(root).candidateManifestName), "utf8");
+  // Read the written manifest back through the same parser publish mode uses,
+  // so a malformed manifest cannot leave the certificate step green.
+  const readBack = parseCandidateManifest(
+    readFileSync(
+      join(archiveDir, readNpmPublicationAuthority(root).candidateManifestName),
+      "utf8",
+    ),
+    "written candidate identity manifest",
+  );
+  if (JSON.stringify(readBack) !== JSON.stringify(manifest)) {
+    throw new Error("written candidate identity manifest does not round-trip");
+  }
 }

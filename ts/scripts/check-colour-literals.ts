@@ -12,14 +12,22 @@
 // directly written presentational value and are not covered here. This check
 // guards colours only.
 
-const NON_COLOUR_KEYWORDS = new Set(["transparent", "currentcolor", "inherit"]);
-
-// Hex colours and functional colour notations carrying any literal argument.
+// Hex colours and functional colour notations. A `rgb()`/`hsl()`/`oklch()` call
+// is a colour written; a `color-mix()` is only one when it mixes a literal, so
+// it is inspected separately below.
 const COLOUR_FUNCTION = /\b(?:rgb|rgba|hsl|hsla|hwb|lab|lch|oklab|oklch|color)\([^)]*\)/i;
+const COLOUR_MIX = /\bcolor-mix\(([^)]*)\)/gi;
 const HEX_COLOUR = /#[0-9a-f]{3,8}\b/i;
+const WORD = /[A-Za-z]+/g;
 
-// The CSS named colours. `transparent`, which is also a keyword, is handled by
-// NON_COLOUR_KEYWORDS rather than listed here.
+// A token reference names a value declared in `styles.css`; its own name is not
+// a colour, so `--nightfire-color-red` must not read as `red`. Only the custom
+// property name is blanked, which keeps a literal fallback (`var(--x, red)`)
+// visible -- that is the case that actually ships a colour.
+const TOKEN_REFERENCE = /var\(\s*--[\w-]+/g;
+
+// The CSS named colours. `transparent`, `currentColor` and `inherit` are
+// keywords rather than colours and are deliberately absent.
 const NAMED_COLOURS = new Set([
   "aliceblue", "antiquewhite", "aqua", "aquamarine", "azure", "beige", "bisque", "black",
   "blanchedalmond", "blue", "blueviolet", "brown", "burlywood", "cadetblue", "chartreuse",
@@ -71,20 +79,40 @@ function lineAt(source: string, index: number): number {
   return line;
 }
 
+// Blank out the parts of a value that cannot hold a colour, keeping every
+// remaining character at its original index so a finding can be reported from
+// the value as written.
+function blankNonColour(rawValue: string): string {
+  return rawValue
+    .replace(TOKEN_REFERENCE, (token) => `var(${"x".repeat(token.length - 4)}`)
+    .replace(/url\([^)]*\)/gi, (url) => " ".repeat(url.length))
+    .replace(/"[^"]*"|'[^']*'/g, (quoted) => " ".repeat(quoted.length));
+}
+
+function sliceOf(original: string, match: { index: number; 0: string }): string {
+  return original.slice(match.index, match.index + match[0].length);
+}
+
 function colourLiteralIn(rawValue: string): string | null {
-  const value = rawValue
-    .replace(/url\([^)]*\)/gi, " ")
-    .replace(/"[^"]*"|'[^']*'/g, " ");
+  const value = blankNonColour(rawValue);
 
   const functional = COLOUR_FUNCTION.exec(value);
-  if (functional) return functional[0].trim();
+  if (functional) return sliceOf(rawValue, functional).trim();
+
+  // `color-mix()` derives a colour from its arguments, so it is a literal only
+  // when one of the mixed colours is. `color-mix(in srgb, var(--token) 40%,
+  // transparent)` references a token and passes; `color-mix(in srgb, #fff 40%,
+  // transparent)` does not.
+  for (const mix of value.matchAll(COLOUR_MIX)) {
+    const literal = colourLiteralIn(mix[1]!);
+    if (literal) return literal;
+  }
 
   const hex = HEX_COLOUR.exec(value);
-  if (hex) return hex[0];
+  if (hex) return sliceOf(rawValue, hex);
 
-  for (const word of value.split(/[^A-Za-z]+/)) {
-    if (!word || NON_COLOUR_KEYWORDS.has(word.toLowerCase())) continue;
-    if (NAMED_COLOURS.has(word.toLowerCase())) return word;
+  for (const word of value.matchAll(WORD)) {
+    if (NAMED_COLOURS.has(word[0].toLowerCase())) return sliceOf(rawValue, word);
   }
 
   return null;

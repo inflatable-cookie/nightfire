@@ -5,15 +5,21 @@ Repository scripts are proof helpers invoked through Effigy.
 | Script | Purpose |
 | --- | --- |
 | `check-boundaries.ts` | Proves dependency, source-graph, and bundle boundaries |
+| `check-colour-literals.ts` | Refuses a colour literal in any `ts/src` component style block |
 | `check-renderer-consumer.ts` | Installs Nightfire without Poodle and renders every core block |
 | `check-exports.ts` | Proves declared package exports resolve |
 | `check-pack.ts` | Proves the packed package contains the intended files |
+| `check-release-automation.ts` | Asserts the release workflow's structure and mutation guards as text |
 | `check-rust-package.ts` | Tests the freshly unpacked Cargo crate and its fixture |
 | `check-schemas.ts` | Proves published JSON Schema documents against the shared wire fixtures |
 | `schema-documents.ts` | Shared JSON Schema loader and validator used by `check-schemas` and editor payload tests |
 | `check-sanitization.ts` | Exercises malicious markup across supported runtime shapes |
 | `check-version-sync.ts` | Proves npm/Cargo version and shared-fixture alignment |
 | `check-git-consumer.ts` | Exercises disposable npm and Cargo Git consumers |
+| `npm-admission.ts` | Refuses to certify a candidate from a dirty tree |
+| `npm-archive.ts` | Packs once and writes the candidate identity manifest |
+| `npm-publication.ts` | Publication authority, candidate manifest and tarball readers the npm proofs share |
+| `verify-npm-candidate.ts` | Verifies a candidate archive set against tag, commit, packages and hashes |
 | `oxide-rust-runner.sh` | The one Rust route: oxide locally, Cargo in CI or on the explicit escape |
 | `rust-route.ts` | Shared route helper for proof scripts that run Cargo |
 | `run-test-files.ts` | Runs selected Bun test files with consistent setup |
@@ -31,6 +37,17 @@ install cache when `node_modules` is missing, and the cached TypeScript 7 root
 export is version metadata only, so the loader refuses a toolchain that resolves
 outside this checkout, or a TypeScript without the compiler API, by name instead
 of failing inside a component.
+
+## Release proofs
+
+`npm-publication.ts` is the one reader of `release-manifest.json`'s
+`npmPublication` authority, and it also owns the candidate identity manifest:
+schema name, structure parsing, SHA-256 via `node:crypto`, and the
+`package/package.json` reader. `npm-admission.ts` requires a clean exact head,
+`npm-archive.ts` packs once and writes the manifest, and
+`verify-npm-candidate.ts` checks the archive set against the tag, the commit and
+every recorded hash before any publish. A flag passed without a value is
+refused rather than ignored.
 
 ## Rust route
 

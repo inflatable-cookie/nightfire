@@ -8,7 +8,9 @@
     "title": {
       "anyOf": [{ "type": "string" }, { "type": "null" }]
     },
-    "intro": {},
+    "intro": {
+      "anyOf": [{ "type": "string" }, { "type": "null" }]
+    },
     "variant": { "type": "string" },
     "items": {
       "type": "array",

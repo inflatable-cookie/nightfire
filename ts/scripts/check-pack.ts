@@ -2,6 +2,8 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { isAbsolute, join } from "node:path";
 import { tmpdir } from "node:os";
 
+import { CORE_BLOCK_TYPE_NAMES } from "../src/core-blocks";
+
 const destination = await mkdtemp(join(tmpdir(), "nightfire-pack-"));
 try {
   const packed = Bun.spawnSync([
@@ -26,13 +28,9 @@ try {
     "package/schemas/block.schema.json",
     "package/schemas/registry.schema.json",
     "package/schemas/strategy.schema.json",
-    "package/schemas/blocks/markdown.schema.json",
-    "package/schemas/blocks/rich_text.schema.json",
-    "package/schemas/blocks/download_card.schema.json",
-    "package/schemas/blocks/table.schema.json",
-    "package/schemas/blocks/item_list.schema.json",
-    "package/schemas/blocks/image.schema.json",
-    "package/schemas/blocks/video.schema.json",
+    // One payload schema per declared core block, so a new core block that ships
+    // without its schema is caught here rather than at a consumer's migration.
+    ...CORE_BLOCK_TYPE_NAMES.map((type) => `package/schemas/blocks/${type}.schema.json`),
   ]) {
     if (!entries.includes(required)) throw new Error(`packed artifact missing ${required}`);
   }
