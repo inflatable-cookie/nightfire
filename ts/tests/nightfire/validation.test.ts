@@ -4,11 +4,13 @@ import {
 	validateNightfireValue,
 	prepareNightfireForSave,
 } from "../../src/validation";
+import type { BlockValidator } from "../../src/validation";
 
 describe("nightfire/validation", () => {
 	it("re-exports validator helpers", () => {
+		const passthrough: BlockValidator = (block) => block;
 		registerBlockValidator("schema-v", "markdown", (block: any) => ({
-			...block,
+			...passthrough(block) as any,
 			validated: true,
 		}));
 

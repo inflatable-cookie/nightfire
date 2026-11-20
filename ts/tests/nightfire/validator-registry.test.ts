@@ -106,6 +106,84 @@ describe("nightfire/validator-registry", () => {
 		).toEqual({ schema: "schema-n", blocks: [] });
 	});
 
+	it("re-resolves the version a validator answers with", () => {
+		registerBlockVersions("callout", { current: "2", supported: ["1", "2"] });
+
+		// Retyping to a registered type resolves against that type's versions.
+		registerBlockValidator("schema-retype", "markdown", (block: any) => ({
+			...block,
+			type: "callout",
+			version: "1",
+		}));
+		expect(
+			validateNightfireValue({
+				schema: "schema-retype",
+				blocks: [{ type: "markdown", data: {} }],
+			} as any)
+		).toEqual({
+			schema: "schema-retype",
+			blocks: [{ id: undefined, type: "callout", version: "2", data: {} }],
+		});
+
+		// A version the type does not support cannot be smuggled past validation.
+		registerBlockValidator("schema-version", "markdown", (block: any) => ({
+			...block,
+			version: "9",
+		}));
+		expect(
+			validateNightfireValue({
+				schema: "schema-version",
+				blocks: [{ type: "markdown", data: {} }],
+			} as any)
+		).toEqual({ schema: "schema-version", blocks: [] });
+
+		// A retyped block whose new type is unregistered also fails closed.
+		registerBlockValidator("schema-unknown-type", "markdown", (block: any) => ({
+			...block,
+			type: "unregistered",
+			version: "2",
+		}));
+		expect(
+			validateNightfireValue({
+				schema: "schema-unknown-type",
+				blocks: [{ type: "markdown", data: {} }],
+			} as any)
+		).toEqual({ schema: "schema-unknown-type", blocks: [] });
+	});
+
+	it("fails a block closed when a validator throws", () => {
+		registerBlockValidator("schema-t", "markdown", () => {
+			throw new Error("validator exploded");
+		});
+
+		expect(
+			validateNightfireValue({
+				schema: "schema-t",
+				blocks: [
+					{ type: "markdown", data: {} },
+					{ type: "other", data: {} },
+				],
+			} as any)
+		).toEqual({
+			schema: "schema-t",
+			blocks: [{ id: undefined, type: "other", version: "initial", data: {} }],
+		});
+	});
+
+	it("rejects an envelope whose blocks member is not an array", () => {
+		for (const blocks of ["bad", null, {}, 3]) {
+			expect(
+				validateNightfireValue({ schema: "schema-x", blocks } as any),
+				String(blocks)
+			).toEqual({ schema: "", blocks: [] });
+		}
+
+		expect(validateNightfireValue({ schema: "schema-x" } as any)).toEqual({
+			schema: "",
+			blocks: [],
+		});
+	});
+
 	it("drops blocks that are not objects and keeps a valid one", () => {
 		expect(
 			validateNightfireValue({

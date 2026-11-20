@@ -53,7 +53,16 @@ function validateBlock(schema: string, block: unknown): NightfireBlock | null {
     return typedBlock;
   }
 
-  const validated = asRecord(fn(typedBlock));
+  // A validator is consumer code: a throw fails this block closed rather than
+  // taking down the whole save path.
+  let answer: unknown;
+  try {
+    answer = fn(typedBlock);
+  } catch {
+    return null;
+  }
+
+  const validated = asRecord(answer);
   // A validator answers with a block. A primitive, an array or a typeless
   // object is a malformed answer, so the block fails closed instead of being
   // replaced by an empty one.
@@ -61,7 +70,21 @@ function validateBlock(schema: string, block: unknown): NightfireBlock | null {
     return null;
   }
 
-  return coerceNightfireBlock(validated, typedBlock.type);
+  const result = coerceNightfireBlock(validated);
+  if (!result) {
+    return null;
+  }
+
+  // A validator may retype or re-version what it was handed, so the answer goes
+  // through version resolution again. Skipping it would let a validator smuggle
+  // an unknown version past the save boundary.
+  const resolved = resolveBlockVersion(result.type, result.version);
+  if (!resolved) {
+    return null;
+  }
+  result.version = resolved;
+
+  return result;
 }
 
 function readEnvelope(value: unknown): { schema: string; blocks: unknown[] } | null {
@@ -81,7 +104,13 @@ function readEnvelope(value: unknown): { schema: string; blocks: unknown[] } | n
     return null;
   }
 
-  return { schema, blocks: Array.isArray(record.blocks) ? record.blocks : [] };
+  // A schema-bearing envelope without a blocks array is malformed, not empty:
+  // coercing `blocks: "bad"` to `[]` would silently accept a corrupt value.
+  if (!Array.isArray(record.blocks)) {
+    return null;
+  }
+
+  return { schema, blocks: record.blocks };
 }
 
 /**

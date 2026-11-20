@@ -115,7 +115,9 @@ export function configureNightfireStrategies(cfg: NightfireStrategiesConfig): vo
 function isStale(): boolean {
   if (fetchedAt === null) return true;
   const ttl = config?.cacheTtl ?? DEFAULT_CACHE_TTL;
-  return Date.now() - fetchedAt > ttl;
+  // A non-positive TTL means "never cache": `cacheTtl: 0` is a real request to
+  // refetch every time, not a value that needs to be spelled `-1`.
+  return ttl <= 0 || Date.now() - fetchedAt >= ttl;
 }
 
 function resetCache(): void {
@@ -124,6 +126,10 @@ function resetCache(): void {
   fetchPromise = null;
   activeRequest = null;
   loadingStore.set(false);
+  // A retired cache is not a cache of the old config's strategies, and its error
+  // belongs to the request that failed, not to the one about to start.
+  strategiesStore.set([]);
+  errorStore.set(null);
 }
 
 /**
@@ -181,7 +187,10 @@ async function ensure(): Promise<NightfireStrategy[]> {
         return get(strategiesStore);
       }
       errorStore.set(e instanceof Error ? e.message : "Failed to load strategies");
-      return [];
+      // The answer is whatever the store holds, so a caller that read
+      // `strategies` and a caller that awaited `ensure()` never disagree: a
+      // failed refetch keeps the stale list rather than pretending it is empty.
+      return get(strategiesStore);
     });
 
   return fetchPromise;

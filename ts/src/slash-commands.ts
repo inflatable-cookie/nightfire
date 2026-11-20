@@ -39,6 +39,10 @@ function normaliseSearchValue(value: string): string {
   return value.toLowerCase().trim();
 }
 
+function nonBlank(value: string | undefined): string | undefined {
+  return typeof value === "string" && value.trim().length > 0 ? value : undefined;
+}
+
 function buildDefaultCommand(option: BlockTypeOption): NightfireSlashCommand {
   return {
     id: `insert-${option.type}`,
@@ -77,7 +81,9 @@ export function buildNightfireSlashCommands(
     commands.set(input.type, {
       id: input.id ?? existing.id,
       type: input.type,
-      label: input.label ?? existing.label,
+      // A blank label is not a label: it must not erase the one the default
+      // command already has.
+      label: nonBlank(input.label) ?? existing.label,
       description: input.description ?? existing.description,
       aliases: dedupe([...(existing.aliases ?? []), ...(input.aliases ?? [])]),
       keywords: dedupe([...(existing.keywords ?? []), ...(input.keywords ?? [])])
@@ -112,11 +118,16 @@ export function filterNightfireSlashCommands(
 export function findNightfireSlashMatch(
   context: MarkdownEditorContext
 ): NightfireSlashMatch | null {
-  if (context.selectionStart !== context.selectionEnd) {
+  // A cursor from another document version (or a stale editor state) can sit
+  // past the end of the value; clamp before slicing so the match stays inside it.
+  const selectionStart = clampToLength(context.selectionStart, context.value.length);
+  const selectionEnd = clampToLength(context.selectionEnd, context.value.length);
+
+  if (selectionStart !== selectionEnd) {
     return null;
   }
 
-  const beforeCursor = context.value.slice(0, context.selectionStart);
+  const beforeCursor = context.value.slice(0, selectionStart);
   const lineStart = beforeCursor.lastIndexOf("\n") + 1;
   const linePrefix = beforeCursor.slice(lineStart);
   const match = /(?:^|\s)\/([^\s/]*)$/.exec(linePrefix);
@@ -128,13 +139,18 @@ export function findNightfireSlashMatch(
   const token = match[0];
   const query = match[1] ?? "";
   const offset = token.startsWith("/") ? 0 : 1;
-  const start = context.selectionStart - token.length + offset;
+  const start = selectionStart - token.length + offset;
 
   return {
     start,
-    end: context.selectionStart,
+    end: selectionStart,
     query
   };
+}
+
+function clampToLength(offset: number, length: number): number {
+  if (!Number.isFinite(offset)) return 0;
+  return Math.min(Math.max(Math.trunc(offset), 0), length);
 }
 
 export function removeNightfireSlashText(

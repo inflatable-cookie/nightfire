@@ -113,6 +113,14 @@ export function unregisterRichTextInlineNodeRenderer(
 }
 
 /**
+ * Retire every inline-node registration. A process-global registry needs a
+ * clean seam so one test or hot reload does not leak into the next.
+ */
+export function clearRichTextInlineNodeRenderers(): void {
+  renderers.clear();
+}
+
+/**
  * Resolve the renderer for a schema and node type. Matching is exact: a
  * registration for one schema never answers for another.
  */

@@ -17,8 +17,8 @@ const INVALID_POINTER =
  * True for a well-formed RFC 6901 pointer: non-empty, slash-prefixed, and every
  * `~` escapes `0` or `1`. Mirrors `is_well_formed_pointer` in the Rust crate.
  */
-function isWellFormedPointer(pointer: string): boolean {
-  if (!pointer.startsWith("/")) {
+function isWellFormedPointer(pointer: unknown): boolean {
+  if (typeof pointer !== "string" || !pointer.startsWith("/")) {
     return false;
   }
 
@@ -65,6 +65,13 @@ function resolveJsonPointer(value: unknown, pointer: string): unknown {
 }
 
 function readLocator(locator: NightfireMediaLocator): NightfireMediaLocator {
+  // A locator arrives from stored data or another language's caller, so the
+  // shape is checked here rather than trusted from the type: a non-string id
+  // is a domain error, not a `TypeError` from `.trim()`.
+  if (typeof locator.blockId !== "string") {
+    throw new Error("Nightfire media locator requires a string blockId");
+  }
+
   const blockId = locator.blockId.trim();
   if (!blockId) {
     throw new Error("Nightfire media locator requires a blockId");
@@ -98,6 +105,10 @@ export function parseNightfireMediaLocator(locatorKey: string): NightfireMediaLo
   });
 }
 
+function isObjectRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
 export function findNightfireBlockById(
   value: NightfireValue,
   blockId: string
@@ -106,7 +117,60 @@ export function findNightfireBlockById(
     return null;
   }
 
-  return value.blocks.find((block) => block.id === blockId) ?? null;
+  const topLevel = value.blocks.find(
+    (block) => isObjectRecord(block) && block.id === blockId
+  );
+  if (topLevel) {
+    return topLevel;
+  }
+
+  // Then nested blocks, which live in another block's `data` (an `item_list`
+  // item body, for instance) and are not top-level blocks of the value.
+  for (const block of value.blocks) {
+    if (!isObjectRecord(block)) {
+      continue;
+    }
+    const nested = findBlockInJson(block.data, blockId);
+    if (nested) {
+      return nested;
+    }
+  }
+
+  return null;
+}
+
+/** A nested block object: it carries an id, a type and a `data` member. */
+function findBlockInJson(value: unknown, blockId: string): NightfireBlock | null {
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const found = findBlockInJson(item, blockId);
+      if (found) {
+        return found;
+      }
+    }
+    return null;
+  }
+
+  if (!isObjectRecord(value)) {
+    return null;
+  }
+
+  if (
+    value.id === blockId &&
+    typeof value.type === "string" &&
+    Object.hasOwn(value, "data")
+  ) {
+    return value as unknown as NightfireBlock;
+  }
+
+  for (const child of Object.values(value)) {
+    const found = findBlockInJson(child, blockId);
+    if (found) {
+      return found;
+    }
+  }
+
+  return null;
 }
 
 /**
@@ -120,15 +184,17 @@ function findBlockData(value: NightfireValue, blockId: string): Lookup {
     return NOT_FOUND;
   }
 
-  for (const block of value.blocks) {
-    if (!block || typeof block !== "object") {
-      continue;
-    }
+  const blocks = value.blocks.filter(isObjectRecord);
 
+  // Top-level blocks answer first, then nested ones: a nested block never
+  // shadows a top-level block that carries the same id.
+  for (const block of blocks) {
     if (block.id === blockId) {
-      return block.data ?? {};
+      return (block.data as Record<string, unknown> | undefined) ?? {};
     }
+  }
 
+  for (const block of blocks) {
     const nested = findBlockDataInJson(block.data, blockId);
     if (nested !== NOT_FOUND) {
       return nested;

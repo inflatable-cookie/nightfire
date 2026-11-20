@@ -148,4 +148,84 @@ describe("nightfire/media-locator", () => {
 		const locator: NightfireMediaLocator = { blockId: "hero_01", dataPointer: "image_id" };
 		expect(() => resolveNightfireMediaLocator(value, locator)).toThrow(/JSON Pointer/);
 	});
+
+	it("rejects a non-string block id or pointer as a domain error", () => {
+		for (const blockId of [42, null, undefined, {}, []]) {
+			expect(
+				() => formatNightfireMediaLocator({ blockId, dataPointer: "/image_id" } as any),
+				String(blockId)
+			).toThrow(/blockId/);
+		}
+
+		expect(() =>
+			formatNightfireMediaLocator({ blockId: "hero_01", dataPointer: 7 } as any)
+		).toThrow(/JSON Pointer/);
+	});
+
+	it("finds a block by id without trusting every element to be a block", () => {
+		const messy = {
+			schema: "test:schema",
+			blocks: [null, "block", 7, { id: "real", type: "markdown", version: "initial", data: {} }]
+		} as any;
+
+		expect(findNightfireBlockById(messy, "real")?.id).toBe("real");
+		expect(findNightfireBlockById(messy, "missing")).toBeNull();
+		expect(findNightfireBlockById({ schema: "s" } as any, "real")).toBeNull();
+	});
+
+	it("finds a nested block by id", () => {
+		const nested = {
+			schema: "test:schema",
+			blocks: [
+				{
+					id: "list_01",
+					type: "item_list",
+					version: "initial",
+					data: {
+						items: [
+							{
+								id: "row_01",
+								body: [
+									{
+										id: "gallery_02",
+										type: "gallery",
+										version: "initial",
+										data: { pages: [] }
+									}
+								]
+							}
+						]
+					}
+				}
+			]
+		};
+
+		const block = findNightfireBlockById(nested, "gallery_02");
+		expect(block?.id).toBe("gallery_02");
+		expect(block?.type).toBe("gallery");
+	});
+
+	it("prefers a top-level block over a nested one with the same id", () => {
+		const duplicated = {
+			schema: "test:schema",
+			blocks: [
+				{
+					id: "list_01",
+					type: "item_list",
+					version: "initial",
+					data: {
+						items: [{ id: "dup", type: "image", version: "initial", data: { image_id: "nested" } }]
+					}
+				},
+				{ id: "dup", type: "image", version: "initial", data: { image_id: "top" } }
+			]
+		};
+
+		expect(
+			resolveNightfireMediaLocator(
+				duplicated as any,
+				parseNightfireMediaLocator("dup#/image_id")
+			)
+		).toBe("top");
+	});
 });
