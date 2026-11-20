@@ -13,7 +13,8 @@ export interface GroupedOptions {
 
 const CATEGORY_PRIORITY: Record<string, number> = {
 	Text: 1,
-	Media: 2
+	Media: 2,
+	Layout: 3
 };
 
 function getCategoryPriority(category: string | null): number {

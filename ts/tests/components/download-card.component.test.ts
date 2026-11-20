@@ -365,4 +365,61 @@ describe("nightfire/download-card block", () => {
     expect(clearedRows[0].querySelector("[data-download-card-file-title]")).toBeNull();
     expect(clearedRows[0].querySelector("a")!.textContent).toBe("trail-map.pdf");
   });
+
+  it("falls back to media_id when resolve() throws or omits a URL in DownloadCardEditor", () => {
+    registerMediaSource(
+      stubSource({
+        resolve: () => {
+          throw new Error("resolve failed");
+        },
+      })
+    );
+    const throwingView = render(EditorComponent as any, {
+      block: { type: "download_card", version: "initial", data: { files: [{ media_id: "m-1" }] } },
+      onChange: mock(),
+    });
+    expect(
+      throwingView.container.querySelector(".underlay-download-card-editor__file-name")!.textContent
+    ).toBe("m-1");
+
+    registerMediaSource(
+      stubSource({
+        resolve: () => ({ url: "", filename: "ignored.pdf" }),
+      })
+    );
+    const blankUrlView = render(EditorComponent as any, {
+      block: { type: "download_card", version: "initial", data: { files: [{ media_id: "m-2" }] } },
+      onChange: mock(),
+    });
+    expect(
+      blankUrlView.container.querySelector(".underlay-download-card-editor__file-name")!.textContent
+    ).toBe("m-2");
+  });
+
+  it("renders externally authored duplicate media_id entries without crashing", async () => {
+    registerMediaSource(stubSource());
+    const onChange = mock();
+    const view = render(EditorComponent as any, {
+      block: {
+        type: "download_card",
+        version: "initial",
+        data: {
+          files: [
+            { media_id: "m-1", title: "First copy" },
+            { media_id: "m-1", title: "Second copy" },
+          ],
+        },
+      },
+      onChange,
+    });
+
+    const rows = view.container.querySelectorAll(".underlay-download-card-editor__file");
+    expect(rows).toHaveLength(2);
+    const removeButtons = within(view.container).getAllByRole("button", { name: "Remove" });
+    await fireEvent.click(removeButtons[0]!);
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange.mock.calls[0]![0].data.files).toEqual([
+      { media_id: "m-1", title: "Second copy" },
+    ]);
+  });
 });

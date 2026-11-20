@@ -302,5 +302,62 @@ describe("nightfire/image block", () => {
 
     registerMediaSource(stubSource({ pick: async () => [{ media_id: "unknown" }] }));
     expect(await createRichTextImageRequest()!()).toBeNull();
+
+    registerMediaSource(
+      stubSource({
+        pick: async () => {
+          throw new Error("picker failed");
+        },
+      })
+    );
+    expect(await createRichTextImageRequest()!()).toBeNull();
+
+    registerMediaSource(
+      stubSource({
+        pick: async () => [{ media_id: "img-1" }],
+        resolve: () => {
+          throw new Error("resolve failed");
+        },
+      })
+    );
+    expect(await createRichTextImageRequest()!()).toBeNull();
+
+    registerMediaSource(
+      stubSource({
+        pick: async () => [{ media_id: "img-1" }],
+        resolve: () => ({ url: "   ", filename: "blank.jpg" }),
+      })
+    );
+    expect(await createRichTextImageRequest()!()).toBeNull();
+  });
+
+  it("falls back to media_id when resolve() throws or omits a URL in ImageEditor", () => {
+    registerMediaSource(
+      stubSource({
+        resolve: () => {
+          throw new Error("resolve failed");
+        },
+      })
+    );
+    const throwingView = render(EditorComponent as any, {
+      block: { type: "image", version: "initial", data: { media_id: "img-1" } },
+      onChange: mock(),
+    });
+    expect(
+      throwingView.container.querySelector(".underlay-image-editor__file-name")!.textContent
+    ).toBe("img-1");
+
+    registerMediaSource(
+      stubSource({
+        resolve: () => ({ url: "   ", filename: "ignored.jpg" }),
+      })
+    );
+    const blankUrlView = render(EditorComponent as any, {
+      block: { type: "image", version: "initial", data: { media_id: "img-2" } },
+      onChange: mock(),
+    });
+    expect(
+      blankUrlView.container.querySelector(".underlay-image-editor__file-name")!.textContent
+    ).toBe("img-2");
   });
 });

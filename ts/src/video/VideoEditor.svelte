@@ -61,6 +61,17 @@
     typeof block?.data?.caption === "string" ? block.data.caption : ""
   );
 
+  function sameEmbed(a: ParsedEmbed | null, b: ParsedEmbed | null): boolean {
+    if (a === b) return true;
+    if (!a || !b) return false;
+    return (
+      a.provider === b.provider &&
+      a.id === b.id &&
+      (a.originalUrl ?? undefined) === (b.originalUrl ?? undefined) &&
+      (a.originalEmbed ?? undefined) === (b.originalEmbed ?? undefined)
+    );
+  }
+
   const initialEmbed = untrack(() => storedEmbed(block?.data?.embed));
   let url = $state(initialEmbed?.originalUrl ?? "");
   let pendingEmbed = $state<ParsedEmbed | null | undefined>(undefined);
@@ -69,8 +80,8 @@
 
   $effect(() => {
     const current = embed;
-    if (current !== observedEmbed) {
-      if (current !== lastEmitted) {
+    if (!sameEmbed(current, observedEmbed)) {
+      if (!sameEmbed(current, lastEmitted)) {
         url = typeof current?.originalUrl === "string" ? current.originalUrl : "";
       }
       pendingEmbed = undefined;

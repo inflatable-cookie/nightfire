@@ -185,4 +185,31 @@ describe("nightfire/item-list editor", () => {
     );
     expect(lastBlock(onChange).data.items).toEqual([{ title: "Empty item", body: [] }]);
   });
+
+  it("clears pending confirmation when items are reordered or added", async () => {
+    const onChange = mock();
+    const block = itemListBlock({
+      items: [
+        { title: "First", body: [] },
+        { title: "Second", body: [] },
+      ],
+    });
+    const view = render(EditorComponent as any, {
+      block,
+      value: { schema: "example:content/list" },
+      onChange,
+    });
+
+    await fireEvent.click(within(view.container).getByRole("button", { name: "Remove item 2" }));
+    expect(within(view.container).getByRole("alertdialog")).toBeTruthy();
+
+    await fireEvent.click(within(view.container).getByRole("button", { name: "Move item 2 up" }));
+    expect(within(view.container).queryByRole("alertdialog")).toBeNull();
+
+    await fireEvent.click(within(view.container).getByRole("button", { name: "Remove item 1" }));
+    expect(within(view.container).getByRole("alertdialog")).toBeTruthy();
+
+    await fireEvent.click(within(view.container).getByRole("button", { name: "Add item" }));
+    expect(within(view.container).queryByRole("alertdialog")).toBeNull();
+  });
 });

@@ -58,7 +58,17 @@
   ];
 
   function resolvedName(reference: string): string | null {
-    return mediaSource?.resolve({ media_id: reference })?.filename ?? null;
+    try {
+      const resolved = mediaSource?.resolve({ media_id: reference }) ?? null;
+      if (!resolved || typeof resolved.url !== "string" || resolved.url.trim().length === 0) {
+        return null;
+      }
+      return typeof resolved.filename === "string" && resolved.filename.length > 0
+        ? resolved.filename
+        : null;
+    } catch {
+      return null;
+    }
   }
 
   function emit(updates: {

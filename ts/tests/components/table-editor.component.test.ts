@@ -366,4 +366,75 @@ describe("nightfire/table editor", () => {
     ]);
     expectRectangular(lastBlock(onChange).data.rows, 2);
   });
+
+  it("sets and clears the table caption in emitted block data", async () => {
+    const onChange = mock();
+    let current = tableBlock([{ cells: [{ markdown: "A" }] }]);
+    const view = render(EditorComponent as any, {
+      block: current,
+      onChange: (next: any) => {
+        current = next;
+        onChange(next);
+      },
+    });
+
+    const captionInput = within(view.container).getByPlaceholderText(
+      "Table caption (optional)",
+    ) as HTMLInputElement;
+    await fireEvent.input(captionInput, { target: { value: "Updated caption" } });
+    expect(lastBlock(onChange).data.caption).toBe("Updated caption");
+
+    const updatedView = render(EditorComponent as any, {
+      block: current,
+      onChange: (next: any) => {
+        current = next;
+        onChange(next);
+      },
+    });
+    await fireEvent.input(
+      within(updatedView.container).getByPlaceholderText("Table caption (optional)"),
+      { target: { value: "" } },
+    );
+    expect(lastBlock(onChange).data).not.toHaveProperty("caption");
+    expect("caption" in lastBlock(onChange).data).toBe(false);
+  });
+
+  it("clears pending confirmation when rows or columns change or cells split", async () => {
+    const block = tableBlock([
+      {
+        cells: [
+          { markdown: "Keep", colspan: 2 },
+          { markdown: "Other" },
+        ],
+      },
+      {
+        cells: [{ markdown: "" }, { markdown: "" }, { markdown: "" }],
+      },
+    ]);
+    const onChange = mock();
+    const view = render(EditorComponent as any, { block, onChange });
+
+    const row1Cell = within(view.container).getByRole("gridcell", { name: "Row 1, column 1" });
+    row1Cell.focus();
+    await fireEvent.click(within(view.container).getByRole("button", { name: "Remove row" }));
+    expect(within(view.container).getByRole("alertdialog")).toBeTruthy();
+
+    await fireEvent.click(within(view.container).getByRole("button", { name: "Insert row above" }));
+    expect(within(view.container).queryByRole("alertdialog")).toBeNull();
+
+    const col3Cell = within(view.container).getByRole("gridcell", { name: "Row 1, column 3" });
+    col3Cell.focus();
+    await fireEvent.click(within(view.container).getByRole("button", { name: "Remove column" }));
+    expect(within(view.container).getByRole("alertdialog")).toBeTruthy();
+
+    await fireEvent.click(within(view.container).getByRole("button", { name: "Insert column left" }));
+    expect(within(view.container).queryByRole("alertdialog")).toBeNull();
+
+    row1Cell.focus();
+    await fireEvent.click(within(view.container).getByRole("button", { name: "Remove row" }));
+    expect(within(view.container).getByRole("alertdialog")).toBeTruthy();
+
+    await fireEvent.click(within(view.container).getByRole("button", { name: "Split cell" }));
+    expect(within(view.container).queryByRole("alertdialog")).toBeNull();
+  });
 });
