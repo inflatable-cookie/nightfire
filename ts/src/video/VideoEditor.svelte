@@ -69,8 +69,16 @@ import type { ParsedEmbed } from '@inflatable-cookie/poodle-svelte';
     );
   }
 
+  function embedInputValue(value: ParsedEmbed | null): string {
+    if (!value) {return "";}
+    if (typeof value.originalUrl === "string" && value.originalUrl.length > 0) {
+      return value.originalUrl;
+    }
+    return typeof value.originalEmbed === "string" ? value.originalEmbed : "";
+  }
+
   const initialEmbed = untrack(() => storedEmbed(block?.data?.embed));
-  let url = $state(initialEmbed?.originalUrl ?? "");
+  let url = $state(embedInputValue(initialEmbed));
   let pendingEmbed = $state<ParsedEmbed | null | undefined>(undefined);
   let lastEmitted: ParsedEmbed | null = initialEmbed;
   let observedEmbed: ParsedEmbed | null = initialEmbed;
@@ -79,7 +87,7 @@ import type { ParsedEmbed } from '@inflatable-cookie/poodle-svelte';
     const current = embed;
     if (!sameEmbed(current, observedEmbed)) {
       if (!sameEmbed(current, lastEmitted)) {
-        url = typeof current?.originalUrl === "string" ? current.originalUrl : "";
+        url = embedInputValue(current);
       }
       pendingEmbed = undefined;
       observedEmbed = current;

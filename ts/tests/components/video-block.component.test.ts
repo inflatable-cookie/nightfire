@@ -431,4 +431,40 @@ describe("nightfire/video block", () => {
     expect(next.data.title).toBe("Example film");
     expect(next.data.caption).toBe("A new caption");
   });
+
+  it("reloads originalEmbed when originalUrl is absent on mount and external updates", () => {
+    const iframeMarkup = `<iframe src="https://www.youtube.com/embed/${YOUTUBE_ID}"></iframe>`;
+    const reloaded = render(EditorComponent as any, {
+      block: {
+        type: "video",
+        version: "initial",
+        data: {
+          embed: {
+            provider: "youtube",
+            id: YOUTUBE_ID,
+            originalEmbed: iframeMarkup
+          }
+        }
+      },
+      onChange: () => {},
+      parseDebounce: 0
+    });
+    expect(urlInput(reloaded.container).value).toBe(iframeMarkup);
+
+    const updatedEmbed = {
+      provider: "vimeo",
+      id: "98765",
+      originalEmbed: '<iframe src="https://player.vimeo.com/video/98765"></iframe>'
+    };
+    const harnessView = render(VideoEditorHarness, {
+      initial: { type: "video", data: {} },
+      onChange: () => {}
+    });
+    (harnessView.component as { setBlock: (next: unknown) => void }).setBlock({
+      type: "video",
+      data: { embed: updatedEmbed }
+    });
+    flushSync();
+    expect(urlInput(harnessView.container).value).toBe(updatedEmbed.originalEmbed);
+  });
 });

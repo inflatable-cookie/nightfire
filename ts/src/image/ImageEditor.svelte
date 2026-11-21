@@ -43,9 +43,13 @@
   const caption = $derived(
     typeof block?.data?.caption === "string" ? block.data.caption : ""
   );
-  const sizing = $derived(
-    typeof block?.data?.sizing === "string" ? block.data.sizing : ""
-  );
+  const VALID_SIZING: ReadonlySet<string> = new Set(["small", "medium", "large", "full"]);
+
+  function normalizeSizing(value: unknown): string {
+    return typeof value === "string" && VALID_SIZING.has(value) ? value : "";
+  }
+
+  const sizing = $derived(normalizeSizing(block?.data?.sizing));
 
   let picking = $state(false);
 
@@ -82,7 +86,7 @@
     const nextAlt = updates.alt ?? alt;
     const nextTitle = updates.title ?? title;
     const nextCaption = updates.caption ?? caption;
-    const nextSizing = updates.sizing ?? sizing;
+    const nextSizing = normalizeSizing(updates.sizing ?? sizing);
     onChange({
       ...(block.id !== undefined ? { id: block.id } : {}),
       type: block?.type ?? "image",

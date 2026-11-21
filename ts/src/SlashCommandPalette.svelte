@@ -89,6 +89,8 @@
       bind:this={queryInput}
       class="underlay-nightfire-slash-palette__input"
       type="text"
+      role="combobox"
+      aria-expanded="true"
       value={query}
       oninput={(event) => {
         selectedIndex = 0;
@@ -108,7 +110,7 @@
   >
     {#if commands.length > 0}
       {#each commands as command, index (command.id)}
-        <li>
+        <li role="presentation">
           <button
             id={`${listboxId}-${command.id}`}
             type="button"

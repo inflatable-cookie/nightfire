@@ -35,6 +35,14 @@ describe("nightfire/SlashCommandPalette.svelte", () => {
     });
 
     const input = screen.getByLabelText<HTMLInputElement>("Filter commands");
+    expect(input.getAttribute("role")).toBe("combobox");
+    expect(input.getAttribute("aria-expanded")).toBe("true");
+    const optionItems = Array.from(document.querySelectorAll('[role="listbox"] > li'));
+    expect(optionItems.length).toBe(2);
+    for (const item of optionItems) {
+      expect(item.getAttribute("role")).toBe("presentation");
+    }
+
     await fireEvent.input(input, { target: { value: "atta" } });
     expect(queryChanges).toHaveBeenCalledWith("atta");
 

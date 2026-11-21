@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
+import { flushSync } from "svelte";
 import { cleanup, fireEvent, render, within } from "../render";
+import TableEditorHarness from "./TableEditorHarness.svelte";
 
 import "../../src/editor-registrations";
 import { getBlockEditor, isBlockContentEmpty } from "../../src/editor-registry";
@@ -462,5 +464,95 @@ describe("nightfire/table editor", () => {
 
     await fireEvent.click(within(view.container).getByRole("button", { name: "Split cell" }));
     expect(within(view.container).queryByRole("alertdialog")).toBeNull();
+  });
+
+  it("offers justify horizontal and baseline vertical alignment options", async () => {
+    const onChange = mock();
+    const view = render(EditorComponent as any, {
+      block: tableBlock([{ cells: [{ markdown: "A" }] }]),
+      onChange
+    });
+
+    const horizontal = within(view.container).getByLabelText<HTMLSelectElement>(
+      "Horizontal alignment"
+    );
+    const vertical = within(view.container).getByLabelText<HTMLSelectElement>("Vertical alignment");
+
+    expect(Array.from(horizontal.options).map((option) => option.value)).toEqual([
+      "",
+      "left",
+      "center",
+      "right",
+      "justify"
+    ]);
+    expect(Array.from(vertical.options).map((option) => option.value)).toEqual([
+      "",
+      "top",
+      "middle",
+      "bottom",
+      "baseline"
+    ]);
+
+    await fireEvent.change(horizontal, { target: { value: "justify" } });
+    expect(lastBlock(onChange).data.rows[0]!.cells[0]!.horizontal_align).toBe("justify");
+
+    await fireEvent.change(vertical, { target: { value: "baseline" } });
+    expect(lastBlock(onChange).data.rows[0]!.cells[0]!.vertical_align).toBe("baseline");
+  });
+
+  it("clamps anchor coordinates alongside active coordinates when block shrinks externally", async () => {
+    const view = render(TableEditorHarness, {
+      initial: tableBlock([
+        { cells: [{ markdown: "1,1" }, { markdown: "1,2" }, { markdown: "1,3" }] },
+        { cells: [{ markdown: "2,1" }, { markdown: "2,2" }, { markdown: "2,3" }] },
+        { cells: [{ markdown: "3,1" }, { markdown: "3,2" }, { markdown: "3,3" }] }
+      ])
+    });
+
+    const bottomRight = within(view.container).getByRole("gridcell", {
+      name: "Row 3, column 3"
+    });
+    await fireEvent.pointerDown(bottomRight);
+    await fireEvent.focus(bottomRight);
+    expect(view.container.textContent).toContain("Selected rows 3–3, columns 3–3");
+
+    (view.component as { setBlock: (next: unknown) => void }).setBlock(
+      tableBlock([
+        { cells: [{ markdown: "1,1" }, { markdown: "1,2" }] },
+        { cells: [{ markdown: "2,1" }, { markdown: "2,2" }] }
+      ])
+    );
+    flushSync();
+
+    expect(view.container.textContent).toContain("Selected rows 2–2, columns 2–2");
+
+    const clampedCell = within(view.container).getByRole("gridcell", {
+      name: "Row 2, column 2"
+    });
+    await fireEvent.keyDown(clampedCell, { key: "ArrowLeft", shiftKey: true });
+    expect(view.container.textContent).toContain("Selected rows 2–2, columns 1–2");
+  });
+
+  it("clears editing mode when focus moves to another cell", async () => {
+    const view = render(EditorComponent as any, {
+      block: tableBlock([{ cells: [{ markdown: "One" }, { markdown: "Two" }] }]),
+      onChange: mock()
+    });
+
+    const firstCell = within(view.container).getByRole("gridcell", {
+      name: "Row 1, column 1"
+    });
+    await fireEvent.focus(firstCell);
+    await fireEvent.keyDown(firstCell, { key: "Enter" });
+    expect(
+      within(view.container).getByRole("textbox", { name: "Edit Row 1, column 1" })
+    ).toBeTruthy();
+
+    const secondCell = within(view.container).getByRole("gridcell", {
+      name: "Row 1, column 2"
+    });
+    await fireEvent.focus(secondCell);
+
+    expect(view.container.querySelector("textarea")).toBeNull();
   });
 });
