@@ -46,7 +46,7 @@ import type { ProseMirrorDocumentJSON } from '@inflatable-cookie/poodle-svelte/r
 
   function handleChange(next: ProseMirrorDocumentJSON) {
     onChange({
-      ...(block.id !== undefined ? { id: block.id } : {}),
+      ...(block?.id !== undefined ? { id: block.id } : {}),
       type: block?.type ?? "rich_text",
       version: block?.version ?? "initial",
       data: { document: next }

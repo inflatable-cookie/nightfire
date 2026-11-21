@@ -555,4 +555,74 @@ describe("nightfire/table editor", () => {
 
     expect(view.container.querySelector("textarea")).toBeNull();
   });
+
+  it("lands on the first cell of the appended row when tabbing off the last cell", async () => {
+    const onChange = mock();
+    const view = render(TableEditorHarness, {
+      initial: tableBlock([
+        { cells: [{ markdown: "A" }, { markdown: "B" }] },
+        { cells: [{ markdown: "C" }, { markdown: "D" }] }
+      ]),
+      onChange
+    });
+
+    const last = within(view.container).getByRole("gridcell", { name: "Row 2, column 2" });
+    last.focus();
+    await fireEvent.keyDown(last, { key: "Tab" });
+
+    expect(lastBlock(onChange).data.rows).toHaveLength(3);
+    expect((document.activeElement as HTMLElement).dataset.tableCell).toBe("2-0");
+
+    // The next Tab walks the new row instead of appending another one.
+    await fireEvent.keyDown(document.activeElement as HTMLElement, { key: "Tab" });
+    expect(lastBlock(onChange).data.rows).toHaveLength(3);
+    expect((document.activeElement as HTMLElement).dataset.tableCell).toBe("2-1");
+  });
+
+  it("ignores the split shortcut on a single cell without touching pending state", async () => {
+    const onChange = mock();
+    const view = render(EditorComponent as any, {
+      block: tableBlock([{ cells: [{ markdown: "Only" }] }]),
+      onChange
+    });
+
+    const only = within(view.container).getByRole("gridcell", { name: "Row 1, column 1" });
+    only.focus();
+    await fireEvent.click(within(view.container).getByRole("button", { name: "Remove row" }));
+    expect(within(view.container).getByRole("alertdialog")).toBeTruthy();
+
+    await fireEvent.keyDown(only, { key: "S", ctrlKey: true, shiftKey: true });
+
+    expect(onChange).not.toHaveBeenCalled();
+    expect(within(view.container).getByRole("alertdialog")).toBeTruthy();
+  });
+
+  it("focuses the clamped cell after the block shrinks underneath the focus", async () => {
+    const view = render(TableEditorHarness, {
+      initial: tableBlock([
+        { cells: [{ markdown: "1,1" }, { markdown: "1,2" }, { markdown: "1,3" }] },
+        { cells: [{ markdown: "2,1" }, { markdown: "2,2" }, { markdown: "2,3" }] },
+        { cells: [{ markdown: "3,1" }, { markdown: "3,2" }, { markdown: "3,3" }] }
+      ])
+    });
+
+    const bottomRight = within(view.container).getByRole("gridcell", {
+      name: "Row 3, column 3"
+    });
+    await fireEvent.focus(bottomRight);
+
+    (view.component as { setBlock: (next: unknown) => void }).setBlock(
+      tableBlock([
+        { cells: [{ markdown: "1,1" }, { markdown: "1,2" }] },
+        { cells: [{ markdown: "2,1" }, { markdown: "2,2" }] }
+      ])
+    );
+    flushSync();
+
+    await fireEvent.click(within(view.container).getByRole("button", { name: "Insert row above" }));
+
+    const focused = document.activeElement as HTMLElement;
+    expect(focused.dataset.tableCell).toBe("1-1");
+    expect(view.container.contains(focused)).toBe(true);
+  });
 });

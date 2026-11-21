@@ -72,7 +72,7 @@
     const nextDescription = updates.description ?? description;
     const nextFiles = updates.files ?? files.map((file) => ({ ...file }));
     onChange({
-      ...(block.id !== undefined ? { id: block.id } : {}),
+      ...(block?.id !== undefined ? { id: block.id } : {}),
       type: block?.type ?? "download_card",
       version: block?.version ?? "initial",
       data: {

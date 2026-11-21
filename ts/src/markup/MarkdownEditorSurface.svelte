@@ -70,6 +70,7 @@
     <MarkdownEditor
       value={value ?? ""}
       {name}
+      ariaLabel={label ?? undefined}
       {required}
       disabled={loading}
       placeholder={placeholder ?? undefined}
@@ -80,10 +81,13 @@
     />
   {/snippet}
   {#if label}
-    <label class="underlay-markdown-editor-label">
+    <!-- The composite editor wraps a toolbar and a textarea, so this is a
+         heading-style label, not a <label>: a wrapping label would label every
+         one of those controls at once. -->
+    <div class="underlay-markdown-editor-label">
       <span class="underlay-markdown-editor-label__text">{label}</span>
       {@render editor()}
-    </label>
+    </div>
   {:else}
     {@render editor()}
   {/if}

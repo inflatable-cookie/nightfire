@@ -9,9 +9,16 @@
   }: { initial: TableBlockProp; onChange?: (block: TableBlockProp) => void } = $props();
   let block = $state(initial);
 
+  // Feed edits back into the block, the way a controlled host would, so the
+  // rendered grid follows structural changes made from the keyboard.
+  function handleChange(next: TableBlockProp) {
+    block = next;
+    onChange(next);
+  }
+
   export function setBlock(next: TableBlockProp) {
     block = next;
   }
 </script>
 
-<TableEditor {block} {onChange} />
+<TableEditor {block} onChange={handleChange} />

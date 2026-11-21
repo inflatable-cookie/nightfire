@@ -140,4 +140,54 @@ describe("nightfire/NightfireEditor slash commands", () => {
       expect(document.activeElement).toBe(insertedTextarea);
     });
   });
+
+  it("closes the palette when a block is reordered away from the slash index", async () => {
+    const view = render(NightfireEditorHarness, {
+      modeOverride: "multi",
+      slashCommands: { enabled: true },
+      initialValue: {
+        schema: "example:content/markup",
+        blocks: [
+          { id: "nf_first", type: "markdown", version: "initial", data: { text: "/down" } },
+          { id: "nf_second", type: "markdown", version: "initial", data: { text: "Other" } }
+        ]
+      }
+    });
+    const textarea = view.container.querySelector("textarea") as HTMLTextAreaElement;
+    textarea.selectionStart = textarea.value.length;
+    textarea.selectionEnd = textarea.value.length;
+    await fireEvent.input(textarea);
+
+    await screen.findByRole("dialog", { name: "Slash commands" });
+
+    const moveDown = view.container.querySelector<HTMLElement>('button[aria-label="Move down"]');
+    expect(moveDown).toBeTruthy();
+    await fireEvent.click(moveDown!);
+
+    expect(screen.queryByRole("dialog", { name: "Slash commands" })).toBeNull();
+  });
+
+  it("closes the palette when the block type changes", async () => {
+    const view = render(NightfireEditorHarness, {
+      modeOverride: "multi",
+      slashCommands: { enabled: true },
+      initialValue: {
+        schema: "example:content/markup",
+        blocks: [
+          { id: "nf_typed_markdown", type: "markdown", version: "initial", data: { text: "/d" } }
+        ]
+      }
+    });
+    const textarea = view.container.querySelector("textarea") as HTMLTextAreaElement;
+    textarea.selectionStart = textarea.value.length;
+    textarea.selectionEnd = textarea.value.length;
+    await fireEvent.input(textarea);
+
+    await screen.findByRole("dialog", { name: "Slash commands" });
+
+    const typeSelect = view.container.querySelector("select") as HTMLSelectElement;
+    await fireEvent.change(typeSelect, { target: { value: "download_card" } });
+
+    expect(screen.queryByRole("dialog", { name: "Slash commands" })).toBeNull();
+  });
 });

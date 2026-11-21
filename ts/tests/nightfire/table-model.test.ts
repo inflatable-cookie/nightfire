@@ -120,4 +120,12 @@ describe("table grid model", () => {
       ["D", "E"]
     ]);
   });
+  it("caps stored spans at the HTML limits instead of allocating from them", () => {
+    const wide = layoutRows([{ cells: [{ markdown: "W", colspan: 250_000 }] }]);
+    expect(wide.entries[0]!.colspan).toBe(1000);
+    expect(wide.width).toBe(1000);
+
+    const tall = layoutRows([{ cells: [{ markdown: "T", rowspan: 250_000 }] }]);
+    expect(tall.entries[0]!.rowspan).toBe(65_534);
+  });
 });

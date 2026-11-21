@@ -156,6 +156,10 @@ import type { Edge, GridEntry, TableCell, TableRow } from './table-model';
   }
 
   function splitCell(): void {
+    // Splitting a 1x1 cell changes nothing. Guarding here keeps a stray
+    // Ctrl/Cmd+Shift+S (or a disabled button click) from emitting an
+    // unchanged block and clearing a pending confirmation.
+    if (!canSplit) {return;}
     const entry = focusedEntry;
     if (!entry) {return;}
     const nextRows = splitModelCell(rows, activeRow, activeColumn);
@@ -220,6 +224,16 @@ import type { Edge, GridEntry, TableCell, TableRow } from './table-model';
     focusCell();
   }
 
+  // Tab off the last cell appends a row and lands on its first cell, so the
+  // next Tab walks the new row instead of appending another one.
+  function appendRowAtTab(): void {
+    const index = rows.length;
+    const nextRows = insertModelRow(rows, index);
+    selectAfterChange(nextRows, index, 0);
+    emit(nextRows);
+    focusCell();
+  }
+
   function insertColumn(offset: 0 | 1): void {
     const index = activeColumn + offset;
     const nextRows = insertModelColumn(rows, index);
@@ -248,9 +262,11 @@ import type { Edge, GridEntry, TableCell, TableRow } from './table-model';
   async function focusCell(): Promise<void> {
     editing = false;
     await tick();
+    // The rendered cell carries clamped coordinates: the stored row can outlive
+    // a block that shrank underneath it.
     rootElement
       ?.querySelector<HTMLElement>(
-        `[data-table-cell="${focusRow}-${focusColumn}"]`,
+        `[data-table-cell="${activeRow}-${activeColumn}"]`,
       )
       ?.focus();
   }
@@ -282,10 +298,10 @@ import type { Edge, GridEntry, TableCell, TableRow } from './table-model';
 
   function moveByTab(direction: -1 | 1): void {
     const entries = layout.entries;
-    const index = focusedEntry ? entries.indexOf(focusedEntry) : 0;
+    const index = focusedEntry ? entries.indexOf(focusedEntry) : -1;
     const nextIndex = index + direction;
     if (nextIndex < 0) {move(entries[0]?.row ?? 0, entries[0]?.column ?? 0);}
-    else if (nextIndex >= entries.length) {insertRow(1);}
+    else if (nextIndex >= entries.length) {appendRowAtTab();}
     else {
       const nextEntry = entries[nextIndex];
       if (nextEntry) {move(nextEntry.row, nextEntry.column);}

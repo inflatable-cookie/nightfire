@@ -25,9 +25,9 @@
      */
     onChange?: (block: any) => void;
     /**
-     * Pre-resolved schema definition and type options. NightfireBlockEditor
-     * does not perform any registry lookups itself; these must be
-     * provided by the caller (typically the field-level Nightfire editor).
+     * Pre-resolved schema definition and type options, so this component does not
+     * repeat the caller's registry lookup. The block editor itself is resolved
+     * from the registry by schema and current type.
      */
     definition: SchemaDefinition;
     typeOptions: Array<BlockTypeOption>;
@@ -60,7 +60,7 @@
 
 <div class="underlay-nightfire-editor underlay-nightfire-editor--single">
   {#if BlockEditor}
-    {#key currentBlockType}
+    {#key `${block?.id ?? ""}:${currentBlockType}`}
       {@const EditorComponent = BlockEditor}
       <EditorComponent
         block={normalisedBlock}
