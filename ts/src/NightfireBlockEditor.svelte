@@ -1,7 +1,6 @@
 <script lang="ts">
   import type { MarkdownEditorContext } from "./markup/markdown-editor-context";
   import { getBlockEditor } from "./editor-registry";
-  import "./render-registrations";
   import "./editor-registrations";
   import type { BlockTypeOption, SchemaDefinition } from "./editor-registry";
   import { normaliseNightfireBlock } from "./utils";

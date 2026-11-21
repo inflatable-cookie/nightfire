@@ -90,8 +90,26 @@
     );
   });
 
+  function stripSyntheticFallbackId(block: unknown): unknown {
+    if (!block || typeof block !== "object" || Array.isArray(block)) {
+      return block;
+    }
+    const record = block as Record<string, unknown>;
+    if (
+      typeof record.id === "string" &&
+      (record.id.startsWith(`${fallbackIdPrefix}-`) ||
+        record.id.startsWith("nightfire-unsaved-block-"))
+    ) {
+      const copy = { ...record };
+      delete copy.id;
+      return copy;
+    }
+    return block;
+  }
+
   function handleShellChange(nextBlocks: Array<any>): void {
-    const normalisedBlocks = nextBlocks.map((block) => {
+    const normalisedBlocks = nextBlocks.map((rawBlock) => {
+      const block = stripSyntheticFallbackId(rawBlock);
       if (!block || typeof block !== "object") {
         return block;
       }
@@ -164,18 +182,19 @@
 
   function handleBlockEditorChange(index: number, nextBlock: any): void {
     const currentBlock = isMulti ? blocks[index] : singleBlock;
+    const cleanedNext = stripSyntheticFallbackId(nextBlock);
     const nextWithStableId =
       currentBlock &&
       typeof currentBlock === "object" &&
       typeof (currentBlock as { id?: unknown }).id === "string" &&
-      (typeof nextBlock !== "object" ||
-        nextBlock === null ||
-        typeof (nextBlock as { id?: unknown }).id !== "string")
+      (typeof cleanedNext !== "object" ||
+        cleanedNext === null ||
+        typeof (cleanedNext as { id?: unknown }).id !== "string")
         ? {
-            ...(nextBlock && typeof nextBlock === "object" ? nextBlock : {}),
+            ...(cleanedNext && typeof cleanedNext === "object" ? cleanedNext : {}),
             id: (currentBlock as { id: string }).id,
           }
-        : nextBlock;
+        : cleanedNext;
 
     if (isMulti) {
       const nextBlocks = blocks.slice();

@@ -364,4 +364,25 @@ describe("nightfire/image block", () => {
       blankUrlView.container.querySelector(".underlay-image-editor__file-name")!.textContent
     ).toBe("img-2");
   });
+
+  it("drops invalid out-of-enum sizing when editing other fields in ImageEditor", async () => {
+    const onChange = mock();
+    const view = render(EditorComponent as any, {
+      block: {
+        type: "image",
+        version: "initial",
+        data: { media_id: "img-1", alt: "Initial", sizing: "1200px" }
+      },
+      onChange
+    });
+
+    await fireEvent.input(within(view.container).getByPlaceholderText("Alt text"), {
+      target: { value: "Updated" }
+    });
+
+    const emitted = onChange.mock.calls.at(-1)![0] as { data: Record<string, unknown> };
+    expect(emitted.data.alt).toBe("Updated");
+    expect(emitted.data.sizing).toBeUndefined();
+    expect("sizing" in emitted.data).toBe(false);
+  });
 });

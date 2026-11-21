@@ -358,20 +358,25 @@ import type { NightfireSlashCommand, NightfireSlashCommandsConfig } from './slas
     }
 
     const slashTarget = slashState;
-    const currentBlock = blocks[slashState.blockIndex] as {
+    const currentBlock = blocks[slashTarget.blockIndex] as {
       id?: string;
       type?: string;
       version?: string;
       data?: { text?: string };
     } | undefined;
-    const currentText = currentBlock?.data?.text ?? "";
+    if (!currentBlock || currentBlock.type !== "markdown") {
+      closeSlashPalette();
+      return;
+    }
+
+    const currentText = currentBlock.data?.text ?? "";
     const nextCurrentBlock = {
-      ...(currentBlock?.id ? { id: currentBlock.id } : {}),
-      type: currentBlock?.type ?? "markdown",
-      version: currentBlock?.version ?? "initial",
+      ...(currentBlock.id ? { id: currentBlock.id } : {}),
+      type: currentBlock.type,
+      version: currentBlock.version ?? "initial",
       data: {
-        ...(currentBlock?.data ?? {}),
-        text: removeNightfireSlashText(currentText, slashState)
+        ...(currentBlock.data ?? {}),
+        text: removeNightfireSlashText(currentText, slashTarget)
       }
     };
     const updatedBlocks = replaceBlockAtIndex(blocks, slashTarget.blockIndex, nextCurrentBlock);

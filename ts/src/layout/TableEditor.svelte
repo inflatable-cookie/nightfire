@@ -36,12 +36,14 @@ import type { Edge, GridEntry, TableCell, TableRow } from './table-model';
     { value: "left", label: "Left" },
     { value: "center", label: "Centre" },
     { value: "right", label: "Right" },
+    { value: "justify", label: "Justify" },
   ];
   const verticalOptions = [
     { value: "", label: "Default" },
     { value: "top", label: "Top" },
     { value: "middle", label: "Middle" },
     { value: "bottom", label: "Bottom" },
+    { value: "baseline", label: "Baseline" },
   ];
 
   function startingRows(): Array<TableRow> {
@@ -60,8 +62,10 @@ import type { Edge, GridEntry, TableCell, TableRow } from './table-model';
   const rows = $derived(sourceRows());
   const layout = $derived(layoutRows(rows));
   const columnCount = $derived(layout.width);
-  const activeRow = $derived(Math.min(focusRow, rows.length - 1));
-  const activeColumn = $derived(Math.min(focusColumn, columnCount - 1));
+  const activeRow = $derived(Math.max(0, Math.min(focusRow, rows.length - 1)));
+  const activeColumn = $derived(Math.max(0, Math.min(focusColumn, columnCount - 1)));
+  const clampedAnchorRow = $derived(Math.max(0, Math.min(anchorRow, rows.length - 1)));
+  const clampedAnchorColumn = $derived(Math.max(0, Math.min(anchorColumn, columnCount - 1)));
   const focusedEntry = $derived(entryAt(layout, activeRow, activeColumn));
   const focusedCell = $derived(focusedEntry?.cell ?? emptyCell());
   const selection = $derived(selectionBounds());
@@ -111,17 +115,17 @@ import type { Edge, GridEntry, TableCell, TableRow } from './table-model';
     bottom: number;
     left: number;
   } {
-    const anchor = entryAt(layout, anchorRow, anchorColumn);
+    const anchor = entryAt(layout, clampedAnchorRow, clampedAnchorColumn);
     const focus = focusedEntry;
-    const anchorBottom = anchor ? anchor.row + anchor.rowspan - 1 : anchorRow;
-    const anchorRight = anchor ? anchor.column + anchor.colspan - 1 : anchorColumn;
+    const anchorBottom = anchor ? anchor.row + anchor.rowspan - 1 : clampedAnchorRow;
+    const anchorRight = anchor ? anchor.column + anchor.colspan - 1 : clampedAnchorColumn;
     const focusBottom = focus ? focus.row + focus.rowspan - 1 : activeRow;
     const focusRight = focus ? focus.column + focus.colspan - 1 : activeColumn;
     return {
-      top: Math.min(anchor?.row ?? anchorRow, focus?.row ?? activeRow),
+      top: Math.min(anchor?.row ?? clampedAnchorRow, focus?.row ?? activeRow),
       right: Math.max(anchorRight, focusRight),
       bottom: Math.max(anchorBottom, focusBottom),
-      left: Math.min(anchor?.column ?? anchorColumn, focus?.column ?? activeColumn),
+      left: Math.min(anchor?.column ?? clampedAnchorColumn, focus?.column ?? activeColumn),
     };
   }
 
@@ -382,6 +386,7 @@ import type { Edge, GridEntry, TableCell, TableRow } from './table-model';
                 }
               }}
               onfocus={() => {
+                editing = false;
                 focusRow = entry.row;
                 focusColumn = entry.column;
               }}
