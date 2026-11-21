@@ -13,6 +13,6 @@ index names the one file that owns each topic.
 
 The plan is in Nucleus: its lanes, their documents and their order.
 
-`0.5.0` is the latest published release. `0.6.0` release metadata is
-prepared on `main` and awaits tagging and publication; nothing on
-`main` reaches consumers until then.
+`0.6.0` is published on npm and tagged `v0.6.0`; the Rust crate `nightfire` is
+tag-only at the same tag. Consumers repin from tags, so nothing on `main`
+reaches them until a release.

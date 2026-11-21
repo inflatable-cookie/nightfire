@@ -18,9 +18,10 @@ and never rebuilds on publish.
   `MultiConfig`/`BlockVersions` invariants and media-locator parsing,
   strips the leaked question-prefix handling from the type picker, and
   tightens the table, item-list and video payload schemas. Under `0.x`
-  the minor is the breaking boundary. Release preparation is approved
-  on `main`; tagging and publication await separate operator
-  approval.
+  the minor is the breaking boundary. Operator approved tagging and
+  publication at `a0b20645f1919b33c160fa04602b488cb7d8c952` on
+  2026-11-21 (candidate run `44952064946`, publish run `44952201371`).
+  That approval does not include consumer notifications or adoption.
 - **Set the version explicitly.** Effigy plans the bump from commit and changelog
   markers, and nothing here carries a breaking marker, so `effigy release
   simulate` proposes a patch for a breaking release. Under `0.x` the minor is the
