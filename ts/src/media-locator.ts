@@ -220,63 +220,11 @@ function findBlockInJson(value: unknown, blockId: string): NightfireBlock | null
 /**
  * A block's `data`, anchored on its id, wherever the block sits: a top-level
  * block of the value, or a nested block inside another block's data (an
- * `item_list` item body, for instance). Follows `find_block_data_in_value` in
- * the Rust crate, with one difference: a nested payload must also carry a
- * string `type`, the same shape `findNightfireBlockById` requires, so an
- * unrelated `{ id, data }` payload is not addressable by a locator.
+ * `item_list` item body, for instance).
  */
 function findBlockData(value: NightfireValue, blockId: string): Lookup {
-  if (!Array.isArray(value.blocks)) {
-    return NOT_FOUND;
-  }
-
-  const blocks = value.blocks.filter(isObjectRecord);
-
-  // Top-level blocks answer first, then nested ones: a nested block never
-  // shadows a top-level block that carries the same id.
-  for (const block of blocks) {
-    if (block.id === blockId) {
-      return block.data ?? {};
-    }
-  }
-
-  for (const block of blocks) {
-    const nested = findBlockDataInJson(block.data, blockId);
-    if (nested !== NOT_FOUND) {
-      return nested;
-    }
-  }
-
-  return NOT_FOUND;
-}
-
-function findBlockDataInJson(value: unknown, blockId: string): Lookup {
-  if (Array.isArray(value)) {
-    for (const item of value) {
-      const found = findBlockDataInJson(item, blockId);
-      if (found !== NOT_FOUND) {
-        return found;
-      }
-    }
-    return NOT_FOUND;
-  }
-
-  if (!isObjectRecord(value)) {
-    return NOT_FOUND;
-  }
-
-  if (isNestedBlockRecord(value, blockId)) {
-    return value.data;
-  }
-
-  for (const key of sortedKeys(value)) {
-    const found = findBlockDataInJson(value[key], blockId);
-    if (found !== NOT_FOUND) {
-      return found;
-    }
-  }
-
-  return NOT_FOUND;
+  const block = findNightfireBlockById(value, blockId);
+  return block ? (block.data ?? {}) : NOT_FOUND;
 }
 
 export function resolveNightfireMediaLocator(

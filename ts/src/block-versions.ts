@@ -21,6 +21,10 @@ const blockVersions = new KeyedRegistry<BlockVersionSpec>();
  * mutation of the caller's array must not reach the registry.
  */
 export function registerBlockVersions(type: string, spec: BlockVersionSpec): void {
+  if (typeof type !== "string" || type.trim().length === 0) {
+    throw new TypeError("block type must be a non-empty string");
+  }
+
   const current = spec?.current;
   const supported = spec?.supported;
 
@@ -32,8 +36,8 @@ export function registerBlockVersions(type: string, spec: BlockVersionSpec): voi
     throw new TypeError(`block type ${type} must list at least one supported version`);
   }
 
-  if (!supported.every((version) => typeof version === "string")) {
-    throw new TypeError(`block type ${type} has a non-string supported version`);
+  if (!supported.every((version) => typeof version === "string" && version.trim().length > 0)) {
+    throw new TypeError(`block type ${type} has an empty or non-string supported version`);
   }
 
   if (!supported.includes(current)) {

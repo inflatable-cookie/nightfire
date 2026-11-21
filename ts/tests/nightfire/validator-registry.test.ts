@@ -91,6 +91,25 @@ describe("nightfire/validator-registry", () => {
     }
   });
 
+  it("rejects malformed incoming explicit versions before coercion", () => {
+    for (const version of [99, null, "", "   "]) {
+      expect(
+        validateNightfireValue({
+          schema: "schema-version-input",
+          blocks: [{ type: "markdown", version, data: {} }]
+        } as any),
+        String(version)
+      ).toEqual({ schema: "schema-version-input", blocks: [] });
+    }
+
+    expect(
+      validateNightfireValue({
+        schema: "schema-version-input",
+        blocks: [{ type: "markdown", data: {} }]
+      } as any).blocks
+    ).toHaveLength(1);
+  });
+
   it("rejects a hybrid envelope and a missing or empty schema", () => {
     expect(
       validateNightfireValue({
