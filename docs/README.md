@@ -12,3 +12,7 @@ index names the one file that owns each topic.
 - Dependency provenance: [PROVENANCE.md](../PROVENANCE.md)
 
 The plan is in Nucleus: its lanes, their documents and their order.
+
+`0.5.0` is the latest published release. `0.6.0` release metadata is
+prepared on `main` and awaits tagging and publication; nothing on
+`main` reaches consumers until then.

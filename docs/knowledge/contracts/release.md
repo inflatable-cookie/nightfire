@@ -11,6 +11,16 @@ and never rebuilds on publish.
   Tom approved tagging and publication at
   `c7ee77da95905e7dfd99441576c59078f4b6bd55` with "Approve" on 2026-10-25.
   That approval does not include consumer notifications or adoption.
+- **`0.6.0` is a breaking minor release** (Operator, 2026-11-21). It cuts
+  five redundant npm subpaths, moves `renderSafeMarkdownPreview` from
+  `.` to `./markdown`, removes renamed helpers and duplicate
+  interfaces, drops zero-caller Rust APIs, tightens
+  `MultiConfig`/`BlockVersions` invariants and media-locator parsing,
+  strips the leaked question-prefix handling from the type picker, and
+  tightens the table, item-list and video payload schemas. Under `0.x`
+  the minor is the breaking boundary. Release preparation is approved
+  on `main`; tagging and publication await separate operator
+  approval.
 - **Set the version explicitly.** Effigy plans the bump from commit and changelog
   markers, and nothing here carries a breaking marker, so `effigy release
   simulate` proposes a patch for a breaking release. Under `0.x` the minor is the
@@ -43,11 +53,11 @@ and never rebuilds on publish.
    (`check:version-sync` enforces agreement), fold the `changelog.d/` fragments
    into `[Unreleased]` and promote it into the dated heading, commit, and push.
    `release:npm-admission` refuses a dirty tree.
-2. Run Queue's `project.qa.run` on `main` at that commit. Its recorded stages
-   run `effigy bootstrap:deps` before full `effigy qa` in the clean checkout,
-   so Bun uses the pinned local compilers rather than its global cache.
-   Confirm with `project.qa.get` that both stages passed at the commit you will
-   tag.
+2. Run milestone QA as an ordinary report-only task pinned to that commit
+   on `main`. Its stages run `effigy bootstrap:deps` before full
+   `effigy qa` in a clean checkout, so Bun uses the pinned local
+   compilers rather than its global cache. Confirm the QA report passed
+   at the commit you will tag.
 3. With operator authority, tag `v<version>` on that commit and push the tag.
 4. Certify: dispatch `release.yml` with `mode: candidate` on the tag. It packs
    once and writes the candidate identity manifest binding the source commit and
