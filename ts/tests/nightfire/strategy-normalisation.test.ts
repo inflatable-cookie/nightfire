@@ -31,8 +31,17 @@ describe("nightfire/editor/strategy-normalisation", () => {
     const blocks = [{ type: "a", version: "initial", data: {} }];
     expect(normaliseForStrategy({ schema: 123, blocks } as any, "schema-b")).toEqual({
       coerced: { schema: "schema-b", blocks },
-      // A non-string schema is reported as received.
-      schemaMismatch: 123 as unknown as string
+      // A non-string schema never leaks through the mismatch channel.
+      schemaMismatch: null
     });
+  });
+
+  it("ignores empty and non-string schemas", () => {
+    const blocks = [{ type: "a", version: "initial", data: {} }];
+    expect(normaliseForStrategy({ schema: "", blocks }, "schema-b").schemaMismatch).toBeNull();
+    expect(normaliseForStrategy({ blocks } as any, "schema-b").schemaMismatch).toBeNull();
+    expect(
+      normaliseForStrategy({ schema: "schema-b", blocks }, "schema-b").schemaMismatch
+    ).toBeNull();
   });
 });

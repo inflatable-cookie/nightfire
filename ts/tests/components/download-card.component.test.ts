@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
-import { fireEvent, render, waitFor, within } from "../render";
+import { cleanup, fireEvent, render, waitFor, within } from "../render";
 
 import "../../src/render-registrations";
 import "../../src/editor-registrations";
@@ -417,6 +417,32 @@ describe("nightfire/download-card block", () => {
     expect(
       blankUrlView.container.querySelector(".underlay-download-card-editor__file-name")!.textContent
     ).toBe("m-2");
+  });
+
+  it("never emits after unmount while the picker is pending", async () => {
+    let resolvePick!: (value: Array<{ media_id: string }> | null) => void;
+    const pick = mock(
+      () =>
+        new Promise<Array<{ media_id: string }> | null>((resolve) => {
+          resolvePick = resolve;
+        })
+    );
+    registerMediaSource(stubSource({ pick }));
+
+    const onChange = mock();
+    const view = render(EditorComponent as any, {
+      block: { type: "download_card", version: "initial", data: {} },
+      onChange
+    });
+    await fireEvent.click(
+      await waitFor(() => within(view.container).getByRole("button", { name: /choose files/i }))
+    );
+    await waitFor(() => expect(pick).toHaveBeenCalled());
+
+    await cleanup();
+    resolvePick([{ media_id: "m-1" }]);
+    await waitFor(() => expect(true).toBe(true));
+    expect(onChange).not.toHaveBeenCalled();
   });
 
   it("renders externally authored duplicate media_id entries without crashing", async () => {

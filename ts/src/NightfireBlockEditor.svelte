@@ -52,26 +52,29 @@
   // A block a caller passes without an id mints one on its first edit. That is
   // the same block, so the editor only restarts when the type changes or when
   // two distinct real ids are swapped: a first id, or a removed one, is not a
-  // new block.
-  let mountedId: string | null = null;
-  let restarts = 0;
-  function editorKey(): string {
-    const id = typeof block?.id === "string" && block.id.trim().length > 0 ? block.id : null;
-    if (id !== null && mountedId === null) {
-      mountedId = id;
-    } else if (id !== null && id !== mountedId) {
-      mountedId = id;
+  // new block. The swap is tracked in an effect so `editorKey()` stays pure
+  // and never mutates state during template evaluation.
+  let mountedId = $state<string | null>(null);
+  let restarts = $state(0);
+  const currentId = $derived(
+    typeof block?.id === "string" && block.id.trim().length > 0 ? block.id : null,
+  );
+  $effect(() => {
+    if (currentId !== null && mountedId === null) {
+      mountedId = currentId;
+    } else if (currentId !== null && currentId !== mountedId) {
+      mountedId = currentId;
       restarts += 1;
     }
-
+  });
+  function editorKey(): string {
     return `${restarts}:${currentBlockType}`;
   }
 
   function handleBlockEditorChange(next: any) {
-    const candidate = next && typeof next === "object" && "block" in next
-      ? (next as { block?: any }).block
-      : next;
-    const normalised = normaliseNightfireBlock(candidate, typeOptions, definition);
+    // Legacy `{ block }` envelopes are rejected: child editors emit the block
+    // itself, and compatibility shims are out of scope.
+    const normalised = normaliseNightfireBlock(next, typeOptions, definition);
     onChange?.(normalised);
   }
 </script>

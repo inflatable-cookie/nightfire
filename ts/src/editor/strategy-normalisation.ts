@@ -18,6 +18,9 @@ export function normaliseForStrategy(
       schema,
       blocks: Array.isArray(normalised.blocks) ? normalised.blocks : []
     },
-    schemaMismatch: actualSchema && actualSchema !== schema ? actualSchema : null
+    schemaMismatch:
+      typeof actualSchema === "string" && actualSchema.length > 0 && actualSchema !== schema
+        ? actualSchema
+        : null
   };
 }

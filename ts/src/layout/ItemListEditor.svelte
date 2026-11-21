@@ -44,6 +44,61 @@
 
   const items = $derived(readItems(block));
 
+  // A pending removal belongs to the list as it was: when the list shrinks
+  // underneath it through an external edit, the dialog drops instead of
+  // pointing at an item that no longer exists.
+  $effect(() => {
+    if (confirmation !== null && confirmation >= items.length) {confirmation = null;}
+  });
+
+  // Stable outer keys, reconciled per render: an identical reference keeps
+  // its key (reorder and removal survivors stay mounted), while an entry
+  // edited in place arrives as a fresh object at the same index and reuses
+  // the key carried there. In-place edits spread-copy the item on every
+  // keystroke, so identity alone would remount the section under the
+  // author's cursor. Non-object entries carry no child editors and keep
+  // positional keys. Re-running with the same array is idempotent: known
+  // references hit the map and carried keys line up by index.
+  const itemKeyByRef = new WeakMap<object, string>();
+  let itemKeysByIndex: Array<string> = [];
+  let nextItemKey = 0;
+  const keyedItems = $derived(keyOuterItems(items));
+  function keyOuterItems(current: Array<Item>): Array<{ item: Item; key: string }> {
+    const keys = new Array<string>(current.length);
+    const taken = new Set<string>();
+    const claim = (at: number, key: string): void => {
+      keys[at] = key;
+      taken.add(key);
+    };
+    current.forEach((item, at) => {
+      if (item === null || typeof item !== "object") {return;}
+      const known = itemKeyByRef.get(item);
+      if (known !== undefined && !taken.has(known)) {claim(at, known);}
+    });
+    current.forEach((item, at) => {
+      if (keys[at] !== undefined) {return;}
+      if (item === null || typeof item !== "object") {
+        claim(at, `index:${at}`);
+        return;
+      }
+      const carried = itemKeysByIndex[at];
+      if (carried !== undefined && !taken.has(carried)) {
+        itemKeyByRef.set(item, carried);
+        claim(at, carried);
+        return;
+      }
+      let minted: string;
+      do {
+        nextItemKey += 1;
+        minted = `item:${nextItemKey}`;
+      } while (taken.has(minted));
+      itemKeyByRef.set(item, minted);
+      claim(at, minted);
+    });
+    itemKeysByIndex = keys.slice();
+    return current.map((item, at) => ({ item, key: keys[at] as string }));
+  }
+
   function readItems(source: ItemListBlock): Array<Item> {
     return Array.isArray(source?.data?.items) ? (source.data.items as Array<Item>) : [];
   }
@@ -234,7 +289,8 @@
     </div>
   {:else}
     <div class="underlay-item-list-editor__items" aria-label="Item list items">
-      {#each items as item, index (index)}
+      {#each keyedItems as keyed, index (keyed.key)}
+        {@const item = keyed.item}
         {@const children = itemBlocks(item)}
         <section class="underlay-item-list-editor__item" data-item-list-item data-item-index={index}>
           <div class="underlay-item-list-editor__toolbar">

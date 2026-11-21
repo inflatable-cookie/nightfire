@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
+import { flushSync } from "svelte";
 import { cleanup, fireEvent, render, waitFor, within } from "../render";
 
 import "../../src/editor-registrations";
@@ -330,6 +331,45 @@ describe("nightfire/item-list editor", () => {
     expect(
       Array.from(view.container.querySelectorAll("textarea")).map((node) => node.value)
     ).toEqual(["Alpha", "Beta"]);
+  });
+
+  it("drops a pending removal dialog when the list shrinks past its item", async () => {
+    const view = render(ItemListEditorHarness, {
+      initial: itemListBlock({
+        items: [
+          { title: "First", body: [] },
+          { body: [{ type: "markdown", version: "initial", data: { text: "Keep me" } }] }
+        ]
+      }),
+      onChange: mock()
+    });
+
+    await fireEvent.click(within(view.container).getByRole("button", { name: "Remove item 2" }));
+    expect(within(view.container).getByRole("alertdialog")).toBeTruthy();
+
+    (view.component as { setBlock: (next: unknown) => void }).setBlock(
+      itemListBlock({ items: [{ title: "First", body: [] }] })
+    );
+    flushSync();
+    expect(within(view.container).queryByRole("alertdialog")).toBeNull();
+  });
+
+  it("keeps surviving item sections mounted when an earlier item is removed", async () => {
+    const onChange = mock();
+    const view = render(ItemListEditorHarness, {
+      initial: itemListBlock({
+        items: [{ body: [] }, { title: "Second", body: [] }]
+      }),
+      onChange
+    });
+
+    const sections = Array.from(view.container.querySelectorAll("[data-item-list-item]"));
+    expect(sections).toHaveLength(2);
+    await fireEvent.click(within(view.container).getByRole("button", { name: "Remove item 1" }));
+    await waitFor(() => expect(onChange).toHaveBeenCalled());
+    const survivors = Array.from(view.container.querySelectorAll("[data-item-list-item]"));
+    expect(survivors).toHaveLength(1);
+    expect(survivors[0]).toBe(sections[1]);
   });
 
   it("retypes one child block while keeping its id and its siblings", async () => {

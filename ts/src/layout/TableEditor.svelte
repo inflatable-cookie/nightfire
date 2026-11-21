@@ -243,13 +243,27 @@ import type { Edge, GridEntry, TableCell, TableRow } from './table-model';
   }
 
   function requestRemove(kind: "row" | "column"): void {
+    if (kind === "row" ? rows.length <= 1 : columnCount <= 1) {return;}
     const index = kind === "row" ? activeRow : activeColumn;
     if (lineHasContent(rows, kind, index)) {confirmation = { kind, index };}
     else {remove(kind, index);}
   }
 
+  // A pending confirmation belongs to the grid as it was: when the block
+  // shrinks underneath it (an external edit, or the last line gone), the
+  // dialog drops instead of pointing at a line that no longer exists.
+  $effect(() => {
+    if (confirmation !== null && confirmation.kind !== "merge") {
+      const limit = confirmation.kind === "row" ? rows.length : columnCount;
+      if (confirmation.index >= limit) {confirmation = null;}
+    }
+  });
+
   function remove(kind: "row" | "column", index: number): void {
-    if (kind === "row" ? rows.length <= 1 : columnCount <= 1) {return;}
+    if (kind === "row" ? rows.length <= 1 : columnCount <= 1) {
+      confirmation = null;
+      return;
+    }
     const nextRows = removeLine(rows, kind, index);
     const row = kind === "row" ? Math.min(index, nextRows.length - 1) : activeRow;
     const column = kind === "column" ? Math.min(index, columnCount - 2) : activeColumn;
