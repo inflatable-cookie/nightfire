@@ -51,7 +51,7 @@
     if (confirmation !== null && confirmation >= items.length) {confirmation = null;}
   });
 
-  // Stable outer keys, reconciled per render: an identical reference keeps
+  // Stable outer keys, reconciled after item changes: an identical reference keeps
   // its key (reorder and removal survivors stay mounted), while an entry
   // edited in place arrives as a fresh object at the same index and reuses
   // the key carried there. In-place edits spread-copy the item on every
@@ -62,7 +62,17 @@
   const itemKeyByRef = new WeakMap<object, string>();
   let itemKeysByIndex: Array<string> = [];
   let nextItemKey = 0;
-  const keyedItems = $derived(keyOuterItems(items));
+  let keyedItems = $state.raw<Array<{ item: Item; key: string }>>([]);
+  let keysReady = $state(false);
+  $effect.pre(() => {
+    keyedItems = keyOuterItems(items);
+    keysReady = true;
+  });
+  const visibleKeyedItems = $derived(
+    keysReady
+      ? keyedItems
+      : items.map((item, at) => ({ item, key: `index:${at}` })),
+  );
   function keyOuterItems(current: Array<Item>): Array<{ item: Item; key: string }> {
     const keys = new Array<string>(current.length);
     const taken = new Set<string>();
@@ -85,6 +95,12 @@
       if (carried !== undefined && !taken.has(carried)) {
         itemKeyByRef.set(item, carried);
         claim(at, carried);
+        return;
+      }
+      const positional = `index:${at}`;
+      if (!taken.has(positional)) {
+        itemKeyByRef.set(item, positional);
+        claim(at, positional);
         return;
       }
       let minted: string;
@@ -289,7 +305,7 @@
     </div>
   {:else}
     <div class="underlay-item-list-editor__items" aria-label="Item list items">
-      {#each keyedItems as keyed, index (keyed.key)}
+      {#each visibleKeyedItems as keyed, index (keyed.key)}
         {@const item = keyed.item}
         {@const children = itemBlocks(item)}
         <section class="underlay-item-list-editor__item" data-item-list-item data-item-index={index}>

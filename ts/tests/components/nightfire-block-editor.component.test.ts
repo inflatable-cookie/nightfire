@@ -65,4 +65,24 @@ describe("nightfire/NightfireBlockEditor", () => {
     // table editor keeps its DOM and its in-progress state.
     expect(within(view.container).getByRole("grid")).toBe(grid);
   });
+
+  it("keeps the editor mounted when a synthetic id becomes a real id", async () => {
+    const view = render(NightfireBlockEditorHarness, {
+      initialBlock: tableBlock("nightfire-unsaved-block-seed"),
+      definition,
+      typeOptions
+    });
+
+    const grid = within(view.container).getByRole("grid");
+    const cell = within(view.container).getByRole("gridcell", { name: "Row 1, column 1" });
+    await fireEvent.focus(cell);
+    await fireEvent.click(within(view.container).getByRole("button", { name: "Remove row" }));
+    expect(within(view.container).getByRole("alertdialog")).toBeTruthy();
+
+    (view.component as { setBlock: (next: unknown) => void }).setBlock(tableBlock("nf_minted"));
+    flushSync();
+
+    expect(within(view.container).getByRole("grid")).toBe(grid);
+    expect(within(view.container).getByRole("alertdialog")).toBeTruthy();
+  });
 });

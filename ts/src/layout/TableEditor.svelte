@@ -62,11 +62,13 @@ import type { Edge, GridEntry, TableCell, TableRow } from './table-model';
   const rows = $derived(sourceRows());
   const layout = $derived(layoutRows(rows));
   const columnCount = $derived(layout.width);
-  const activeRow = $derived(Math.max(0, Math.min(focusRow, rows.length - 1)));
-  const activeColumn = $derived(Math.max(0, Math.min(focusColumn, columnCount - 1)));
+  const requestedRow = $derived(Math.max(0, Math.min(focusRow, rows.length - 1)));
+  const requestedColumn = $derived(Math.max(0, Math.min(focusColumn, columnCount - 1)));
+  const focusedEntry = $derived(entryAt(layout, requestedRow, requestedColumn));
+  const activeRow = $derived(focusedEntry?.row ?? requestedRow);
+  const activeColumn = $derived(focusedEntry?.column ?? requestedColumn);
   const clampedAnchorRow = $derived(Math.max(0, Math.min(anchorRow, rows.length - 1)));
   const clampedAnchorColumn = $derived(Math.max(0, Math.min(anchorColumn, columnCount - 1)));
-  const focusedEntry = $derived(entryAt(layout, activeRow, activeColumn));
   const focusedCell = $derived(focusedEntry?.cell ?? emptyCell());
   const selection = $derived(selectionBounds());
   const mergeEntries = $derived(entriesForSelection(layout, selection));
@@ -253,9 +255,13 @@ import type { Edge, GridEntry, TableCell, TableRow } from './table-model';
   // shrinks underneath it (an external edit, or the last line gone), the
   // dialog drops instead of pointing at a line that no longer exists.
   $effect(() => {
-    if (confirmation !== null && confirmation.kind !== "merge") {
-      const limit = confirmation.kind === "row" ? rows.length : columnCount;
-      if (confirmation.index >= limit) {confirmation = null;}
+    if (confirmation !== null) {
+      if (confirmation.kind === "merge") {
+        if (!canMerge) {confirmation = null;}
+      } else {
+        const limit = confirmation.kind === "row" ? rows.length : columnCount;
+        if (confirmation.index >= limit) {confirmation = null;}
+      }
     }
   });
 
