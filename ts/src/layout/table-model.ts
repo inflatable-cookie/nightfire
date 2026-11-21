@@ -31,9 +31,17 @@ const key = (row: number, column: number) => `${row}:${column}`;
 // grid from malformed data.
 const MAX_COLSPAN = 1000;
 const MAX_ROWSPAN = 65_534;
+// The slot grid is materialised, so one cell never reserves more slots than
+// this, whatever span it stores. The ceiling bounds the allocation a single
+// malformed entry can ask for; the rest of the grid stays proportional to the
+// table's own cells.
+const MAX_CELL_SLOTS = 250_000;
 const clampSpan = (value: unknown, max: number) =>
   typeof value === "number" && Number.isInteger(value) && value > 1 ? Math.min(value, max) : 1;
-const columnSpan = (value: unknown) => clampSpan(value, MAX_COLSPAN);
+// A column span shares its allocation with the row span it covers, so the
+// per-cell ceiling bounds both.
+const columnSpan = (value: unknown, rowspan: number) =>
+  clampSpan(value, Math.min(MAX_COLSPAN, Math.max(1, Math.floor(MAX_CELL_SLOTS / rowspan))));
 const rowSpan = (value: unknown) => clampSpan(value, MAX_ROWSPAN);
 export const emptyCell = (header = false): TableCell => ({
   markdown: "",
@@ -42,22 +50,36 @@ export const emptyCell = (header = false): TableCell => ({
 const hasContent = (cell: TableCell): boolean =>
   typeof cell.markdown === "string" && cell.markdown.trim().length > 0;
 
+function areaIsFree(
+  slots: Map<string, GridEntry>,
+  row: number,
+  column: number,
+  rowspan: number,
+  colspan: number
+): boolean {
+  for (let r = 0; r < rowspan; r += 1) {
+    for (let c = 0; c < colspan; c += 1) {
+      if (slots.has(key(row + r, column + c))) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
 export function layoutRows(rows: Array<TableRow>): GridLayout {
   const entries: Array<GridEntry> = [];
   const slots = new Map<string, GridEntry>();
   let width = 1;
   rows.forEach((row, rowIndex) => {
     let column = 0;
+    // A stored rowspan cannot reach past the table's last row: a one-row table
+    // holding `rowspan: 65534` is one row, not sixty-five thousand.
+    const remainingRows = Math.max(1, rows.length - rowIndex);
     (Array.isArray(row.cells) ? row.cells : []).forEach((cell, cellIndex) => {
-      const colspan = columnSpan(cell.colspan);
-      const rowspan = rowSpan(cell.rowspan);
-      while (
-        Array.from({ length: rowspan }, (_, r) =>
-          Array.from({ length: colspan }, (_, c) => slots.has(key(rowIndex + r, column + c))).some(
-            Boolean
-          )
-        ).some(Boolean)
-      ) {
+      const rowspan = Math.min(rowSpan(cell.rowspan), remainingRows);
+      const colspan = columnSpan(cell.colspan, rowspan);
+      while (!areaIsFree(slots, rowIndex, column, rowspan, colspan)) {
         column += 1;
       }
       const entry = { cell, cellIndex, row: rowIndex, column, colspan, rowspan };
@@ -92,8 +114,10 @@ function buildRows(
 ): Array<TableRow> {
   const occupied = new Set<string>();
   for (const { row, column, cell } of positioned) {
-    for (let r = 0; r < rowSpan(cell.rowspan); r++) {
-      for (let c = 0; c < columnSpan(cell.colspan); c++) {
+    const rowspan = Math.min(rowSpan(cell.rowspan), Math.max(1, rows.length - row));
+    const colspan = columnSpan(cell.colspan, rowspan);
+    for (let r = 0; r < rowspan; r++) {
+      for (let c = 0; c < colspan; c++) {
         occupied.add(key(row + r, column + c));
       }
     }
@@ -116,11 +140,12 @@ function buildRows(
 
 export function normalizedRows(source: Array<TableRow>): Array<TableRow> {
   const layout = layoutRows(source);
-  const count = Math.max(
-    source.length,
-    ...layout.entries.map((entry) => entry.row + entry.rowspan),
-    1
-  );
+  // Clamped spans end inside the table, so the row count stays the table's own
+  // length; the loop avoids a spread over a large entry list.
+  let count = Math.max(source.length, 1);
+  for (const entry of layout.entries) {
+    count = Math.max(count, entry.row + entry.rowspan);
+  }
   const rows = Array.from({ length: count }, (_, index) => source[index] ?? { cells: [] });
   return buildRows(
     rows,

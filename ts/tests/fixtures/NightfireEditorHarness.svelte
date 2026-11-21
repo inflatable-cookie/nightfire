@@ -50,6 +50,12 @@
   export function setValue(next: NightfireValue) {
     value = next;
   }
+
+  // Swaps the field's schema the way a host renders a different field into the
+  // same editor instance.
+  export function setSchema(next: string) {
+    schema = next;
+  }
 </script>
 
 <NightfireEditor

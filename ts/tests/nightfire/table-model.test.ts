@@ -125,7 +125,20 @@ describe("table grid model", () => {
     expect(wide.entries[0]!.colspan).toBe(1000);
     expect(wide.width).toBe(1000);
 
+    // A row span ends at the last row: one row cannot become sixty-five thousand.
     const tall = layoutRows([{ cells: [{ markdown: "T", rowspan: 250_000 }] }]);
-    expect(tall.entries[0]!.rowspan).toBe(65_534);
+    expect(tall.entries[0]!.rowspan).toBe(1);
+  });
+  it("bounds a combined span on a one-row table to the table's own shape", () => {
+    const source = [{ cells: [{ markdown: "A", colspan: 1000, rowspan: 65_534 }] }];
+    const layout = layoutRows(source);
+    expect(layout.entries[0]).toMatchObject({ row: 0, column: 0, colspan: 1000, rowspan: 1 });
+    expect(layout.slots.size).toBe(1000);
+    expect(layout.width).toBe(1000);
+
+    const rows = normalizedRows(source);
+    expect(rows).toHaveLength(1);
+    // The stored span is preserved; only the layout is bounded by the table.
+    expect(rows[0]!.cells).toEqual([{ markdown: "A", colspan: 1000, rowspan: 65_534 }]);
   });
 });

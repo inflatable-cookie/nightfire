@@ -147,12 +147,14 @@ import type { ParsedEmbed } from '@inflatable-cookie/poodle-svelte';
   <div class="underlay-video-editor__meta">
     <TextInput
       id={`${inputId}-title`}
+      ariaLabel="Title (optional, used as the embed's accessible name)"
       placeholder="Title (optional, used as the embed's accessible name)"
       value={title}
       onValueChange={(nextValue) => emit(pendingEmbed !== undefined ? pendingEmbed : embed, nextValue, caption)}
     />
     <TextInput
       id={`${inputId}-caption`}
+      ariaLabel="Caption (optional)"
       placeholder="Caption (optional)"
       value={caption}
       onValueChange={(nextValue) => emit(pendingEmbed !== undefined ? pendingEmbed : embed, title, nextValue)}

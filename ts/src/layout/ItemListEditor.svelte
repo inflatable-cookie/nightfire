@@ -9,7 +9,7 @@
   import type { BlockTypeOption, SchemaDefinition } from "../editor-registry";
 
   type RecordValue = Record<string, unknown>;
-  type ChildBlock = RecordValue & { type?: string; version?: string; data?: RecordValue };
+  type ChildBlock = RecordValue & { id?: string; type?: string; version?: string; data?: RecordValue };
   type Item = RecordValue & { title?: unknown; body?: unknown };
   type ItemListBlock = RecordValue & {
     type?: string;
@@ -86,6 +86,10 @@
   }
 
   function setListTitle(title: string): void {
+    // A pending removal belongs to the list as it was; editing the list title
+    // is a new state, so the confirmation drops the way it does in
+    // `setItemTitle`.
+    confirmation = null;
     // `items` is always written: an empty block has none yet, and the saved
     // payload must still carry the list the schema requires.
     const data: RecordValue = { ...readData(block), items };
@@ -197,6 +201,16 @@
     nextChildren.splice(to, 0, moved);
     setItemBlocks(itemIndex, nextChildren);
   }
+
+  // A child id keys its editor, so a sibling move or removal leaves the other
+  // editors mounted. Stored data can repeat an id, and a keyed block rejects a
+  // duplicate key, so a repeated id falls back to the child's position.
+  function childKey(children: Array<ChildBlock>, index: number): string | number {
+    const id = children[index]?.id;
+    if (typeof id !== "string" || id.trim().length === 0) {return `index:${index}`;}
+    const duplicated = children.some((child, other) => other !== index && child.id === id);
+    return duplicated ? `index:${index}` : id;
+  }
 </script>
 
 <div class="underlay-item-list-editor" data-item-list-editor>
@@ -261,7 +275,9 @@
           </div>
 
           <div class="underlay-item-list-editor__body" aria-label={`Item ${index + 1} blocks`}>
-            {#each children as child, childIndex (`${child.id ?? "child"}-${childIndex}`)}
+            <!-- A child block keeps its editor while its id does, so a sibling
+                 move or removal does not remount unchanged children. -->
+            {#each children as child, childIndex (childKey(children, childIndex))}
               <NightfireMultiBlockItem
                 block={child}
                 index={childIndex}

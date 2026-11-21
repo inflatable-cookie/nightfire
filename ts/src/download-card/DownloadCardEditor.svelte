@@ -150,6 +150,7 @@
   <div class="underlay-download-card-editor__description">
     <TextInput
       id={`${inputId}-description`}
+      ariaLabel="Card description (optional)"
       placeholder="Card description (optional)"
       value={description}
       onValueChange={(nextValue) => emit({ description: nextValue })}
@@ -169,12 +170,14 @@
           <div class="underlay-download-card-editor__file-controls">
             <TextInput
               id={`${inputId}-file-title-${index}`}
+              ariaLabel="File title (optional)"
               placeholder="File title (optional)"
               value={fileTitle(file)}
               onValueChange={(nextValue) => setFileTitle(index, nextValue)}
             />
             <TextInput
               id={`${inputId}-file-${index}`}
+              ariaLabel="File description (optional)"
               placeholder="File description (optional)"
               value={fileDescription(file)}
               onValueChange={(nextValue) => setFileDescription(index, nextValue)}

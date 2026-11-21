@@ -49,4 +49,20 @@ describe("nightfire/NightfireBlockEditor", () => {
     // belonged to the block that is no longer here.
     expect(within(view.container).queryByRole("alertdialog")).toBeNull();
   });
+
+  it("keeps the editor mounted when an id-less block mints its first id", async () => {
+    const view = render(NightfireBlockEditorHarness, {
+      initialBlock: { ...tableBlock(""), id: undefined },
+      definition,
+      typeOptions
+    });
+
+    const grid = within(view.container).getByRole("grid");
+    (view.component as { setBlock: (next: unknown) => void }).setBlock(tableBlock("nf_minted"));
+    flushSync();
+
+    // The block is the same one: the id appeared, nothing else changed, so the
+    // table editor keeps its DOM and its in-progress state.
+    expect(within(view.container).getByRole("grid")).toBe(grid);
+  });
 });

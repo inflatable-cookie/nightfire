@@ -5,6 +5,7 @@ import "../../src/editor-registrations";
 import "../../src/render-registrations";
 import { getBlockEditor, isBlockContentEmpty } from "../../src/editor-registry";
 import { getBlockRenderer } from "../../src/render-registry";
+import ItemListEditorHarness from "./ItemListEditorHarness.svelte";
 
 const EditorComponent = getBlockEditor(undefined, "item_list");
 const RendererComponent = getBlockRenderer(undefined, "item_list");
@@ -23,7 +24,10 @@ function itemListBlock(data: Record<string, unknown> = {}) {
 type ItemListBlockShape = {
   data: {
     title?: string;
-    items: Array<{ title?: string; body: Array<{ type?: string; data: { text?: string } }> }>;
+    items: Array<{
+      title?: string;
+      body: Array<{ id?: string; type?: string; data: { text?: string } }>;
+    }>;
     intro?: unknown;
     variant?: unknown;
   };
@@ -218,5 +222,147 @@ describe("nightfire/item-list editor", () => {
 
     await fireEvent.click(within(view.container).getByRole("button", { name: "Add item" }));
     expect(within(view.container).queryByRole("alertdialog")).toBeNull();
+  });
+
+  it("clears a pending confirmation when the list title changes", async () => {
+    const onChange = mock();
+    const block = itemListBlock({ items: [{ title: "Kept", body: [] }] });
+    const view = render(EditorComponent as any, {
+      block,
+      value: { schema: "example:content/list" },
+      onChange
+    });
+
+    await fireEvent.click(within(view.container).getByRole("button", { name: "Remove item 1" }));
+    expect(within(view.container).getByRole("alertdialog")).toBeTruthy();
+
+    await fireEvent.input(
+      within(view.container).getByRole("textbox", { name: "Item list title (optional)" }),
+      { target: { value: "Heading" } }
+    );
+    expect(within(view.container).queryByRole("alertdialog")).toBeNull();
+    expect(lastBlock(onChange).data.title).toBe("Heading");
+  });
+
+  it("keeps a child block's editor mounted when a sibling moves", async () => {
+    const onChange = mock();
+    const block = itemListBlock({
+      items: [
+        {
+          body: [
+            { id: "nf_child_a", type: "markdown", version: "initial", data: { text: "Alpha" } },
+            { id: "nf_child_b", type: "markdown", version: "initial", data: { text: "Beta" } }
+          ]
+        }
+      ]
+    });
+    const view = render(ItemListEditorHarness, { initial: block, onChange });
+
+    const editors = Array.from(view.container.querySelectorAll(".underlay-markdown-editor"));
+    expect(editors).toHaveLength(2);
+    expect(
+      Array.from(view.container.querySelectorAll("textarea")).map((node) => node.value)
+    ).toEqual(["Alpha", "Beta"]);
+
+    await fireEvent.click(
+      within(view.container).getAllByRole("button", { name: "Move block up" })[1]!
+    );
+    await waitFor(() =>
+      expect(lastBlock(onChange).data.items[0]!.body.map((child) => child.id)).toEqual([
+        "nf_child_b",
+        "nf_child_a"
+      ])
+    );
+
+    const reordered = Array.from(view.container.querySelectorAll(".underlay-markdown-editor"));
+    expect(
+      Array.from(view.container.querySelectorAll("textarea")).map((node) => node.value)
+    ).toEqual(["Beta", "Alpha"]);
+    // Child editors are keyed by id, so the move relocates the two nodes
+    // instead of unmounting and remounting both of them.
+    expect(reordered[0]).toBe(editors[1]);
+    expect(reordered[1]).toBe(editors[0]);
+  });
+
+  it("removes one child block without remounting the survivors", async () => {
+    const onChange = mock();
+    const block = itemListBlock({
+      items: [
+        {
+          body: [
+            { id: "nf_child_a", type: "markdown", version: "initial", data: { text: "Alpha" } },
+            { id: "nf_child_b", type: "markdown", version: "initial", data: { text: "Beta" } }
+          ]
+        }
+      ]
+    });
+    const view = render(ItemListEditorHarness, { initial: block, onChange });
+
+    const editors = Array.from(view.container.querySelectorAll(".underlay-markdown-editor"));
+    await fireEvent.click(
+      within(view.container).getAllByRole("button", { name: "Remove block" })[0]!
+    );
+    await waitFor(() =>
+      expect(lastBlock(onChange).data.items[0]!.body.map((child) => child.id)).toEqual([
+        "nf_child_b"
+      ])
+    );
+
+    const remaining = Array.from(view.container.querySelectorAll(".underlay-markdown-editor"));
+    expect(remaining).toHaveLength(1);
+    expect(remaining[0]).toBe(editors[1]);
+  });
+
+  it("renders repeated child ids instead of rejecting the keyed list", async () => {
+    const block = itemListBlock({
+      items: [
+        {
+          body: [
+            { id: "nf_same", type: "markdown", version: "initial", data: { text: "Alpha" } },
+            { id: "nf_same", type: "markdown", version: "initial", data: { text: "Beta" } }
+          ]
+        }
+      ]
+    });
+    const view = render(ItemListEditorHarness, { initial: block, onChange: mock() });
+
+    expect(view.container.querySelectorAll(".underlay-markdown-editor")).toHaveLength(2);
+    expect(
+      Array.from(view.container.querySelectorAll("textarea")).map((node) => node.value)
+    ).toEqual(["Alpha", "Beta"]);
+  });
+
+  it("retypes one child block while keeping its id and its siblings", async () => {
+    const onChange = mock();
+    const block = itemListBlock({
+      items: [
+        {
+          body: [
+            { id: "nf_child_a", type: "markdown", version: "initial", data: { text: "Alpha" } },
+            { id: "nf_child_b", type: "markdown", version: "initial", data: { text: "Beta" } }
+          ]
+        }
+      ]
+    });
+    const view = render(ItemListEditorHarness, { initial: block, onChange });
+
+    const editors = Array.from(view.container.querySelectorAll(".underlay-markdown-editor"));
+    await fireEvent.change(
+      within(view.container).getAllByRole("combobox", { name: "Block type" })[0]!,
+      { target: { value: "table" } }
+    );
+
+    await waitFor(() =>
+      expect(lastBlock(onChange).data.items[0]!.body.map((child) => child.type)).toEqual([
+        "table",
+        "markdown"
+      ])
+    );
+    expect(lastBlock(onChange).data.items[0]!.body[0]!.id).toBe("nf_child_a");
+    // The retyped child restarts in its new editor; the untouched sibling keeps
+    // the one it already had.
+    const remaining = Array.from(view.container.querySelectorAll(".underlay-markdown-editor"));
+    expect(remaining).toHaveLength(1);
+    expect(remaining[0]).toBe(editors[1]);
   });
 });
