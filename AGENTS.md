@@ -56,6 +56,20 @@ ideas or observations with `lead.add` (see the Nucleus skill). There is no
 - Write in `docs/knowledge/contracts/writing-style.md`: short, blunt, high
   signal.
 
+## Standing quality gate
+
+- Rubric: rate correctness & safety, clarity, structure, error handling,
+  tests, idiom & simplicity (add integration when a change crosses seams or
+  shared contracts), 1-10 per `hill-climb` anchors: 8 = solid, no bugs or
+  structural debt, minor edge cases only; 7 = good with clear gaps.
+- Floor (verified at `7297392`): 7.5/10 overall - 8/10 on Rust
+  (`rust/nightfire`), TS core/registries/schemas, TS renderers/rich-text,
+  tooling/QA/tests, cross-part integration; 7.5/10 on TS editors & shell.
+- Workers: rate the parts touched (plus integration if seams or shared
+  contracts moved).
+- Reviewers: re-check the same scores at the revision under review; send
+  back anything that lowers a part or adds a new part below the floor.
+
 ## Validate
 
 Before a PR: targeted checks only, run once. That means the tests for the code
