@@ -99,11 +99,12 @@ export const VERIFY_FLAGS = [
 // is the token after it; a missing value or a value that is itself a flag is a
 // broken invocation, reported as `${flag} requires a value` rather than as an
 // unknown argument for the neighbouring flag.
-export function assertKnownFlags(
+export function parseCliFlags(
   args: Array<string>,
   known: ReadonlyArray<string> = VERIFY_FLAGS
-): void {
+): Map<string, string> {
   const seen = new Set<string>();
+  const values = new Map<string, string>();
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
     if (arg === undefined) {
@@ -120,39 +121,27 @@ export function assertKnownFlags(
     if (value === undefined || value.length === 0 || value.startsWith("--")) {
       throw new Error(`${arg} requires a value`);
     }
+    values.set(arg, value);
     index += 1;
   }
-}
-
-// A flag without a value is a broken invocation, not an absent flag: silently
-// dropping it would skip the tag or commit check the workflow asked for.
-export function cliValue(args: Array<string>, flag: string): string | undefined {
-  const index = args.indexOf(flag);
-  if (index === -1) {
-    return undefined;
-  }
-  const value = args[index + 1];
-  if (value === undefined || value.length === 0 || value.startsWith("--")) {
-    throw new Error(`${flag} requires a value`);
-  }
-  return value;
+  return values;
 }
 
 if (import.meta.main) {
   const argv = process.argv.slice(2);
-  assertKnownFlags(argv);
-  const root = resolve(cliValue(argv, "--root") ?? process.cwd());
-  const archiveDir = resolve(cliValue(argv, "--dir") ?? join(root, "release-artifacts"));
+  const flags = parseCliFlags(argv);
+  const root = resolve(flags.get("--root") ?? process.cwd());
+  const archiveDir = resolve(flags.get("--dir") ?? join(root, "release-artifacts"));
   const manifestPath = resolve(
-    cliValue(argv, "--manifest") ??
+    flags.get("--manifest") ??
       join(archiveDir, readNpmPublicationAuthority(root).candidateManifestName)
   );
   const manifest = verifyNpmCandidate({
     root,
     manifestPath,
     archiveDir,
-    tagVersion: cliValue(argv, "--tag-version"),
-    sourceCommit: cliValue(argv, "--source-commit")
+    tagVersion: flags.get("--tag-version"),
+    sourceCommit: flags.get("--source-commit")
   });
   for (const entry of manifest.packages) {
     process.stdout.write(`${entry.name}@${entry.version} ${entry.sha256} ${entry.tarball}\n`);

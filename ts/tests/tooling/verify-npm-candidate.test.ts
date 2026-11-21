@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { CANDIDATE_SCHEMA, sha256File } from "../../scripts/npm-publication";
-import { assertKnownFlags, verifyNpmCandidate } from "../../scripts/verify-npm-candidate";
+import { parseCliFlags, verifyNpmCandidate } from "../../scripts/verify-npm-candidate";
 
 // Publish mode verifies the archive set before any npm mutation. Each case builds
 // a real tarball in its own fixture directory, under the run's temporary root, and
@@ -122,29 +122,32 @@ describe("tooling/verify-npm-candidate", () => {
   });
 
   it("refuses an unknown or repeated CLI flag instead of ignoring it", () => {
-    expect(() => assertKnownFlags(["--tag-verison", "0.6.0"])).toThrow(
+    expect(() => parseCliFlags(["--tag-verison", "0.6.0"])).toThrow(
       /unknown argument --tag-verison/
     );
-    expect(() => assertKnownFlags(["--tag-version", "0.6.0", "stray"])).toThrow(
+    expect(() => parseCliFlags(["--tag-version", "0.6.0", "stray"])).toThrow(
       /unknown argument stray/
     );
-    expect(() => assertKnownFlags(["--tag-version", "0.6.0", "--tag-version", "0.6.1"])).toThrow(
+    expect(() => parseCliFlags(["--tag-version", "0.6.0", "--tag-version", "0.6.1"])).toThrow(
       /--tag-version is given more than once/
     );
-    expect(() =>
-      assertKnownFlags(["--tag-version", "0.6.0", "--source-commit", COMMIT])
-    ).not.toThrow();
+    expect(parseCliFlags(["--tag-version", "0.6.0", "--source-commit", COMMIT])).toEqual(
+      new Map([
+        ["--tag-version", "0.6.0"],
+        ["--source-commit", COMMIT]
+      ])
+    );
   });
 
   it("reports a flag followed by another flag as a missing value", () => {
-    expect(() => assertKnownFlags(["--dir", "--manifest"])).toThrow(/--dir requires a value/);
-    expect(() => assertKnownFlags(["--tag-version"])).toThrow(/--tag-version requires a value/);
-    expect(() => assertKnownFlags(["--dir", "--manifest", "archive"])).toThrow(
+    expect(() => parseCliFlags(["--dir", "--manifest"])).toThrow(/--dir requires a value/);
+    expect(() => parseCliFlags(["--tag-version"])).toThrow(/--tag-version requires a value/);
+    expect(() => parseCliFlags(["--dir", "--manifest", "archive"])).toThrow(
       /--dir requires a value/
     );
-    expect(() =>
-      assertKnownFlags(["--dir", "archive", "--manifest", "candidate.json"])
-    ).not.toThrow();
+    expect(parseCliFlags(["--dir", "archive", "--manifest", "candidate.json"]).get("--dir")).toBe(
+      "archive"
+    );
   });
 
   it("fails the verify CLI on a misspelled flag before it reads anything", () => {

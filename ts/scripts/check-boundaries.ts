@@ -1,6 +1,5 @@
 import { readdir } from "node:fs/promises";
 import { dirname, join, normalize } from "node:path";
-import { createSveltePlugin } from "../tests/setup/svelte-plugin";
 
 const forbidden = [
   "@inflatable-cookie/underlay",
@@ -12,117 +11,11 @@ const forbidden = [
   "smol-toml"
 ];
 
+type ImportRef = { specifier: string; typeOnly: boolean };
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
-
-const manifest: unknown = await Bun.file("package.json").json();
-if (!isRecord(manifest)) {
-  throw new Error("package.json must be a JSON object");
-}
-for (const section of ["dependencies", "devDependencies", "peerDependencies"]) {
-  const deps = manifest[section];
-  for (const name of Object.keys(isRecord(deps) ? deps : {})) {
-    if (forbidden.includes(name)) {
-      throw new Error(`forbidden ${section} dependency: ${name}`);
-    }
-  }
-}
-
-// The lock is held to the published runtime graph, not to every dev tool's own
-// dependencies: a consumer installs `dependencies`, so that closure is the
-// boundary a forbidden package must never enter. The manifest scan above
-// already refuses a forbidden package declared directly in any section,
-// devDependencies included.
-const lockRaw: unknown = Bun.JSONC.parse(await Bun.file("bun.lock").text());
-const lock = isRecord(lockRaw) ? lockRaw : {};
-const lockedPackages = isRecord(lock.packages) ? lock.packages : {};
-const workspaces = isRecord(lock.workspaces) ? lock.workspaces : {};
-const rootWorkspace = isRecord(workspaces[""]) ? workspaces[""] : {};
-const rootDependencies = isRecord(rootWorkspace.dependencies) ? rootWorkspace.dependencies : {};
-const runtimePackages = new Set<string>();
-const lockPending = Object.keys(rootDependencies);
-while (lockPending.length > 0) {
-  const name = lockPending.pop();
-  if (!name || runtimePackages.has(name)) {
-    continue;
-  }
-  runtimePackages.add(name);
-  const entry = lockedPackages[name];
-  const meta = Array.isArray(entry) && isRecord(entry[2]) ? entry[2] : {};
-  const entryDeps = isRecord(meta.dependencies) ? meta.dependencies : {};
-  const entryOptionalDeps = isRecord(meta.optionalDependencies) ? meta.optionalDependencies : {};
-  lockPending.push(...Object.keys(entryDeps), ...Object.keys(entryOptionalDeps));
-}
-for (const name of forbidden) {
-  if (runtimePackages.has(name)) {
-    throw new Error(`forbidden runtime dependency in bun.lock: ${name}`);
-  }
-}
-
-// The Rust lock is held to the same boundary. A crate is forbidden when its name
-// is an npm forbidden package's unscoped name (`vite`, `zod`, …) or names an
-// Underlay or product crate.
-const forbiddenCrateNames = new Set(forbidden.map((name) => name.split("/").at(-1) ?? name));
-const cargoLock = await Bun.file("Cargo.lock").text();
-for (const [, crate] of cargoLock.matchAll(/^name = "([^"]+)"$/gm)) {
-  if (!crate) {
-    continue;
-  }
-  if (forbiddenCrateNames.has(crate) || /underlay|acowtancy|froyo|bovine|dairy/i.test(crate)) {
-    throw new Error(`forbidden transitive dependency in Cargo.lock: ${crate}`);
-  }
-}
-
-async function sourceFiles(root: string): Promise<Array<string>> {
-  const entries = await readdir(root, { withFileTypes: true });
-  const files: Array<string> = [];
-  for (const entry of entries) {
-    const path = join(root, entry.name);
-    if (entry.isDirectory()) {
-      files.push(...(await sourceFiles(path)));
-    } else if (/\.(ts|svelte|rs)$/.test(entry.name)) {
-      files.push(path);
-    }
-  }
-  return files;
-}
-
-const allSourceFiles = await sourceFiles("ts/src");
-const sourceSet = new Set(allSourceFiles.map(normalize));
-
-// The forbidden-package scan reads imports through `importedRefs`, so a
-// side-effect import (`import "zod"`), a spaced dynamic import
-// (`import ("zod")`), and an import on any line are all caught, while a name
-// mentioned in a comment is not an import.
-for (const path of allSourceFiles) {
-  const source = await Bun.file(path).text();
-  for (const ref of importedRefs(path, source)) {
-    const hit = forbidden.find(
-      (name) => ref.specifier === name || ref.specifier.startsWith(`${name}/`)
-    );
-    if (hit) {
-      throw new Error(`forbidden source import ${hit}: ${path}`);
-    }
-  }
-  if (
-    /acow:|acow\.|acowtancy|froyo|bovine|dairy|summary\.(?:book|circles|pie|steps|diagram|slideshow|image_slider)/i.test(
-      source
-    )
-  ) {
-    throw new Error(`product-specific Nightfire source: ${path}`);
-  }
-}
-
-const rustFiles = (await sourceFiles("rust/nightfire")).filter((path) => path.endsWith(".rs"));
-for (const path of ["Cargo.toml", "rust/nightfire/Cargo.toml", ...rustFiles]) {
-  const source = await Bun.file(path).text();
-  if (/underlay|acowtancy|froyo|bovine|dairy/i.test(source)) {
-    throw new Error(`forbidden product or Underlay Rust source: ${path}`);
-  }
-}
-
-type ImportRef = { specifier: string; typeOnly: boolean };
 
 function namedBindingsAreTypeOnly(clause: string): boolean {
   const named = clause.match(/^\{([^}]+)\}$/);
@@ -137,11 +30,7 @@ function namedBindingsAreTypeOnly(clause: string): boolean {
   return parts.length > 0 && parts.every((part) => /^type\s/.test(part));
 }
 
-// Blank every comment before imports are read, so an example in a doc comment is
-// never taken for an import. The walk tracks string and template literals, so a
-// `//` inside a URL is not a comment. Comment characters become spaces, which
-// keeps line numbers and the rest of the source as written.
-function stripComments(source: string): string {
+export function stripComments(source: string): string {
   let out = "";
   let index = 0;
   while (index < source.length) {
@@ -172,7 +61,7 @@ function stripComments(source: string): string {
   return out;
 }
 
-function importedRefs(path: string, source: string): Array<ImportRef> {
+export function importedRefs(path: string, source: string): Array<ImportRef> {
   const scripts = path.endsWith(".svelte")
     ? Array.from(
         source.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g),
@@ -201,7 +90,7 @@ function importedRefs(path: string, source: string): Array<ImportRef> {
         refs.push({ specifier, typeOnly: false });
       }
     }
-    for (const match of script.matchAll(/import\(\s*["']([^"']+)["']/g)) {
+    for (const match of script.matchAll(/import\s*\(\s*["']([^"']+)["']/g)) {
       const specifier = match[1];
       if (specifier) {
         refs.push({ specifier, typeOnly: false });
@@ -211,10 +100,58 @@ function importedRefs(path: string, source: string): Array<ImportRef> {
   });
 }
 
-// A Svelte runtime edge is any non-type reference to `svelte` or a `svelte/*`
-// subpath, wherever it sits in the file: a top-level `import`, a side-effect
-// import or a dynamic `import()`. `import type` and `import { type X }` name
-// types only and are erased, so they pass.
+export function forbiddenPackageImport(path: string, source: string): string | undefined {
+  return importedRefs(path, source).find((ref) =>
+    forbidden.some((name) => ref.specifier === name || ref.specifier.startsWith(`${name}/`))
+  )?.specifier;
+}
+
+export function runtimePackageClosure(
+  rootDependencies: Record<string, unknown>,
+  lockedPackages: Record<string, unknown>
+): Set<string> {
+  const runtimePackages = new Set<string>();
+  const lockPending = Object.keys(rootDependencies);
+  const checkedLockKeys = new Set<string>();
+  while (lockPending.length > 0) {
+    const name = lockPending.pop();
+    if (!name || runtimePackages.has(name)) {
+      continue;
+    }
+    runtimePackages.add(name);
+    for (const key of Object.keys(lockedPackages).filter(
+      (candidate) => candidate === name || candidate.endsWith(`/${name}`)
+    )) {
+      if (checkedLockKeys.has(key)) {
+        continue;
+      }
+      checkedLockKeys.add(key);
+      const entry = lockedPackages[key];
+      const meta = Array.isArray(entry) && isRecord(entry[2]) ? entry[2] : {};
+      const entryDeps = isRecord(meta.dependencies) ? meta.dependencies : {};
+      const entryOptionalDeps = isRecord(meta.optionalDependencies)
+        ? meta.optionalDependencies
+        : {};
+      lockPending.push(...Object.keys(entryDeps), ...Object.keys(entryOptionalDeps));
+    }
+  }
+  return runtimePackages;
+}
+
+async function sourceFiles(root: string): Promise<Array<string>> {
+  const entries = await readdir(root, { withFileTypes: true });
+  const files: Array<string> = [];
+  for (const entry of entries) {
+    const path = join(root, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...(await sourceFiles(path)));
+    } else if (/\.(ts|svelte|rs)$/.test(entry.name)) {
+      files.push(path);
+    }
+  }
+  return files;
+}
+
 function svelteRefs(path: string, source: string): Array<ImportRef> {
   return importedRefs(path, source).filter(
     (ref) => ref.specifier === "svelte" || ref.specifier.startsWith("svelte/")
@@ -225,241 +162,327 @@ function hasSvelteRuntimeEdge(path: string, source: string): boolean {
   return svelteRefs(path, source).some((ref) => !ref.typeOnly);
 }
 
-// The registries describe Svelte component types; they must import Svelte for
-// the types alone, on whatever line, and never at runtime.
-for (const path of ["ts/src/editor-registry.ts", "ts/src/render-registry.ts"]) {
-  const source = await Bun.file(path).text();
-  const refs = svelteRefs(path, source);
-  if (refs.length === 0) {
-    throw new Error(`registry must import Svelte types: ${path}`);
+async function main(): Promise<void> {
+  const { createSveltePlugin } = await import("../tests/setup/svelte-plugin");
+  const manifest: unknown = await Bun.file("package.json").json();
+  if (!isRecord(manifest)) {
+    throw new Error("package.json must be a JSON object");
   }
-  if (refs.some((ref) => !ref.typeOnly)) {
-    throw new Error(`registry Svelte import must stay type-only: ${path}`);
-  }
-}
-
-function resolveSourceImport(importer: string, specifier: string): string | null {
-  if (!specifier.startsWith(".")) {
-    return null;
-  }
-  const base = normalize(join(dirname(importer), specifier)).replace(/\.js$/, "");
-  for (const candidate of [base, `${base}.ts`, `${base}.svelte`, join(base, "index.ts")]) {
-    if (sourceSet.has(candidate)) {
-      return candidate;
-    }
-  }
-  throw new Error(`unresolved relative source import ${specifier}: ${importer}`);
-}
-
-async function sourceGraph(entrypoint: string): Promise<Array<string>> {
-  const pending = [normalize(entrypoint)];
-  const visited = new Set<string>();
-  while (pending.length > 0) {
-    const path = pending.pop();
-    if (!path || visited.has(path)) {
-      continue;
-    }
-    visited.add(path);
-    const source = await Bun.file(path).text();
-    for (const ref of importedRefs(path, source)) {
-      const dependency = resolveSourceImport(path, ref.specifier);
-      if (dependency) {
-        pending.push(dependency);
+  for (const section of ["dependencies", "devDependencies", "peerDependencies"]) {
+    const deps = manifest[section];
+    for (const name of Object.keys(isRecord(deps) ? deps : {})) {
+      if (forbidden.includes(name)) {
+        throw new Error(`forbidden ${section} dependency: ${name}`);
       }
     }
   }
-  return [...visited].sort();
-}
 
-const POODLE = "@inflatable-cookie/poodle-svelte";
+  // The lock is held to the published runtime graph, not to every dev tool's own
+  // dependencies: a consumer installs `dependencies`, so that closure is the
+  // boundary a forbidden package must never enter. The manifest scan above
+  // already refuses a forbidden package declared directly in any section,
+  // devDependencies included.
+  const lockRaw: unknown = Bun.JSONC.parse(await Bun.file("bun.lock").text());
+  const lock = isRecord(lockRaw) ? lockRaw : {};
+  const lockedPackages = isRecord(lock.packages) ? lock.packages : {};
+  const workspaces = isRecord(lock.workspaces) ? lock.workspaces : {};
+  const rootWorkspace = isRecord(workspaces[""]) ? workspaces[""] : {};
+  const rootDependencies = isRecord(rootWorkspace.dependencies) ? rootWorkspace.dependencies : {};
+  const runtimePackages = runtimePackageClosure(rootDependencies, lockedPackages);
+  for (const name of forbidden) {
+    if (runtimePackages.has(name)) {
+      throw new Error(`forbidden runtime dependency in bun.lock: ${name}`);
+    }
+  }
 
-function isPoodleSpecifier(specifier: string): boolean {
-  return specifier === POODLE || specifier.startsWith(`${POODLE}/`);
-}
-
-async function assertRendererGraphPoodleFree(entrypoint: string): Promise<void> {
-  const pending = [normalize(entrypoint)];
-  const visited = new Set<string>();
-  while (pending.length > 0) {
-    const path = pending.pop();
-    if (!path || visited.has(path)) {
+  // The Rust lock is held to the same boundary. A crate is forbidden when its name
+  // is an npm forbidden package's unscoped name (`vite`, `zod`, …) or names an
+  // Underlay or product crate.
+  const forbiddenCrateNames = new Set(forbidden.map((name) => name.split("/").at(-1) ?? name));
+  const cargoLock = await Bun.file("Cargo.lock").text();
+  for (const [, crate] of cargoLock.matchAll(/^name = "([^"]+)"$/gm)) {
+    if (!crate) {
       continue;
     }
-    visited.add(path);
+    if (forbiddenCrateNames.has(crate) || /underlay|acowtancy|froyo|bovine|dairy/i.test(crate)) {
+      throw new Error(`forbidden transitive dependency in Cargo.lock: ${crate}`);
+    }
+  }
+
+  const allSourceFiles = await sourceFiles("ts/src");
+  const sourceSet = new Set(allSourceFiles.map(normalize));
+
+  // The forbidden-package scan reads imports through `importedRefs`, so a
+  // side-effect import (`import "zod"`), a spaced dynamic import
+  // (`import ("zod")`), and an import on any line are all caught, while a name
+  // mentioned in a comment is not an import.
+  for (const path of allSourceFiles) {
     const source = await Bun.file(path).text();
-    for (const ref of importedRefs(path, source)) {
-      if (ref.typeOnly) {
+    const hit = forbiddenPackageImport(path, source);
+    if (hit) {
+      throw new Error(`forbidden source import ${hit}: ${path}`);
+    }
+    if (
+      /acow:|acow\.|acowtancy|froyo|bovine|dairy|summary\.(?:book|circles|pie|steps|diagram|slideshow|image_slider)/i.test(
+        source
+      )
+    ) {
+      throw new Error(`product-specific Nightfire source: ${path}`);
+    }
+  }
+
+  const rustFiles = (await sourceFiles("rust/nightfire")).filter((path) => path.endsWith(".rs"));
+  for (const path of ["Cargo.toml", "rust/nightfire/Cargo.toml", ...rustFiles]) {
+    const source = await Bun.file(path).text();
+    if (/underlay|acowtancy|froyo|bovine|dairy/i.test(source)) {
+      throw new Error(`forbidden product or Underlay Rust source: ${path}`);
+    }
+  }
+
+  // A Svelte runtime edge is any non-type reference to `svelte` or a `svelte/*`
+  // subpath, wherever it sits in the file: a top-level `import`, a side-effect
+  // import or a dynamic `import()`. `import type` and `import { type X }` name
+  // types only and are erased, so they pass.
+  // The registries describe Svelte component types; they must import Svelte for
+  // the types alone, on whatever line, and never at runtime.
+  for (const path of ["ts/src/editor-registry.ts", "ts/src/render-registry.ts"]) {
+    const source = await Bun.file(path).text();
+    const refs = svelteRefs(path, source);
+    if (refs.length === 0) {
+      throw new Error(`registry must import Svelte types: ${path}`);
+    }
+    if (refs.some((ref) => !ref.typeOnly)) {
+      throw new Error(`registry Svelte import must stay type-only: ${path}`);
+    }
+  }
+
+  function resolveSourceImport(importer: string, specifier: string): string | null {
+    if (!specifier.startsWith(".")) {
+      return null;
+    }
+    const base = normalize(join(dirname(importer), specifier)).replace(/\.js$/, "");
+    for (const candidate of [base, `${base}.ts`, `${base}.svelte`, join(base, "index.ts")]) {
+      if (sourceSet.has(candidate)) {
+        return candidate;
+      }
+    }
+    throw new Error(`unresolved relative source import ${specifier}: ${importer}`);
+  }
+
+  async function sourceGraph(entrypoint: string): Promise<Array<string>> {
+    const pending = [normalize(entrypoint)];
+    const visited = new Set<string>();
+    while (pending.length > 0) {
+      const path = pending.pop();
+      if (!path || visited.has(path)) {
         continue;
       }
-      if (isPoodleSpecifier(ref.specifier)) {
-        throw new Error(
-          `renderer graph runtime import of Poodle: ${path} → ${ref.specifier} (from ${entrypoint})`
-        );
+      visited.add(path);
+      const source = await Bun.file(path).text();
+      for (const ref of importedRefs(path, source)) {
+        const dependency = resolveSourceImport(path, ref.specifier);
+        if (dependency) {
+          pending.push(dependency);
+        }
       }
-      const dependency = resolveSourceImport(path, ref.specifier);
-      if (dependency) {
-        pending.push(dependency);
+    }
+    return [...visited].sort();
+  }
+
+  const POODLE = "@inflatable-cookie/poodle-svelte";
+
+  function isPoodleSpecifier(specifier: string): boolean {
+    return specifier === POODLE || specifier.startsWith(`${POODLE}/`);
+  }
+
+  async function assertRendererGraphPoodleFree(entrypoint: string): Promise<void> {
+    const pending = [normalize(entrypoint)];
+    const visited = new Set<string>();
+    while (pending.length > 0) {
+      const path = pending.pop();
+      if (!path || visited.has(path)) {
+        continue;
+      }
+      visited.add(path);
+      const source = await Bun.file(path).text();
+      for (const ref of importedRefs(path, source)) {
+        if (ref.typeOnly) {
+          continue;
+        }
+        if (isPoodleSpecifier(ref.specifier)) {
+          throw new Error(
+            `renderer graph runtime import of Poodle: ${path} → ${ref.specifier} (from ${entrypoint})`
+          );
+        }
+        const dependency = resolveSourceImport(path, ref.specifier);
+        if (dependency) {
+          pending.push(dependency);
+        }
       }
     }
   }
-}
 
-async function bundle(entrypoint: string, svelte = false) {
-  const result = await Bun.build({
-    entrypoints: [entrypoint],
-    target: "browser",
-    format: "esm",
-    minify: false,
-    packages: "external",
-    plugins: svelte ? [createSveltePlugin("client")] : [],
-    metafile: true
-  });
-  if (!result.success) {
-    throw new Error(result.logs.map(String).join("\n"));
+  async function bundle(entrypoint: string, svelte = false) {
+    const result = await Bun.build({
+      entrypoints: [entrypoint],
+      target: "browser",
+      format: "esm",
+      minify: false,
+      packages: "external",
+      plugins: svelte ? [createSveltePlugin("client")] : [],
+      metafile: true
+    });
+    if (!result.success) {
+      throw new Error(result.logs.map(String).join("\n"));
+    }
+    // metafile is requested above, so its absence means the build did not do what
+    // the boundary check needs; fail loudly rather than report no inputs.
+    if (!result.metafile) {
+      throw new Error(`bundle of ${entrypoint} produced no metafile`);
+    }
+    const output = result.outputs[0];
+    if (!output) {
+      throw new Error(`bundle of ${entrypoint} produced no output`);
+    }
+    return {
+      text: await output.text(),
+      size: output.size,
+      inputs: Object.keys(result.metafile.inputs).sort()
+    };
   }
-  // metafile is requested above, so its absence means the build did not do what
-  // the boundary check needs; fail loudly rather than report no inputs.
-  if (!result.metafile) {
-    throw new Error(`bundle of ${entrypoint} produced no metafile`);
+
+  // A block editor module is a per-block `editor.ts` (markup, download-card,
+  // rich-text, image, video, layout, …), the editor registrations catalog, or
+  // anything under an `editor/` directory. `ts/src/editor.ts` is the public
+  // editor entry point, not a block editor, and is excluded by name.
+  const EDITOR_MODULE =
+    /(?:^|\/)(?:editor-registrations|render-registrations)\.ts$|\/editor\/|\/[^/\s]+\/editor\.ts\b/;
+  const PUBLIC_EDITOR_ENTRY = normalize("ts/src/editor.ts");
+
+  function isEditorModule(path: string): boolean {
+    return normalize(path) !== PUBLIC_EDITOR_ENTRY && EDITOR_MODULE.test(path);
   }
-  const output = result.outputs[0];
-  if (!output) {
-    throw new Error(`bundle of ${entrypoint} produced no output`);
+
+  // Every block editor module shipped in `ts/src`, derived from the tree so a new
+  // block's editor is guarded without editing this proof.
+  // Both registrations catalogs are excluded: they catalog modules rather than
+  // being block editors, and `render-registrations.ts` in particular is
+  // render-side. Without this exclusion it would be mislabelled as a block
+  // editor module, and the empty-guard below would be vacuous if the tree ever
+  // held only the catalogs.
+  const blockEditorModules = allSourceFiles
+    .map((path) => normalize(path))
+    .filter(
+      (path) =>
+        isEditorModule(path) &&
+        !path.endsWith("editor-registrations.ts") &&
+        !path.endsWith("render-registrations.ts")
+    );
+  if (blockEditorModules.length === 0) {
+    throw new Error(
+      "boundary proof found no block editor module to guard; the tree is not in the expected shape"
+    );
   }
-  return {
-    text: await output.text(),
-    size: output.size,
-    inputs: Object.keys(result.metafile.inputs).sort()
-  };
-}
 
-// A block editor module is a per-block `editor.ts` (markup, download-card,
-// rich-text, image, video, layout, …), the editor registrations catalog, or
-// anything under an `editor/` directory. `ts/src/editor.ts` is the public
-// editor entry point, not a block editor, and is excluded by name.
-const EDITOR_MODULE =
-  /(?:^|\/)(?:editor-registrations|render-registrations)\.ts$|\/editor\/|\/[^/\s]+\/editor\.ts\b/;
-const PUBLIC_EDITOR_ENTRY = normalize("ts/src/editor.ts");
+  for (const entrypoint of ["ts/src/core.ts", "ts/src/validation.ts", "ts/src/index.ts"]) {
+    for (const path of await sourceGraph(entrypoint)) {
+      const source = await Bun.file(path).text();
+      if (hasSvelteRuntimeEdge(path, source)) {
+        throw new Error(`${entrypoint} has a Svelte runtime edge through ${path}`);
+      }
+    }
+  }
 
-function isEditorModule(path: string): boolean {
-  return normalize(path) !== PUBLIC_EDITOR_ENTRY && EDITOR_MODULE.test(path);
-}
+  // The root export `.` is the Svelte-free barrel. Strategies carry the Svelte
+  // context and store runtime, so they stay on their own `./strategies` subpath.
+  if ((await sourceGraph("ts/src/index.ts")).includes(normalize("ts/src/strategies.ts"))) {
+    throw new Error("root export . reaches ./strategies; keep strategies on their own subpath");
+  }
 
-// Every block editor module shipped in `ts/src`, derived from the tree so a new
-// block's editor is guarded without editing this proof.
-// Both registrations catalogs are excluded: they catalog modules rather than
-// being block editors, and `render-registrations.ts` in particular is
-// render-side. Without this exclusion it would be mislabelled as a block
-// editor module, and the empty-guard below would be vacuous if the tree ever
-// held only the catalogs.
-const blockEditorModules = allSourceFiles
-  .map((path) => normalize(path))
-  .filter(
-    (path) =>
-      isEditorModule(path) &&
-      !path.endsWith("editor-registrations.ts") &&
-      !path.endsWith("render-registrations.ts")
+  const rendererGraph = await sourceGraph("ts/src/renderer.ts");
+  for (const path of rendererGraph) {
+    if (isEditorModule(path)) {
+      throw new Error(`renderer source graph contains editor/registration module: ${path}`);
+    }
+  }
+
+  // The render catalog is the entry consumers import to get every core renderer.
+  // It must reach renderer modules only; a rich-text renderer that pulled its
+  // editor would drag TipTap into every render-only consumer.
+  const renderCatalogGraph = (await sourceGraph("ts/src/render-registrations.ts")).filter(
+    (path) => !path.endsWith("render-registrations.ts")
   );
-if (blockEditorModules.length === 0) {
-  throw new Error(
-    "boundary proof found no block editor module to guard; the tree is not in the expected shape"
-  );
-}
+  for (const path of renderCatalogGraph) {
+    if (isEditorModule(path)) {
+      throw new Error(`render catalog source graph contains editor module: ${path}`);
+    }
+  }
 
-for (const entrypoint of ["ts/src/core.ts", "ts/src/validation.ts", "ts/src/index.ts"]) {
-  for (const path of await sourceGraph(entrypoint)) {
+  // A renderer resolves media references, so no TypeScript module in the renderer
+  // or render-catalog graph may take a Svelte runtime edge: type-only imports are
+  // fine, a context or a reactive primitive is not.
+  for (const path of [...rendererGraph, ...renderCatalogGraph]) {
+    if (!path.endsWith(".ts")) {
+      continue;
+    }
     const source = await Bun.file(path).text();
     if (hasSvelteRuntimeEdge(path, source)) {
-      throw new Error(`${entrypoint} has a Svelte runtime edge through ${path}`);
+      throw new Error(`render-side graph has a Svelte runtime edge through ${path}`);
     }
   }
-}
 
-// The root export `.` is the Svelte-free barrel. Strategies carry the Svelte
-// context and store runtime, so they stay on their own `./strategies` subpath.
-if ((await sourceGraph("ts/src/index.ts")).includes(normalize("ts/src/strategies.ts"))) {
-  throw new Error("root export . reaches ./strategies; keep strategies on their own subpath");
-}
-
-const rendererGraph = await sourceGraph("ts/src/renderer.ts");
-for (const path of rendererGraph) {
-  if (isEditorModule(path)) {
-    throw new Error(`renderer source graph contains editor/registration module: ${path}`);
+  // Learner-facing renderer graphs must not load Poodle at runtime. Type-only
+  // imports pass; a reachable `import` of `@inflatable-cookie/poodle-svelte` fails.
+  // Every block's `render.ts` is derived from the tree, so a new block's renderer is
+  // guarded without editing this proof.
+  const blockRenderModules = allSourceFiles
+    .map((path) => normalize(path))
+    .filter((path) => /^ts\/src\/(?:[^/]+\/)+render\.ts$/.test(path))
+    .sort();
+  if (blockRenderModules.length === 0) {
+    throw new Error(
+      "boundary proof found no block render module to guard; the tree is not in the expected shape"
+    );
   }
-}
-
-// The render catalog is the entry consumers import to get every core renderer.
-// It must reach renderer modules only; a rich-text renderer that pulled its
-// editor would drag TipTap into every render-only consumer.
-const renderCatalogGraph = (await sourceGraph("ts/src/render-registrations.ts")).filter(
-  (path) => !path.endsWith("render-registrations.ts")
-);
-for (const path of renderCatalogGraph) {
-  if (isEditorModule(path)) {
-    throw new Error(`render catalog source graph contains editor module: ${path}`);
+  const rendererEntrypoints = [
+    "ts/src/renderer.ts",
+    "ts/src/render-registrations.ts",
+    "ts/src/rich-text.ts",
+    "ts/src/core-blocks.ts",
+    ...blockRenderModules
+  ];
+  for (const entrypoint of rendererEntrypoints) {
+    await assertRendererGraphPoodleFree(entrypoint);
   }
-}
 
-// A renderer resolves media references, so no TypeScript module in the renderer
-// or render-catalog graph may take a Svelte runtime edge: type-only imports are
-// fine, a context or a reactive primitive is not.
-for (const path of [...rendererGraph, ...renderCatalogGraph]) {
-  if (!path.endsWith(".ts")) {
-    continue;
+  const core = await bundle("ts/src/core.ts");
+  const validation = await bundle("ts/src/validation.ts");
+  const renderer = await bundle("ts/src/renderer.ts", true);
+  const renderCatalog = await bundle("ts/src/render-registrations.ts", true);
+  // Each shipped block editor is a marker, so the bundle proof grows with the
+  // tree instead of naming three blocks by hand.
+  const editorMarkers = blockEditorModules.map((path) =>
+    path.replace(/^ts\/src\//, "").replace(/\.ts$/, "")
+  );
+  for (const marker of ["editor-registrations", ...editorMarkers, "registerBlockEditor(", POODLE]) {
+    if (renderer.text.includes(marker)) {
+      throw new Error(`renderer bundle contains editor/registration marker: ${marker}`);
+    }
   }
-  const source = await Bun.file(path).text();
-  if (hasSvelteRuntimeEdge(path, source)) {
-    throw new Error(`render-side graph has a Svelte runtime edge through ${path}`);
+  if (renderCatalog.text.includes(POODLE)) {
+    throw new Error(`render catalog bundle contains a Poodle import`);
   }
-}
+  for (const input of renderer.inputs) {
+    if (isEditorModule(input)) {
+      throw new Error(`renderer bundle contains editor/registration input: ${input}`);
+    }
+  }
 
-// Learner-facing renderer graphs must not load Poodle at runtime. Type-only
-// imports pass; a reachable `import` of `@inflatable-cookie/poodle-svelte` fails.
-// Every block's `render.ts` is derived from the tree, so a new block's renderer is
-// guarded without editing this proof.
-const blockRenderModules = allSourceFiles
-  .map((path) => normalize(path))
-  .filter((path) => /^ts\/src\/(?:[^/]+\/)+render\.ts$/.test(path))
-  .sort();
-if (blockRenderModules.length === 0) {
-  throw new Error(
-    "boundary proof found no block render module to guard; the tree is not in the expected shape"
+  console.log(
+    `boundary proof passed: forbidden graph absent; core ${core.size} bytes; validation ${validation.size} bytes; renderer ${renderer.size} bytes/${renderer.inputs.length} inputs and editor-free; render catalog Poodle-free`
   );
 }
-const rendererEntrypoints = [
-  "ts/src/renderer.ts",
-  "ts/src/render-registrations.ts",
-  "ts/src/rich-text.ts",
-  "ts/src/core-blocks.ts",
-  ...blockRenderModules
-];
-for (const entrypoint of rendererEntrypoints) {
-  await assertRendererGraphPoodleFree(entrypoint);
-}
 
-const core = await bundle("ts/src/core.ts");
-const validation = await bundle("ts/src/validation.ts");
-const renderer = await bundle("ts/src/renderer.ts", true);
-const renderCatalog = await bundle("ts/src/render-registrations.ts", true);
-// Each shipped block editor is a marker, so the bundle proof grows with the
-// tree instead of naming three blocks by hand.
-const editorMarkers = blockEditorModules.map((path) =>
-  path.replace(/^ts\/src\//, "").replace(/\.ts$/, "")
-);
-for (const marker of ["editor-registrations", ...editorMarkers, "registerBlockEditor(", POODLE]) {
-  if (renderer.text.includes(marker)) {
-    throw new Error(`renderer bundle contains editor/registration marker: ${marker}`);
-  }
+if (import.meta.main) {
+  await main();
 }
-if (renderCatalog.text.includes(POODLE)) {
-  throw new Error(`render catalog bundle contains a Poodle import`);
-}
-for (const input of renderer.inputs) {
-  if (isEditorModule(input)) {
-    throw new Error(`renderer bundle contains editor/registration input: ${input}`);
-  }
-}
-
-console.log(
-  `boundary proof passed: forbidden graph absent; core ${core.size} bytes; validation ${validation.size} bytes; renderer ${renderer.size} bytes/${renderer.inputs.length} inputs and editor-free; render catalog Poodle-free`
-);

@@ -48,4 +48,10 @@ describe("tooling/check-colour-literals", () => {
 
     expect(colourLiterals(source, "probe.svelte")).toEqual([]);
   });
+
+  it("does not let a quoted closing parenthesis in a URL desync colour scanning", () => {
+    const source = `<style>\n  .probe {\n    background: url("asset)name.svg") "red";\n  }\n</style>`;
+
+    expect(colourLiterals(source, "probe.svelte")).toEqual([]);
+  });
 });

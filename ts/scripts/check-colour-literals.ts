@@ -215,8 +215,8 @@ function lineAt(source: string, index: number): number {
 function blankNonColour(rawValue: string): string {
   return rawValue
     .replaceAll(TOKEN_REFERENCE, (token) => `var(${"x".repeat(token.length - 4)}`)
-    .replaceAll(/url\([^)]*\)/gi, (url) => " ".repeat(url.length))
-    .replaceAll(/"[^"]*"|'[^']*'/g, (quoted) => " ".repeat(quoted.length));
+    .replaceAll(/"[^"]*"|'[^']*'/g, (quoted) => " ".repeat(quoted.length))
+    .replaceAll(/url\([^)]*\)/gi, (url) => " ".repeat(url.length));
 }
 
 function sliceOf(original: string, match: { index: number; 0: string }): string {

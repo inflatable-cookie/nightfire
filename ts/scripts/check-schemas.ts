@@ -101,6 +101,45 @@ function isRecursiveDef(defName: string, defSchema: unknown): boolean {
   return recursive;
 }
 
+function requiresObjectPropertyCoverage(
+  schema: JsonSchema,
+  schemaPath: string,
+  document: JsonObject,
+  visited = new Set<string>()
+): boolean {
+  if (typeof schema === "boolean") {
+    return false;
+  }
+  const properties = asObject(schema.properties);
+  if (properties && Object.keys(properties).length > 0) {
+    return true;
+  }
+  const allOf: Array<unknown> = Array.isArray(schema.allOf) ? schema.allOf : [];
+  if (
+    allOf.some((child) =>
+      requiresObjectPropertyCoverage(
+        requireJsonSchema(child, schemaPath),
+        schemaPath,
+        document,
+        visited
+      )
+    )
+  ) {
+    return true;
+  }
+  if (typeof schema.$ref !== "string") {
+    return false;
+  }
+  const referenceKey = `${schemaPath}:${schema.$ref}`;
+  if (visited.has(referenceKey)) {
+    return false;
+  }
+  const nextVisited = new Set(visited).add(referenceKey);
+  const resolved = resolveReference(catalog, schema.$ref, schemaPath);
+  const nextDocument = documents.get(resolved.path) ?? document;
+  return requiresObjectPropertyCoverage(resolved.schema, resolved.path, nextDocument, nextVisited);
+}
+
 function assertCovers(
   schema: JsonSchema,
   value: unknown,
@@ -123,21 +162,21 @@ function assertCovers(
         fail(`${instancePath}: unresolved ${schema.$ref}`);
       }
       if (isRecursiveDef(defName, defSchema)) {
-        return;
+        // Recursive coverage is bounded; continue to check keywords beside the ref.
+      } else {
+        assertCovers(
+          requireJsonSchema(defSchema, `${instancePath} (${schema.$ref})`),
+          value,
+          schemaPath,
+          document,
+          instancePath
+        );
       }
-      assertCovers(
-        requireJsonSchema(defSchema, `${instancePath} (${schema.$ref})`),
-        value,
-        schemaPath,
-        document,
-        instancePath
-      );
-      return;
+    } else {
+      const resolved = resolveReference(catalog, schema.$ref, schemaPath);
+      const nextDocument = documents.get(resolved.path) ?? document;
+      assertCovers(resolved.schema, value, resolved.path, nextDocument, instancePath);
     }
-    const resolved = resolveReference(catalog, schema.$ref, schemaPath);
-    const nextDocument = documents.get(resolved.path) ?? document;
-    assertCovers(resolved.schema, value, resolved.path, nextDocument, instancePath);
-    return;
   }
 
   const allOf: Array<unknown> = Array.isArray(schema.allOf) ? schema.allOf : [];
@@ -152,7 +191,7 @@ function assertCovers(
       fail(`${instancePath}: representative is not an object`);
     }
     for (const key of Object.keys(properties)) {
-      if (!(key in object)) {
+      if (!Object.hasOwn(object, key)) {
         fail(`${instancePath}: representative omits documented property ${key}`);
       }
       assertCovers(
@@ -165,14 +204,17 @@ function assertCovers(
     }
   }
 
-  if (schema.items !== undefined && Array.isArray(value) && value.length > 0) {
-    assertCovers(
-      requireJsonSchema(schema.items, `${instancePath}[0]`),
-      value[0],
-      schemaPath,
-      document,
-      `${instancePath}[0]`
-    );
+  if (schema.items !== undefined && Array.isArray(value)) {
+    const itemSchema = requireJsonSchema(schema.items, `${instancePath}[0]`);
+    if (value.length === 0) {
+      if (requiresObjectPropertyCoverage(itemSchema, schemaPath, document)) {
+        fail(
+          `${instancePath}: representative array is empty; items require object property coverage`
+        );
+      }
+    } else {
+      assertCovers(itemSchema, value[0], schemaPath, document, `${instancePath}[0]`);
+    }
   }
 }
 

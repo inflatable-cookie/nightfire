@@ -64,6 +64,22 @@ describe("tooling/schema-documents", () => {
     expect(errors(1, { const: 2 })).toEqual(["$: value does not match const"]);
   });
 
+  it("treats prototype names as ordinary own-property keys", () => {
+    expect(errors({}, { type: "object", required: ["toString", "constructor"] })).toEqual([
+      "$: missing toString",
+      "$: missing constructor"
+    ]);
+    expect(
+      errors(
+        { toString: "value", constructor: 3 },
+        {
+          type: "object",
+          properties: { toString: { type: "string" }, constructor: { type: "integer" } }
+        }
+      )
+    ).toEqual([]);
+  });
+
   it("treats reordered duplicate items as duplicates for uniqueItems", () => {
     const schema: JsonSchema = { type: "array", uniqueItems: true };
     expect(

@@ -71,3 +71,7 @@ jobs:
       # `health` first, so a standalone health step would only repeat it.
       - name: Release gate
         run: effigy qa
+        env:
+          # rust-toolchain.toml pins local development to 1.100.0; explicitly
+          # override that pin here so the release gate exercises the crate MSRV.
+          RUSTUP_TOOLCHAIN: "1.95"
