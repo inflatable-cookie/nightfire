@@ -9,7 +9,7 @@ import {
   readNpmPublicationAuthority,
   sha256File
 } from "../../scripts/npm-publication";
-import { cliValue } from "../../scripts/verify-npm-candidate";
+import { parseCliFlags } from "../../scripts/verify-npm-candidate";
 
 // The archive step writes the candidate identity manifest and the publish step
 // reads it. Both go through these helpers, so a malformed or hand-edited
@@ -93,15 +93,11 @@ describe("tooling/npm-publication", () => {
   });
 
   it("refuses a flag without a value instead of skipping the check", () => {
-    expect(cliValue(["--root", "."], "--tag-version")).toBeUndefined();
-    expect(cliValue(["--tag-version", "0.6.0"], "--tag-version")).toBe("0.6.0");
-    expect(() => cliValue(["--tag-version"], "--tag-version")).toThrow(
-      /--tag-version requires a value/
-    );
-    expect(() => cliValue(["--tag-version", ""], "--tag-version")).toThrow(
-      /--tag-version requires a value/
-    );
-    expect(() => cliValue(["--tag-version", "--dir", "x"], "--tag-version")).toThrow(
+    expect(parseCliFlags(["--root", "."]).get("--tag-version")).toBeUndefined();
+    expect(parseCliFlags(["--tag-version", "0.6.0"]).get("--tag-version")).toBe("0.6.0");
+    expect(() => parseCliFlags(["--tag-version"])).toThrow(/--tag-version requires a value/);
+    expect(() => parseCliFlags(["--tag-version", ""])).toThrow(/--tag-version requires a value/);
+    expect(() => parseCliFlags(["--tag-version", "--dir", "x"])).toThrow(
       /--tag-version requires a value/
     );
   });

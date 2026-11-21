@@ -41,7 +41,9 @@ export function jsonEqual(left: unknown, right: unknown): boolean {
   if (keys.length !== Object.keys(rightObject).length) {
     return false;
   }
-  return keys.every((key) => key in rightObject && jsonEqual(leftObject[key], rightObject[key]));
+  return keys.every(
+    (key) => Object.hasOwn(rightObject, key) && jsonEqual(leftObject[key], rightObject[key])
+  );
 }
 
 // The keywords this validator enforces. Anything else is refused rather than
@@ -235,7 +237,7 @@ function resolvePointer(document: unknown, fragment: string): unknown {
   for (const part of fragment.slice(2).split("/")) {
     const key = part.replaceAll("~1", "/").replaceAll("~0", "~");
     const object = asObject(current);
-    if (!object || !(key in object)) {
+    if (!object || !Object.hasOwn(object, key)) {
       fail(`unresolved schema fragment: ${fragment}`);
     }
     current = object[key];
@@ -327,7 +329,7 @@ export function validate(
   if (Array.isArray(schema.enum) && !schema.enum.some((entry) => jsonEqual(entry, value))) {
     errors.push(`${instancePath}: value is not in enum`);
   }
-  if ("const" in schema && !jsonEqual(schema.const, value)) {
+  if (Object.hasOwn(schema, "const") && !jsonEqual(schema.const, value)) {
     errors.push(`${instancePath}: value does not match const`);
   }
 
@@ -376,13 +378,13 @@ export function validate(
   if (object) {
     const required = Array.isArray(schema.required) ? schema.required : [];
     for (const key of required) {
-      if (typeof key === "string" && !(key in object)) {
+      if (typeof key === "string" && !Object.hasOwn(object, key)) {
         errors.push(`${instancePath}: missing ${key}`);
       }
     }
     const properties = asObject(schema.properties) ?? {};
     for (const [key, entry] of Object.entries(object)) {
-      if (key in properties) {
+      if (Object.hasOwn(properties, key)) {
         errors.push(
           ...validate(
             catalog,

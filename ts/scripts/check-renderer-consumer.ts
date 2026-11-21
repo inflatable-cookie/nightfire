@@ -148,10 +148,15 @@ try {
   const CORE_BLOCK_TYPE_NAMES = rawBlockNames.filter(
     (entry): entry is string => typeof entry === "string"
   );
-  const rendererMod: unknown = await import(join(pkg, "ts/src/NightfireRenderer.svelte"));
-  const NightfireRenderer = isRecord(rendererMod) ? rendererMod.default : null;
+  if (CORE_BLOCK_TYPE_NAMES.length === 0) {
+    throw new Error("CORE_BLOCK_TYPE_NAMES must contain at least one core block");
+  }
+  const rendererMod: unknown = await import(
+    Bun.resolveSync("@inflatable-cookie/nightfire/renderer", consumer)
+  );
+  const NightfireRenderer = isRecord(rendererMod) ? rendererMod.NightfireRenderer : null;
   if (!isRendererComponent(NightfireRenderer)) {
-    throw new Error("NightfireRenderer default export is not a Svelte component");
+    throw new Error("NightfireRenderer export is not a Svelte component");
   }
 
   const container = document.createElement("div");
