@@ -121,4 +121,33 @@ describe("nightfire/NightfireEditor defaults", () => {
 
     await waitFor(() => expect(onSchemaMismatch).toHaveBeenCalledTimes(2));
   });
+
+  it("initialises a required value again after the schema changes", async () => {
+    const view = render(NightfireEditorHarness, {
+      schema: "example:content/markup",
+      modeOverride: "multi",
+      required: true,
+      initialValue: { schema: "example:content/markup", blocks: [] }
+    });
+
+    await waitFor(() => {
+      const payload = JSON.parse(view.getByTestId("nightfire-value").textContent ?? "{}");
+      expect(payload.blocks).toHaveLength(1);
+    });
+
+    const setSchema = (view.component as { setSchema: (next: string) => void }).setSchema;
+    const setValue = (view.component as { setValue: (next: unknown) => void }).setValue;
+    setSchema("example:content/other");
+    setValue({ schema: "example:content/other", blocks: [] });
+    flushSync();
+    await tick();
+
+    // The new schema is a new field: its required initialisation runs again
+    // instead of inheriting the first schema's completed state.
+    await waitFor(() => {
+      const payload = JSON.parse(view.getByTestId("nightfire-value").textContent ?? "{}");
+      expect(payload.schema).toBe("example:content/other");
+      expect(payload.blocks).toHaveLength(1);
+    });
+  });
 });

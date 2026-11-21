@@ -52,6 +52,36 @@ describe("nightfire/SlashCommandPalette.svelte", () => {
     expect(selected).toHaveBeenCalledWith(commands[1]);
   });
 
+  it("keeps focus on the combobox so Enter activates only the tracked option", async () => {
+    const selected = mock();
+
+    render(SlashCommandPalette, {
+      commands,
+      query: "",
+      onQueryChange: mock(),
+      onSelect: selected
+    });
+
+    const input = screen.getByLabelText<HTMLInputElement>("Filter commands");
+    const options = Array.from(document.querySelectorAll<HTMLButtonElement>('[role="option"]'));
+    expect(options).toHaveLength(2);
+    // Options stay out of the tab order: the combobox owns the keyboard.
+    for (const option of options) {
+      expect(option.tabIndex).toBe(-1);
+    }
+
+    await fireEvent.focus(options[1]!);
+    expect(input.getAttribute("aria-activedescendant")).toBe(options[1]!.id);
+
+    // Enter inside an option does not run the palette's own selection: the
+    // button activates natively, and only the combobox tracks `selectedIndex`.
+    await fireEvent.keyDown(options[1]!, { key: "Enter" });
+    expect(selected).not.toHaveBeenCalled();
+
+    await fireEvent.keyDown(input, { key: "Enter" });
+    expect(selected).toHaveBeenCalledWith(commands[1]);
+  });
+
   it("renders an empty state and closes on escape", async () => {
     const onClose = mock();
 

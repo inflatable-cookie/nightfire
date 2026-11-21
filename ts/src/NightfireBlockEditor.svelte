@@ -49,6 +49,24 @@
   const currentBlockType = $derived(normalisedBlock.type);
   const BlockEditor = $derived(getBlockEditor(schema, currentBlockType));
 
+  // A block a caller passes without an id mints one on its first edit. That is
+  // the same block, so the editor only restarts when the type changes or when
+  // two distinct real ids are swapped: a first id, or a removed one, is not a
+  // new block.
+  let mountedId: string | null = null;
+  let restarts = 0;
+  function editorKey(): string {
+    const id = typeof block?.id === "string" && block.id.trim().length > 0 ? block.id : null;
+    if (id !== null && mountedId === null) {
+      mountedId = id;
+    } else if (id !== null && id !== mountedId) {
+      mountedId = id;
+      restarts += 1;
+    }
+
+    return `${restarts}:${currentBlockType}`;
+  }
+
   function handleBlockEditorChange(next: any) {
     const candidate = next && typeof next === "object" && "block" in next
       ? (next as { block?: any }).block
@@ -60,7 +78,7 @@
 
 <div class="underlay-nightfire-editor underlay-nightfire-editor--single">
   {#if BlockEditor}
-    {#key `${block?.id ?? ""}:${currentBlockType}`}
+    {#key editorKey()}
       {@const EditorComponent = BlockEditor}
       <EditorComponent
         block={normalisedBlock}

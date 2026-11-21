@@ -158,6 +158,7 @@
   <div class="underlay-image-editor__alt">
     <TextInput
       id={`${inputId}-alt`}
+      ariaLabel="Alt text"
       placeholder="Alt text"
       value={alt}
       onValueChange={(nextValue) => emit({ alt: nextValue })}
@@ -167,12 +168,14 @@
   <div class="underlay-image-editor__meta">
     <TextInput
       id={`${inputId}-title`}
+      ariaLabel="Title (optional)"
       placeholder="Title (optional)"
       value={title}
       onValueChange={(nextValue) => emit({ title: nextValue })}
     />
     <TextInput
       id={`${inputId}-caption`}
+      ariaLabel="Caption (optional)"
       placeholder="Caption (optional)"
       value={caption}
       onValueChange={(nextValue) => emit({ caption: nextValue })}

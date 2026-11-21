@@ -64,6 +64,12 @@
     }
 
     if (event.key === "Enter") {
+      // Only the combobox owns Enter. An option button is not tab-reachable
+      // (tabindex -1) and activates natively, so Enter can never select a row
+      // other than the one the user is on.
+      if (event.target !== queryInput) {
+        return;
+      }
       event.preventDefault();
       selectActiveCommand();
       return;
@@ -115,10 +121,14 @@
             id={`${listboxId}-${command.id}`}
             type="button"
             role="option"
+            tabindex={-1}
             class:underlay-nightfire-slash-palette__item--selected={index === selectedIndex}
             aria-selected={index === selectedIndex}
             class="underlay-nightfire-slash-palette__item"
             onclick={() => onSelect(command)}
+            onfocus={() => {
+              selectedIndex = index;
+            }}
             onmousemove={() => {
               selectedIndex = index;
             }}

@@ -364,6 +364,7 @@ import type { Edge, GridEntry, TableCell, TableRow } from './table-model';
 <div class="underlay-table-editor" bind:this={rootElement}>
   <TextInput
     id={`${inputId}-caption`}
+    ariaLabel="Table caption (optional)"
     placeholder="Table caption (optional)"
     value={typeof block?.data?.caption === "string" ? block.data.caption : ""}
     onValueChange={setCaption}

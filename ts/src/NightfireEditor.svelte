@@ -159,6 +159,18 @@ import type { NightfireSlashCommand, NightfireSlashCommandsConfig } from './slas
   );
 
   let hasInitialisedRequired = $state(false);
+  // A schema change is a different field with its own required
+  // initialisation, so the settled value for the new schema is initialised
+  // again.
+  let requiredSchema = $state(untrack(() => schema));
+  $effect(() => {
+    if (requiredSchema === schema) {
+      return;
+    }
+
+    requiredSchema = schema;
+    hasInitialisedRequired = false;
+  });
 
   // The registry entry for `schema` sets the mode and default type unless a
   // strategy or the caller overrides them. Block editors are looked up with
