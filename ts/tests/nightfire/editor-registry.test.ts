@@ -117,6 +117,14 @@ describe("nightfire/editor-registry", () => {
     expect(isBlockContentEmpty({ type: "markdown", data: { text: "" } })).toBe(false);
   });
 
+  it("treats a throwing empty checker as conservatively non-empty", () => {
+    registerBlockEmptyChecker("broken", () => {
+      throw new Error("consumer checker failed");
+    });
+
+    expect(isBlockContentEmpty({ type: "broken", data: {} })).toBe(false);
+  });
+
   it("registers an editor for every core block type that declares one", async () => {
     // The real catalog, unmocked. The import runs once per test file, and
     // beforeEach has just cleared the registry, so a registration that does

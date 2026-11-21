@@ -102,6 +102,23 @@ describe("nightfire/strategies", () => {
     expect(calls).toBe(3);
   });
 
+  it("clears loading when fetchStrategies throws synchronously", async () => {
+    const strategies = await loadStrategies();
+    strategies.configureNightfireStrategies({
+      fetchStrategies: () => {
+        throw new Error("sync failure");
+      },
+      cacheTtl: 100_000
+    });
+
+    const store = strategies.createNightfireStrategiesContext();
+    const pending = store.ensure();
+    expect(get(store.loading)).toBe(true);
+    expect(await pending).toEqual([]);
+    expect(get(store.loading)).toBe(false);
+    expect(get(store.error)).toBe("sync failure");
+  });
+
   it("caches an empty strategy list until it is invalidated", async () => {
     const strategies = await loadStrategies();
     let calls = 0;

@@ -126,7 +126,11 @@ export function isBlockContentEmpty(block: unknown): boolean {
   if (!checker) {
     return false;
   } // no checker → assume non-empty
-  return checker(block);
+  try {
+    return checker(block);
+  } catch {
+    return false;
+  }
 }
 
 // Registrations are defined in `*-registrations.ts` to keep this file

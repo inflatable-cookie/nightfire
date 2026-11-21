@@ -151,7 +151,8 @@ async function ensure(): Promise<Array<NightfireStrategy>> {
   }
 
   // Check if configured
-  if (!config) {
+  const cfg = config;
+  if (!cfg) {
     errorStore.set(
       "Nightfire strategies not configured. Call configureNightfireStrategies() first."
     );
@@ -173,17 +174,19 @@ async function ensure(): Promise<Array<NightfireStrategy>> {
     return true;
   };
 
-  fetchPromise = config
-    .fetchStrategies()
+  fetchPromise = Promise.resolve()
+    .then(() => cfg.fetchStrategies())
     .then((result) => {
       // A slower earlier request must not clobber a later one.
       if (activeRequest !== request) {
         return get(strategiesStore);
       }
+      if (!settle()) {
+        return get(strategiesStore);
+      }
       strategiesStore.set(result);
       fetchedAt = Date.now();
       hasLoaded = true;
-      settle();
       return result;
     })
     .catch((error: unknown) => {

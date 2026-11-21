@@ -33,6 +33,15 @@ function asRecord(value: unknown): Record<string, unknown> | null {
 }
 
 function validateBlock(schema: string, block: unknown): NightfireBlock | null {
+  const incoming = asRecord(block);
+  if (
+    incoming &&
+    Object.hasOwn(incoming, "version") &&
+    (typeof incoming.version !== "string" || incoming.version.trim().length === 0)
+  ) {
+    return null;
+  }
+
   const typedBlock = coerceNightfireBlock(block);
   if (!typedBlock) {
     return null;

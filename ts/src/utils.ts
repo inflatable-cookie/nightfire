@@ -73,7 +73,8 @@ export function normaliseNightfireBlock(
   definition: SchemaDefinition
 ): NightfireBlock {
   const allowed = typeOptions.map((option) => option.type);
-  const defaultType = definition.defaultType ?? typeOptions[0]?.type ?? "markdown";
+  const definitionDefault = definition.defaultType?.trim() ? definition.defaultType : undefined;
+  const defaultType = definitionDefault ?? typeOptions[0]?.type ?? "markdown";
   const normalized = coerceNightfireBlock(block, defaultType) ?? {
     type: defaultType,
     version: "initial",

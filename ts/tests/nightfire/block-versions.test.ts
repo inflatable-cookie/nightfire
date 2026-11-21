@@ -54,6 +54,12 @@ describe("nightfire/block-versions", () => {
     expect(() => registerBlockVersions("bad", { current: "1", supported: [1] as any })).toThrow(
       /non-string/
     );
+    expect(() => registerBlockVersions("   ", { current: "1", supported: ["1"] })).toThrow(
+      /block type/
+    );
+    expect(() => registerBlockVersions("bad", { current: "1", supported: ["1", " "] })).toThrow(
+      /empty or non-string/
+    );
 
     expect(() => getBlockVersions("bad")).not.toThrow();
     expect(getBlockVersions("bad")).toEqual({ current: "initial", supported: ["initial"] });

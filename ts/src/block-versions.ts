@@ -12,6 +12,16 @@ const DEFAULT_VERSIONS: BlockVersionSpec = Object.freeze({
 
 const blockVersions = new KeyedRegistry<BlockVersionSpec>();
 
+function areSupportedVersions(value: unknown): value is ReadonlyArray<string> {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (version: unknown): version is string =>
+        typeof version === "string" && version.trim().length > 0
+    )
+  );
+}
+
 /**
  * Register the versions one block type accepts.
  *
@@ -21,20 +31,26 @@ const blockVersions = new KeyedRegistry<BlockVersionSpec>();
  * mutation of the caller's array must not reach the registry.
  */
 export function registerBlockVersions(type: string, spec: BlockVersionSpec): void {
+  if (typeof type !== "string" || type.trim().length === 0) {
+    throw new TypeError("block type must be a non-empty string");
+  }
+
   const current = spec?.current;
-  const supported = spec?.supported;
+  const supportedValue: unknown = spec?.supported;
 
   if (typeof current !== "string" || current.trim().length === 0) {
     throw new TypeError(`block type ${type} needs a non-empty current version`);
   }
 
-  if (!Array.isArray(supported) || supported.length === 0) {
+  if (!Array.isArray(supportedValue) || supportedValue.length === 0) {
     throw new TypeError(`block type ${type} must list at least one supported version`);
   }
 
-  if (!supported.every((version) => typeof version === "string")) {
-    throw new TypeError(`block type ${type} has a non-string supported version`);
+  if (!areSupportedVersions(supportedValue)) {
+    throw new TypeError(`block type ${type} has an empty or non-string supported version`);
   }
+
+  const supported = supportedValue;
 
   if (!supported.includes(current)) {
     throw new TypeError(
@@ -42,7 +58,7 @@ export function registerBlockVersions(type: string, spec: BlockVersionSpec): voi
     );
   }
 
-  blockVersions.set(type, Object.freeze({ current, supported: Object.freeze([...supported]) }));
+  blockVersions.set(type, Object.freeze({ current, supported: Object.freeze(supported.slice()) }));
 }
 
 export function unregisterBlockVersions(type: string): boolean {
