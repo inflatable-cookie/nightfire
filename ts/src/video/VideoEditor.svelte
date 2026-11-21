@@ -97,7 +97,7 @@ import type { ParsedEmbed } from '@inflatable-cookie/poodle-svelte';
   function emit(current: ParsedEmbed | null, nextTitle: string, nextCaption: string) {
     lastEmitted = current;
     onChange({
-      ...(block.id !== undefined ? { id: block.id } : {}),
+      ...(block?.id !== undefined ? { id: block.id } : {}),
       type: block?.type ?? "video",
       version: block?.version ?? "initial",
       data: {

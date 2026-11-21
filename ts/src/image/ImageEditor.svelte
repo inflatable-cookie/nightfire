@@ -88,7 +88,7 @@
     const nextCaption = updates.caption ?? caption;
     const nextSizing = normalizeSizing(updates.sizing ?? sizing);
     onChange({
-      ...(block.id !== undefined ? { id: block.id } : {}),
+      ...(block?.id !== undefined ? { id: block.id } : {}),
       type: block?.type ?? "image",
       version: block?.version ?? "initial",
       data: {

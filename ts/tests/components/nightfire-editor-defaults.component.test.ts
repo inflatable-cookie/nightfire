@@ -1,4 +1,4 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it, mock } from "bun:test";
 import { flushSync, tick } from "svelte";
 import { render, screen, waitFor } from "../render";
 
@@ -60,10 +60,12 @@ describe("nightfire/NightfireEditor defaults", () => {
   });
 
   it("initialises a default block when required is true and blocks is empty", async () => {
+    const onChange = mock();
     const view = render(NightfireEditorHarness, {
       schema: "example:content/markup",
       modeOverride: "multi",
       required: true,
+      onChange,
       initialValue: {
         schema: "example:content/markup",
         blocks: []
@@ -76,5 +78,47 @@ describe("nightfire/NightfireEditor defaults", () => {
       expect(payload.blocks[0].type).toBe("markdown");
       expect(payload.blocks[0].id).toMatch(/^nf_/);
     });
+
+    // A controlled caller without bind:value learns about the initialised
+    // value through onChange, not just through the internal state.
+    const emitted = onChange.mock.calls.at(-1)![0];
+    expect(emitted.blocks).toHaveLength(1);
+    expect(emitted.blocks[0].type).toBe("markdown");
+  });
+
+  it("reports the same schema mismatch again after it clears", async () => {
+    const onSchemaMismatch = mock();
+    const view = render(NightfireEditorHarness, {
+      schema: "example:content/markup",
+      modeOverride: "single",
+      onSchemaMismatch,
+      initialValue: {
+        schema: "example:content/other",
+        blocks: [{ type: "markdown", version: "initial", data: { text: "" } }]
+      }
+    });
+    const setValue = (view.component as { setValue: (next: unknown) => void }).setValue;
+
+    await waitFor(() => expect(onSchemaMismatch).toHaveBeenCalledTimes(1));
+    expect(onSchemaMismatch.mock.calls[0]![0]).toMatchObject({
+      actualSchema: "example:content/other",
+      expectedSchema: "example:content/markup"
+    });
+
+    setValue({
+      schema: "example:content/markup",
+      blocks: [{ type: "markdown", version: "initial", data: { text: "" } }]
+    });
+    flushSync();
+    await tick();
+
+    setValue({
+      schema: "example:content/other",
+      blocks: [{ type: "markdown", version: "initial", data: { text: "" } }]
+    });
+    flushSync();
+    await tick();
+
+    await waitFor(() => expect(onSchemaMismatch).toHaveBeenCalledTimes(2));
   });
 });

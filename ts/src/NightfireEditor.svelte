@@ -109,11 +109,19 @@ import type { NightfireSlashCommand, NightfireSlashCommandsConfig } from './slas
   // the registry defaults in place.
   const strategiesStore = useNightfireStrategies();
   let strategy = $state<NightfireStrategy | null>(null);
-  let lastSchemaMismatchReported = $state<string | null>(null);
+  // True once the strategy for `schema` has either arrived or failed, and true
+  // from the start when there is no store to wait for. Work that depends on the
+  // strategy's default type must not lock in a registry fallback before then.
+  let strategySettled = $state(false);
+  let lastSchemaMismatchReported = $state<{
+    schema: string;
+    mismatch: string;
+  } | null>(null);
 
   $effect(() => {
     const requestedSchema = schema;
     strategy = null;
+    strategySettled = !strategiesStore;
     if (!strategiesStore) {
       return;
     }
@@ -124,11 +132,13 @@ import type { NightfireSlashCommand, NightfireSlashCommandsConfig } from './slas
       .then(() => {
         if (!superseded) {
           strategy = strategiesStore.findById(requestedSchema);
+          strategySettled = true;
         }
       })
       .catch(() => {
         if (!superseded) {
           strategy = null;
+          strategySettled = true;
         }
       });
 
@@ -168,8 +178,16 @@ import type { NightfireSlashCommand, NightfireSlashCommandsConfig } from './slas
   $effect(() => {
     const { coerced, schemaMismatch } = normaliseForStrategy(value, schema);
 
-    if (schemaMismatch && schemaMismatch !== lastSchemaMismatchReported) {
-      lastSchemaMismatchReported = schemaMismatch;
+    // One report per (schema, mismatch) pair. A cleared mismatch forgets the
+    // report, and so does a new `schema` value, so the same mismatch after
+    // either is reported again.
+    if (!schemaMismatch) {
+      lastSchemaMismatchReported = null;
+    } else if (
+      lastSchemaMismatchReported?.schema !== schema ||
+      lastSchemaMismatchReported.mismatch !== schemaMismatch
+    ) {
+      lastSchemaMismatchReported = { schema, mismatch: schemaMismatch };
       onSchemaMismatch?.({ actualSchema: schemaMismatch, expectedSchema: schema });
     }
 
@@ -244,6 +262,21 @@ import type { NightfireSlashCommand, NightfireSlashCommandsConfig } from './slas
     }
   });
 
+  // The palette belongs to the markdown block at one index. Structural edits
+  // are closed by the handlers below; this is the backstop for a value that
+  // arrives without one, so a stale index can never keep the palette open.
+  $effect(() => {
+    const state = slashState;
+    if (!state) {
+      return;
+    }
+
+    const block = blocks[state.blockIndex] as { type?: string } | undefined;
+    if (block?.type !== "markdown") {
+      closeSlashPalette();
+    }
+  });
+
   function emit(nextValue: NightfireValue) {
     value = nextValue;
     onChange?.(nextValue);
@@ -262,7 +295,32 @@ import type { NightfireSlashCommand, NightfireSlashCommandsConfig } from './slas
   }
 
   function handleTypeChange(index: number, nextType: string) {
+    // A retyped block is no longer the markdown block the palette points at.
+    closeSlashPalette();
     handleBlockChange(index, changeBlockType(blocks[index], nextType));
+  }
+
+  function handleBlocksChange(nextBlocks: Array<any>) {
+    // Structural edits (add, remove, reorder, retype) invalidate an open
+    // palette; a plain content edit does not, because the slash text the user
+    // is still typing lives in that same change.
+    if (isStructuralChange(nextBlocks, blocks)) {
+      closeSlashPalette();
+    }
+
+    emit(asMultiBlockValue(schema, nextBlocks));
+  }
+
+  function isStructuralChange(nextBlocks: Array<any>, currentBlocks: Array<any>): boolean {
+    if (nextBlocks.length !== currentBlocks.length) {
+      return true;
+    }
+
+    return nextBlocks.some((nextBlock, index) => {
+      const current = currentBlocks[index] as { id?: string; type?: string } | undefined;
+      const next = nextBlock as { id?: string; type?: string } | undefined;
+      return next?.id !== current?.id || next?.type !== current?.type;
+    });
   }
 
   function addBlock() {
@@ -387,14 +445,19 @@ import type { NightfireSlashCommand, NightfireSlashCommandsConfig } from './slas
     focusBlockCard(slashTarget.blockIndex + 1);
   }
 
-  // For required fields, ensure there is at least one block when the
-  // editor is first initialised and the value is empty.
+  // For required fields, ensure there is at least one block when the editor is
+  // first initialised and the value is empty. Waiting for the strategy to
+  // settle keeps a registry fallback type from being locked in before the
+  // strategy's own default arrives, and the initialised value is emitted so a
+  // controlled parent that does not bind:value still receives it.
   $effect(() => {
-    if (!hasInitialisedRequired && required) {
+    if (!hasInitialisedRequired && required && strategySettled) {
       if (isEmptyNightfire(value, false)) {
-        value = createRequiredInitialValue(
-          schema,
-          effectiveDef.defaultType ?? "markdown"
+        emit(
+          createRequiredInitialValue(
+            schema,
+            effectiveDef.defaultType ?? "markdown"
+          )
         );
       }
 
@@ -442,7 +505,7 @@ import type { NightfireSlashCommand, NightfireSlashCommandsConfig } from './slas
     {slashState}
     {filteredSlashCommands}
     onSingleBlockChange={handleSingleBlockChange}
-    onBlocksChange={(nextBlocks) => emit(asMultiBlockValue(schema, nextBlocks))}
+    onBlocksChange={handleBlocksChange}
     onSingleTypeChange={handleSingleTypeChange}
     onTypeChange={handleTypeChange}
     onBlockContextChange={handleSlashContextChange}
@@ -458,7 +521,7 @@ import type { NightfireSlashCommand, NightfireSlashCommandsConfig } from './slas
   />
 
   {#if showRequiredError}
-    <p class="underlay-nightfire-field__error">This field is required.</p>
+    <p class="underlay-nightfire-field__error" role="alert">This field is required.</p>
   {/if}
 </div>
 

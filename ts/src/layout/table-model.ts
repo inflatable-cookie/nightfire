@@ -26,8 +26,15 @@ export type Bounds = { top: number; right: number; bottom: number; left: number 
 
 type Positioned = { row: number; column: number; cell: TableCell };
 const key = (row: number, column: number) => `${row}:${column}`;
-const span = (value: unknown) =>
-  typeof value === "number" && Number.isInteger(value) && value > 1 ? value : 1;
+// HTML's own span limits (colspan 1000, rowspan 65534). A stored value above
+// them cannot mean anything, and reading one unbounded would allocate the slot
+// grid from malformed data.
+const MAX_COLSPAN = 1000;
+const MAX_ROWSPAN = 65_534;
+const clampSpan = (value: unknown, max: number) =>
+  typeof value === "number" && Number.isInteger(value) && value > 1 ? Math.min(value, max) : 1;
+const columnSpan = (value: unknown) => clampSpan(value, MAX_COLSPAN);
+const rowSpan = (value: unknown) => clampSpan(value, MAX_ROWSPAN);
 export const emptyCell = (header = false): TableCell => ({
   markdown: "",
   ...(header ? { is_header: true } : {})
@@ -42,8 +49,8 @@ export function layoutRows(rows: Array<TableRow>): GridLayout {
   rows.forEach((row, rowIndex) => {
     let column = 0;
     (Array.isArray(row.cells) ? row.cells : []).forEach((cell, cellIndex) => {
-      const colspan = span(cell.colspan);
-      const rowspan = span(cell.rowspan);
+      const colspan = columnSpan(cell.colspan);
+      const rowspan = rowSpan(cell.rowspan);
       while (
         Array.from({ length: rowspan }, (_, r) =>
           Array.from({ length: colspan }, (_, c) => slots.has(key(rowIndex + r, column + c))).some(
@@ -85,8 +92,8 @@ function buildRows(
 ): Array<TableRow> {
   const occupied = new Set<string>();
   for (const { row, column, cell } of positioned) {
-    for (let r = 0; r < span(cell.rowspan); r++) {
-      for (let c = 0; c < span(cell.colspan); c++) {
+    for (let r = 0; r < rowSpan(cell.rowspan); r++) {
+      for (let c = 0; c < columnSpan(cell.colspan); c++) {
         occupied.add(key(row + r, column + c));
       }
     }
