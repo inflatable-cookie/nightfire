@@ -67,8 +67,7 @@ jobs:
       - name: Install dependencies
         run: effigy bootstrap:deps
 
-      - name: Repository health
-        run: effigy health
-
+      # No separate `effigy health` step: `qa` runs `validate`, which runs
+      # `health` first, so a standalone health step would only repeat it.
       - name: Release gate
         run: effigy qa

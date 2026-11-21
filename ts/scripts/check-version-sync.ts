@@ -10,7 +10,10 @@ const npmVersion =
 const workspace = await Bun.file("Cargo.toml").text();
 const crate = await Bun.file("rust/nightfire/Cargo.toml").text();
 
-const cargoVersion = workspace.match(/^version = "([^"]+)"$/m)?.[1];
+// Scope the match to `[workspace.package]`: the first `version = "..."` line
+// anywhere in the manifest could belong to a dependency or a patch table.
+const workspaceSection = workspace.split(/^\[workspace\.package\]\s*$/m)[1]?.split(/^\[/m)[0];
+const cargoVersion = workspaceSection?.match(/^version = "([^"]+)"$/m)?.[1];
 if (!cargoVersion) {
   throw new Error("root Cargo workspace version is missing");
 }

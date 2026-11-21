@@ -49,9 +49,12 @@ export const fireEvent: AsyncFireEvent = new Proxy(domFireEvent, {
   }
 }) as unknown as AsyncFireEvent;
 
-export function cleanup(): void {
+// Svelte 5 `unmount` is async: teardown completes after the returned promise
+// settles, so cleanup awaits each unmount before removing its container and
+// before the next test starts.
+export async function cleanup(): Promise<void> {
   for (const entry of mounted.splice(0)) {
-    void unmount(entry.component);
+    await unmount(entry.component);
     entry.container.remove();
   }
 }

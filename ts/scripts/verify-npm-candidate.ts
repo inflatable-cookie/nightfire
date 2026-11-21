@@ -96,7 +96,9 @@ export const VERIFY_FLAGS = [
 
 // An unknown or repeated flag is a typo, not an option to ignore: `--tag-verison`
 // silently dropped would skip the tag check the workflow asked for. A flag's value
-// is the token after it, and `cliValue` refuses a value that is missing or a flag.
+// is the token after it; a missing value or a value that is itself a flag is a
+// broken invocation, reported as `${flag} requires a value` rather than as an
+// unknown argument for the neighbouring flag.
 export function assertKnownFlags(
   args: Array<string>,
   known: ReadonlyArray<string> = VERIFY_FLAGS
@@ -114,6 +116,10 @@ export function assertKnownFlags(
       throw new Error(`${arg} is given more than once`);
     }
     seen.add(arg);
+    const value = args[index + 1];
+    if (value === undefined || value.length === 0 || value.startsWith("--")) {
+      throw new Error(`${arg} requires a value`);
+    }
     index += 1;
   }
 }
