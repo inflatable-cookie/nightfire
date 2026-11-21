@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
-import { flushSync } from "svelte";
+import { flushSync, tick } from "svelte";
 import { cleanup, fireEvent, render, within } from "../render";
 import TableEditorHarness from "./TableEditorHarness.svelte";
 
@@ -582,7 +582,10 @@ describe("nightfire/table editor", () => {
   it("ignores the split shortcut on a single cell without touching pending state", async () => {
     const onChange = mock();
     const view = render(EditorComponent as any, {
-      block: tableBlock([{ cells: [{ markdown: "Only" }] }]),
+      block: tableBlock([
+        { cells: [{ markdown: "Only" }, { markdown: "" }] },
+        { cells: [{ markdown: "" }, { markdown: "" }] }
+      ]),
       onChange
     });
 
@@ -595,6 +598,61 @@ describe("nightfire/table editor", () => {
 
     expect(onChange).not.toHaveBeenCalled();
     expect(within(view.container).getByRole("alertdialog")).toBeTruthy();
+  });
+
+  it("never opens a removal dialog on a 1-row or 1-column table", async () => {
+    const oneRow = tableBlock([{ cells: [{ markdown: "Only" }, { markdown: "" }] }]);
+    const rowChange = mock();
+    const rowView = render(EditorComponent as any, { block: oneRow, onChange: rowChange });
+    const onlyCell = within(rowView.container).getByRole("gridcell", {
+      name: "Row 1, column 1"
+    });
+    onlyCell.focus();
+    await fireEvent.click(within(rowView.container).getByRole("button", { name: "Remove row" }));
+    expect(within(rowView.container).queryByRole("alertdialog")).toBeNull();
+    expect(rowChange).not.toHaveBeenCalled();
+
+    const oneColumn = tableBlock([
+      { cells: [{ markdown: "Only" }] },
+      { cells: [{ markdown: "" }] }
+    ]);
+    const columnChange = mock();
+    const columnView = render(EditorComponent as any, {
+      block: oneColumn,
+      onChange: columnChange
+    });
+    const topCell = within(columnView.container).getByRole("gridcell", {
+      name: "Row 1, column 1"
+    });
+    topCell.focus();
+    await fireEvent.click(
+      within(columnView.container).getByRole("button", { name: "Remove column" })
+    );
+    expect(within(columnView.container).queryByRole("alertdialog")).toBeNull();
+    expect(columnChange).not.toHaveBeenCalled();
+  });
+
+  it("drops a pending removal dialog when the block shrinks past its line", async () => {
+    const view = render(TableEditorHarness, {
+      initial: tableBlock([
+        { cells: [{ markdown: "Keep" }, { markdown: "" }] },
+        { cells: [{ markdown: "Drop" }, { markdown: "" }] }
+      ])
+    });
+
+    const secondCell = within(view.container).getByRole("gridcell", {
+      name: "Row 2, column 1"
+    });
+    secondCell.focus();
+    await fireEvent.click(within(view.container).getByRole("button", { name: "Remove row" }));
+    expect(within(view.container).getByRole("alertdialog")).toBeTruthy();
+
+    (view.component as { setBlock: (next: unknown) => void }).setBlock(
+      tableBlock([{ cells: [{ markdown: "Keep" }, { markdown: "" }] }])
+    );
+    flushSync();
+    await tick();
+    expect(within(view.container).queryByRole("alertdialog")).toBeNull();
   });
 
   it("focuses the clamped cell after the block shrinks underneath the focus", async () => {

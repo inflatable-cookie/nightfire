@@ -45,6 +45,10 @@
   );
 
   let picking = $state(false);
+  let mounted = $state(true);
+  $effect(() => () => {
+    mounted = false;
+  });
 
   function fileTitle(file: CardFile): string {
     return typeof file.title === "string" ? file.title : "";
@@ -88,6 +92,7 @@
 
     try {
       const picked = await mediaSource.pick({ multiple: true });
+      if (!mounted) {return;}
       if (!picked) {return;} // cancelled
 
       const known = new Set(files.map((file) => file.media_id));
@@ -111,8 +116,18 @@
     } catch {
       // A failed picker leaves the existing selection intact.
     } finally {
-      picking = false;
+      if (mounted) {picking = false;}
     }
+  }
+
+  // A file id keys its row, so removing one row leaves the survivors
+  // mounted. Stored data can repeat an id, and a keyed block rejects a
+  // duplicate key, so a repeated id falls back to the row's position.
+  function fileKey(list: Array<CardFile>, index: number): string {
+    const id = list[index]?.media_id;
+    if (typeof id !== "string" || id.trim().length === 0) {return `index:${index}`;}
+    const duplicated = list.some((file, other) => other !== index && file.media_id === id);
+    return duplicated ? `index:${index}` : id;
   }
 
   function removeFile(index: number) {
@@ -159,7 +174,7 @@
 
   {#if files.length > 0}
     <ul class="underlay-download-card-editor__files">
-      {#each files as file, index (`${file.media_id}:${index}`)}
+      {#each files as file, index (fileKey(files, index))}
         <li class="underlay-download-card-editor__file">
           <div class="underlay-download-card-editor__file-info">
             <span class="underlay-download-card-editor__file-name">

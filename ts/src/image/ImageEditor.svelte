@@ -52,6 +52,10 @@
   const sizing = $derived(normalizeSizing(block?.data?.sizing));
 
   let picking = $state(false);
+  let mounted = $state(true);
+  $effect(() => () => {
+    mounted = false;
+  });
 
   const sizingOptions = [
     { value: "", label: "Natural size" },
@@ -110,6 +114,7 @@
         multiple: false,
         filterKind: MediaKind.Image
       });
+      if (!mounted) {return;}
       if (!picked) {return;} // cancelled
 
       const first = picked.find(
@@ -125,7 +130,7 @@
     } catch {
       // A failed picker leaves the existing selection intact.
     } finally {
-      picking = false;
+      if (mounted) {picking = false;}
     }
   }
 
