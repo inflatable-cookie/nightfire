@@ -136,6 +136,17 @@ describe("tooling/verify-npm-candidate", () => {
     ).not.toThrow();
   });
 
+  it("reports a flag followed by another flag as a missing value", () => {
+    expect(() => assertKnownFlags(["--dir", "--manifest"])).toThrow(/--dir requires a value/);
+    expect(() => assertKnownFlags(["--tag-version"])).toThrow(/--tag-version requires a value/);
+    expect(() => assertKnownFlags(["--dir", "--manifest", "archive"])).toThrow(
+      /--dir requires a value/
+    );
+    expect(() =>
+      assertKnownFlags(["--dir", "archive", "--manifest", "candidate.json"])
+    ).not.toThrow();
+  });
+
   it("fails the verify CLI on a misspelled flag before it reads anything", () => {
     const result = Bun.spawnSync(
       [

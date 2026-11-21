@@ -47,12 +47,12 @@ verify and unsafe to coordinate.
   `noUncheckedIndexedAccess`, `verbatimModuleSyntax`, `noImplicitOverride` and
   `noFallthroughCasesInSwitch`, and no `types` entry, so `ts/src` cannot reach a
   Bun global. `ts/tsconfig.tooling.json` is the scripts-and-tests program and the
-  only place `types: ["bun"]` belongs.
+  only place `types: ["bun"]` belongs. `ts/scripts/tsconfig.json` and
+  `ts/tests/tsconfig.json` extend it, so tooling and tests resolve Bun types
+  without leaking them into `ts/src`.
 - `check` runs svelte-check with `--fail-on-warnings`; a compiler warning fails
-  validation. `check:lint` is oxlint over the Cloudflare shared config with
-  type-aware rules off: `check:types` and `check` already own type facts, and
-  the type-aware set reports assertions in test doubles and Svelte component
-  casts by the hundred. `oxlint.config.ts` names each override and its reason.
+  validation. `check:lint` is `oxlint --type-aware` over the Cloudflare shared
+  config. `oxlint.config.ts` enables it and names each override and its reason.
 - `check:fmt` is oxfmt over `ts/**` code and the root JSON/TS configs. Docs are
   hand-wrapped prose and the wire fixtures and schemas are the conformance
   boundary, so formatting leaves them alone.

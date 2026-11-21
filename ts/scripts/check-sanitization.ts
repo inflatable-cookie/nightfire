@@ -30,7 +30,9 @@ for (const [runtime, command] of commands) {
     stdout: "inherit",
     stderr: "inherit"
   });
+  // A signal-killed child reports `exitCode: null`; `?? 1` keeps that failure
+  // from exiting 0.
   if (child.exitCode !== 0) {
-    process.exit(child.exitCode);
+    process.exit(child.exitCode ?? 1);
   }
 }

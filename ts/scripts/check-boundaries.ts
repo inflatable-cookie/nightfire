@@ -91,14 +91,18 @@ async function sourceFiles(root: string): Promise<Array<string>> {
 const allSourceFiles = await sourceFiles("ts/src");
 const sourceSet = new Set(allSourceFiles.map(normalize));
 
+// The forbidden-package scan reads imports through `importedRefs`, so a
+// side-effect import (`import "zod"`), a spaced dynamic import
+// (`import ("zod")`), and an import on any line are all caught, while a name
+// mentioned in a comment is not an import.
 for (const path of allSourceFiles) {
   const source = await Bun.file(path).text();
-  for (const name of forbidden) {
-    const dependencyPattern = new RegExp(
-      `(?:from\\s+|import\\s*\\()(["'])${name.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`)}`
+  for (const ref of importedRefs(path, source)) {
+    const hit = forbidden.find(
+      (name) => ref.specifier === name || ref.specifier.startsWith(`${name}/`)
     );
-    if (dependencyPattern.test(source)) {
-      throw new Error(`forbidden source import ${name}: ${path}`);
+    if (hit) {
+      throw new Error(`forbidden source import ${hit}: ${path}`);
     }
   }
   if (
@@ -343,9 +347,19 @@ function isEditorModule(path: string): boolean {
 
 // Every block editor module shipped in `ts/src`, derived from the tree so a new
 // block's editor is guarded without editing this proof.
+// Both registrations catalogs are excluded: they catalog modules rather than
+// being block editors, and `render-registrations.ts` in particular is
+// render-side. Without this exclusion it would be mislabelled as a block
+// editor module, and the empty-guard below would be vacuous if the tree ever
+// held only the catalogs.
 const blockEditorModules = allSourceFiles
   .map((path) => normalize(path))
-  .filter((path) => isEditorModule(path) && !path.endsWith("editor-registrations.ts"));
+  .filter(
+    (path) =>
+      isEditorModule(path) &&
+      !path.endsWith("editor-registrations.ts") &&
+      !path.endsWith("render-registrations.ts")
+  );
 if (blockEditorModules.length === 0) {
   throw new Error(
     "boundary proof found no block editor module to guard; the tree is not in the expected shape"
