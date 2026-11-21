@@ -533,6 +533,61 @@ describe("nightfire/table editor", () => {
     expect(view.container.textContent).toContain("Selected rows 2–2, columns 1–2");
   });
 
+  it("keeps one focusable cell when an external merge covers the active coordinate", async () => {
+    const view = render(TableEditorHarness, {
+      initial: tableBlock([
+        { cells: [{ markdown: "A" }, { markdown: "B" }] },
+        { cells: [{ markdown: "C" }, { markdown: "D" }] }
+      ])
+    });
+
+    const bottomRight = within(view.container).getByRole("gridcell", {
+      name: "Row 2, column 2"
+    });
+    await fireEvent.focus(bottomRight);
+
+    (view.component as { setBlock: (next: unknown) => void }).setBlock(
+      tableBlock([{ cells: [{ markdown: "merged", colspan: 2, rowspan: 2 }] }, { cells: [] }])
+    );
+    flushSync();
+
+    const focusableCells = Array.from(
+      view.container.querySelectorAll<HTMLElement>(
+        '[role="gridcell"][tabindex="0"], [role="columnheader"][tabindex="0"]'
+      )
+    );
+    expect(focusableCells).toHaveLength(1);
+    expect(focusableCells[0]?.getAttribute("aria-label")).toBe("Row 1, column 1");
+    await fireEvent.keyDown(focusableCells[0]!, { key: "Enter" });
+    expect(
+      within(view.container).getByRole("textbox", { name: "Edit Row 1, column 1" })
+    ).toBeTruthy();
+  });
+
+  it("clears merge confirmation when an external edit makes merging unavailable", async () => {
+    const view = render(TableEditorHarness, {
+      initial: tableBlock([
+        { cells: [{ markdown: "A" }, { markdown: "B" }] },
+        { cells: [{ markdown: "C" }, { markdown: "D" }] }
+      ])
+    });
+
+    const first = within(view.container).getByRole("gridcell", {
+      name: "Row 1, column 1"
+    });
+    await fireEvent.focus(first);
+    await fireEvent.keyDown(first, { key: "ArrowRight", shiftKey: true });
+    await fireEvent.click(within(view.container).getByRole("button", { name: "Merge cells" }));
+    expect(within(view.container).getByRole("alertdialog")).toBeTruthy();
+
+    (view.component as { setBlock: (next: unknown) => void }).setBlock(
+      tableBlock([{ cells: [{ markdown: "merged", colspan: 2, rowspan: 2 }] }, { cells: [] }])
+    );
+    flushSync();
+
+    expect(within(view.container).queryByRole("alertdialog")).toBeNull();
+  });
+
   it("clears editing mode when focus moves to another cell", async () => {
     const view = render(EditorComponent as any, {
       block: tableBlock([{ cells: [{ markdown: "One" }, { markdown: "Two" }] }]),

@@ -54,10 +54,14 @@
   // two distinct real ids are swapped: a first id, or a removed one, is not a
   // new block. The swap is tracked in an effect so `editorKey()` stays pure
   // and never mutates state during template evaluation.
-  let mountedId = $state<string | null>(null);
+  let mountedId: string | null = null;
   let restarts = $state(0);
   const currentId = $derived(
-    typeof block?.id === "string" && block.id.trim().length > 0 ? block.id : null,
+    typeof block?.id === "string" &&
+      block.id.trim().length > 0 &&
+      !block.id.startsWith("nightfire-unsaved-block-")
+      ? block.id
+      : null,
   );
   $effect(() => {
     if (currentId !== null && mountedId === null) {

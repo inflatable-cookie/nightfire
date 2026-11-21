@@ -94,6 +94,9 @@ describe("nightfire/SlashCommandPalette.svelte", () => {
 
     const input = screen.getByLabelText("Filter commands");
     expect(screen.getByText("No matching commands.")).toBeTruthy();
+    const listbox = document.querySelector('[role="listbox"]')!;
+    const emptyState = listbox.querySelector("li");
+    expect(emptyState?.getAttribute("role")).toBe("presentation");
 
     await fireEvent.keyDown(input, { key: "Escape" });
     expect(onClose).toHaveBeenCalledTimes(1);

@@ -141,7 +141,7 @@
         </li>
       {/each}
     {:else}
-      <li class="underlay-nightfire-slash-palette__empty" aria-live="polite">
+      <li class="underlay-nightfire-slash-palette__empty" role="presentation" aria-live="polite">
         No matching commands.
       </li>
     {/if}
