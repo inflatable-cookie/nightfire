@@ -57,14 +57,23 @@ describe("nightfire/utils", () => {
   });
 
   it("checks structural and content emptiness", () => {
-    const value = { schema: "article", blocks: [{ type: "markdown", data: { text: " " } }] };
-    registerBlockEmptyChecker("markdown", (block) => block.data.text.trim().length === 0);
+    const value = {
+      schema: "article",
+      blocks: [{ type: "markdown", version: "initial", data: { text: " " } }]
+    };
+    registerBlockEmptyChecker("markdown", (block) => {
+      const text: unknown = block?.data?.text;
+      return typeof text === "string" && text.trim().length === 0;
+    });
 
     expect(isEmptyNightfire(null)).toBe(true);
     expect(isEmptyNightfire(value)).toBe(true);
     expect(isEmptyNightfire(value, false)).toBe(false);
-    expect(isEmptyNightfire({ schema: "article", blocks: [{ type: "unknown", data: {} }] })).toBe(
-      false
-    );
+    expect(
+      isEmptyNightfire({
+        schema: "article",
+        blocks: [{ type: "unknown", version: "initial", data: {} }]
+      })
+    ).toBe(false);
   });
 });
