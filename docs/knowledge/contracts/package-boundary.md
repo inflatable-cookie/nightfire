@@ -59,10 +59,11 @@ after consumer migration begins.
   runtime Poodle imports. Type-only Poodle imports pass. `./markdown` is not a
   renderer entry point for this rule, because it carries the markdown editor.
 - Keep `@inflatable-cookie/poodle-svelte` an optional peer of editor entry
-  points only. Declare it as a patch range within one Poodle minor
-  (`>=0.4.4 <0.5` today), not an exact version: below `1.0` a Poodle minor is
-  breaking and moves the range in a Nightfire release, while a Poodle patch
-  needs none (Tom, 2026-09-27).
+  points only. Declare it as a range, not an exact version: below `1.0` a
+  Poodle minor is breaking and moves the range in a Nightfire release, while a
+  Poodle patch needs none (Tom, 2026-09-27). A range may span two minors when
+  Nightfire's editor surface works on both, so consumers can move on their own
+  schedule: `>=0.4.4 <0.6` today, with the dev pin on `0.5.0`.
 - Keep editor and renderer registration as explicit consumer opt-ins.
 - Every registry exposes `unregister` and `clear` next to its `register`. A
   process-global registry must be retirable, or tests and hot reloads leak one

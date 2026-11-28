@@ -43,7 +43,7 @@ ideas or observations with `lead.add` (see the Nucleus skill). There is no
 - Add dependencies only with direct retained-source evidence, recorded in
   `PROVENANCE.md` and the package documentation.
 - Keep the Rust crate framework- and Underlay-independent, at edition 2021 and
-  MSRV 1.95, until an explicit compatibility decision changes them.
+  MSRV 1.97.1, until an explicit compatibility decision changes them.
 - Committed root wire fixtures are the shared Rust/TypeScript conformance
   boundary.
 - Before `1.0`, prefer a clean break over a compatibility shim.

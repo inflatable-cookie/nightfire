@@ -121,7 +121,8 @@ try {
     "Element",
     "HTMLElement",
     "DocumentFragment",
-    "HTMLIFrameElement"
+    "HTMLIFrameElement",
+    "customElements"
   ]) {
     Object.defineProperty(globalThis, name, {
       configurable: true,
