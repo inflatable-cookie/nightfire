@@ -82,8 +82,9 @@ dependencies or transitive framework assumptions of the retained source.
 
 ## Static tooling
 
-Four devDependencies carry the TypeScript and Svelte static gates:
-`oxlint` with `@cloudflare/oxlint-config` lints, `oxfmt` formats, and `knip`
+Five devDependencies carry the TypeScript and Svelte static gates:
+`oxlint` with `@cloudflare/oxlint-config` lints, `tsrs` is the type-aware
+backend that config names for `--type-aware`, `oxfmt` formats, and `knip`
 finds dead files, exports and dependencies. None is a runtime dependency, none
 reaches `ts/src`, and the packed package contains none of them. `knip` parses
 TOML with `smol-toml` for its own config handling; that package stays outside
