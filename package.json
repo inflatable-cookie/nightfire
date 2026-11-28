@@ -47,7 +47,7 @@
     "./render-registrations": "./ts/src/render-registrations.ts"
   },
   "dependencies": {
-    "isomorphic-dompurify": "3.23.0",
+    "isomorphic-dompurify": "4.9.0",
     "marked": "18.3.0"
   },
   "peerDependencies": {
